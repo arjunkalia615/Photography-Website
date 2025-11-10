@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenVision - Photography Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f0f0f;
+            color: #e8e8e8;
+            overflow-x: hidden;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Title Section - Centered */
+        .title-section {
+            padding: 100px 20px 70px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(3.5rem, 10vw, 7rem);
+            font-weight: 400;
+            letter-spacing: 14px;
+            color: #ffffff;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeInUp 1.2s ease-out 0.3s forwards;
+            text-shadow: 0 2px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(0.8rem, 1.6vw, 0.95rem);
+            font-weight: 300;
+            letter-spacing: 5px;
+            color: #888888;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeInUp 1.2s ease-out 0.6s forwards;
+        }
+
+        /* Gallery Container */
+        .gallery-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 80px;
+        }
+
+        /* Responsive Masonry Grid using CSS Columns */
+        .masonry-grid {
+            column-count: 1;
+            column-gap: 20px;
+            column-fill: balance;
+        }
+
+        /* Tablet: 2 columns */
+        @media (min-width: 640px) {
+            .masonry-grid {
+                column-count: 2;
+                column-gap: 20px;
+            }
+            
+            .gallery-container {
+                padding: 0 30px 80px;
+            }
+        }
+
+        /* Desktop: 3 columns */
+        @media (min-width: 1024px) {
+            .masonry-grid {
+                column-count: 3;
+                column-gap: 25px;
+            }
+            
+            .gallery-container {
+                padding: 0 40px 100px;
+            }
+        }
+
+        /* Gallery Item - Maintains natural aspect ratios */
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #1a1a1a;
+            margin-bottom: 20px;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            display: inline-block;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease-out forwards;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform, box-shadow;
+        }
+
+        /* Staggered fade-in animations */
+        .gallery-item:nth-child(1) { animation-delay: 0.1s; }
+        .gallery-item:nth-child(2) { animation-delay: 0.15s; }
+        .gallery-item:nth-child(3) { animation-delay: 0.2s; }
+        .gallery-item:nth-child(4) { animation-delay: 0.25s; }
+        .gallery-item:nth-child(5) { animation-delay: 0.3s; }
+        .gallery-item:nth-child(6) { animation-delay: 0.35s; }
+        .gallery-item:nth-child(7) { animation-delay: 0.4s; }
+        .gallery-item:nth-child(8) { animation-delay: 0.45s; }
+        .gallery-item:nth-child(9) { animation-delay: 0.5s; }
+        .gallery-item:nth-child(10) { animation-delay: 0.55s; }
+        .gallery-item:nth-child(11) { animation-delay: 0.6s; }
+        .gallery-item:nth-child(12) { animation-delay: 0.65s; }
+        .gallery-item:nth-child(13) { animation-delay: 0.7s; }
+        .gallery-item:nth-child(14) { animation-delay: 0.75s; }
+        .gallery-item:nth-child(15) { animation-delay: 0.8s; }
+
+        /* Hover effects - Zoom and lift */
+        .gallery-item:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+
+        /* Image styling - Preserves natural aspect ratio */
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+        }
+
+        .gallery-item img.loaded {
+            opacity: 1;
+        }
+
+        /* Hover zoom effect on image */
+        .gallery-item:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Subtle overlay on hover */
+        .gallery-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.4) 100%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            z-index: 1;
+            border-radius: 8px;
+        }
+
+        .gallery-item:hover::before {
+            opacity: 1;
+        }
+
+        /* Elegant border on hover */
+        .gallery-item::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            z-index: 2;
+            border-radius: 8px;
+        }
+
+        .gallery-item:hover::after {
+            opacity: 1;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes imageFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .gallery-item img.loaded {
+            animation: imageFadeIn 0.6s ease-out;
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 639px) {
+            .title-section {
+                padding: 70px 15px 50px;
+            }
+
+            .title {
+                letter-spacing: 8px;
+                margin-bottom: 16px;
+            }
+
+            .subtitle {
+                letter-spacing: 3px;
+            }
+
+            .gallery-container {
+                padding: 0 15px 60px;
+            }
+
+            .masonry-grid {
+                column-gap: 15px;
+            }
+
+            .gallery-item {
+                margin-bottom: 15px;
+                border-radius: 6px;
+            }
+        }
+
+        /* Scroll reveal animation */
+        .gallery-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Ensure consistent spacing on all screen sizes */
+        @media (min-width: 1024px) {
+            .gallery-item {
+                margin-bottom: 25px;
+            }
+        }
+
+        @media (min-width: 640px) and (max-width: 1023px) {
+            .gallery-item {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Title Section -->
+    <div class="title-section">
+        <h1 class="title">ZenVision</h1>
+        <p class="subtitle">Photography Portfolio</p>
+    </div>
+
+    <!-- Gallery Section -->
+    <div class="gallery-container">
+        <div class="masonry-grid" id="gallery">
+            <!-- Gallery Items -->
+            
+            <div class="gallery-item">
+                <img src="Images/Blue Mountain1.jpg" alt="Blue Mountain" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/DSCF0273.jpg" alt="Photography" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/Qutab Minar1.jpg" alt="Qutab Minar" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/Qutab Minar2.jpg" alt="Qutab Minar" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/Qutab Minar5.jpg" alt="Qutab Minar" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/Sydney10.jpg" alt="Sydney" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/Sydney15.jpg" alt="Sydney" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/Sydney16.jpg" alt="Sydney" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/Sydney3.jpg" alt="Sydney" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/Sydney6.jpg" alt="Sydney" loading="lazy">
+            </div>
+            
+            <div class="gallery-item">
+                <img src="Images/Waterfall1.jpg" alt="Waterfall" loading="lazy">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Image loading and animation handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('.gallery-item img');
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            
+            // Handle image loading with fade-in
+            images.forEach((img) => {
+                if (img.complete && img.naturalHeight !== 0) {
+                    img.classList.add('loaded');
+                } else {
+                    img.addEventListener('load', function() {
+                        this.classList.add('loaded');
+                    });
+                }
+            });
+
+            // Intersection Observer for scroll-triggered animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // Optionally unobserve after animation for performance
+                        // observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all gallery items for scroll animations
+            galleryItems.forEach(item => {
+                observer.observe(item);
+            });
+        });
+    </script>
+</body>
+</html>
