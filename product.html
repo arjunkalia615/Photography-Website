@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product - ifeelworld</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">ifeelworld</a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="traditional-arts.html">Traditional Arts</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="page-content">
+        <div class="container">
+            <a href="#" id="backButton" class="back-button">Back to Gallery</a>
+            
+            <div class="product-container">
+                <div class="product-image-wrapper">
+                    <img src="" alt="Product Image" class="product-image" id="productImage">
+                </div>
+                
+                <div class="product-details">
+                    <h1 class="product-title" id="productTitle">Product Title</h1>
+                    <div class="product-price" id="productPrice">$0.99</div>
+                    
+                    <div class="product-options">
+                        <div class="option-group">
+                            <label class="option-label" for="dimension">Dimension</label>
+                            <select id="dimension" class="option-select">
+                                <option value="8x10">8x10 inches</option>
+                                <option value="12x16">12x16 inches</option>
+                                <option value="16x20">16x20 inches</option>
+                            </select>
+                        </div>
+                        
+                        <div class="option-group">
+                            <label class="option-label" for="quantity">Quantity</label>
+                            <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="10">
+                        </div>
+                        
+                        <button class="product-buy-btn" onclick="handleBuy()">Buy Now</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p class="footer-text">&copy; 2025 ifeelworld – All rights reserved</p>
+    </footer>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const image = urlParams.get('image');
+        const title = urlParams.get('title');
+        const back = urlParams.get('back');
+        
+        // Set product details
+        if (image) {
+            document.getElementById('productImage').src = decodeURIComponent(image);
+            document.getElementById('productImage').alt = title || 'Product Image';
+        }
+        if (title) {
+            document.getElementById('productTitle').textContent = decodeURIComponent(title);
+            document.title = decodeURIComponent(title) + ' - ifeelworld';
+        }
+        if (back) {
+            const backPath = decodeURIComponent(back);
+            document.getElementById('backButton').href = backPath;
+            document.getElementById('backButton').textContent = '← Back to Gallery';
+        } else {
+            document.getElementById('backButton').href = 'gallery.html';
+            document.getElementById('backButton').textContent = '← Back to Gallery';
+        }
+        
+        // Handle buy button (placeholder)
+        function handleBuy() {
+            const dimension = document.getElementById('dimension').value;
+            const quantity = document.getElementById('quantity').value;
+            const productTitle = title ? decodeURIComponent(title) : 'Product';
+            alert('Purchase functionality coming soon!\n\nProduct: ' + productTitle + '\nDimension: ' + dimension + '\nQuantity: ' + quantity);
+        }
+        
+        // Mobile menu toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const navLinks = document.getElementById('navLinks');
+
+        mobileMenuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>
+

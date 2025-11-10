@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ifeelworld - Art & Photography</title>
+    <title>Gallery - ifeelworld</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -15,8 +15,8 @@
         <div class="nav-container">
             <a href="index.html" class="logo">ifeelworld</a>
             <ul class="nav-links" id="navLinks">
-                <li><a href="index.html" class="active">Home</a></li>
-                <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="gallery.html" class="active">Gallery</a></li>
                 <li><a href="traditional-arts.html">Traditional Arts</a></li>
                 <li><a href="about.html">About</a></li>
                 <li><a href="contact.html">Contact</a></li>
@@ -29,15 +29,37 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <img src="Images/Banner Photo/Sydney10.jpg" alt="Hero Banner" class="hero-banner">
-            <h1 class="hero-tagline">Capture the World Through Art</h1>
-            <p class="hero-subtitle">Discover unique photography and artwork from around the globe, curated with passion and artistic vision. Explore stunning landscapes, vibrant cityscapes, and rich cultural heritage through our carefully selected collection.</p>
-            <a href="gallery.html" class="view-gallery-btn">View Gallery</a>
+    <!-- Page Content -->
+    <div class="page-content">
+        <div class="container">
+            <h1 class="page-title">Gallery</h1>
+
+            <div class="country-grid">
+                <!-- Australia Card -->
+                <div class="country-card">
+                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=600&fit=crop" alt="Australia" class="country-image">
+                    <div class="country-info">
+                        <h2 class="country-name">Australia</h2>
+                        <div class="subcategories">
+                            <a href="australia/coastal-and-nature.html" class="subcategory-link">Coastal & Nature</a>
+                            <a href="australia/urban-life.html" class="subcategory-link">Urban Life</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- India Card -->
+                <div class="country-card">
+                    <img src="https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=1200&h=600&fit=crop" alt="India" class="country-image">
+                    <div class="country-info">
+                        <h2 class="country-name">India</h2>
+                        <div class="subcategories">
+                            <a href="india/cultural-heritage.html" class="subcategory-link">Cultural Heritage</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </section>
+    </div>
 
     <!-- Footer -->
     <footer>
@@ -62,3 +84,4 @@
     </script>
 </body>
 </html>
+

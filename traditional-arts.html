@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ifeelworld - Art & Photography</title>
+    <title>Traditional Arts - ifeelworld</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -15,9 +15,9 @@
         <div class="nav-container">
             <a href="index.html" class="logo">ifeelworld</a>
             <ul class="nav-links" id="navLinks">
-                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="index.html">Home</a></li>
                 <li><a href="gallery.html">Gallery</a></li>
-                <li><a href="traditional-arts.html">Traditional Arts</a></li>
+                <li><a href="traditional-arts.html" class="active">Traditional Arts</a></li>
                 <li><a href="about.html">About</a></li>
                 <li><a href="contact.html">Contact</a></li>
             </ul>
@@ -29,15 +29,15 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <img src="Images/Banner Photo/Sydney10.jpg" alt="Hero Banner" class="hero-banner">
-            <h1 class="hero-tagline">Capture the World Through Art</h1>
-            <p class="hero-subtitle">Discover unique photography and artwork from around the globe, curated with passion and artistic vision. Explore stunning landscapes, vibrant cityscapes, and rich cultural heritage through our carefully selected collection.</p>
-            <a href="gallery.html" class="view-gallery-btn">View Gallery</a>
+    <!-- Page Content -->
+    <div class="page-content">
+        <div class="container">
+            <h1 class="page-title">Traditional Arts</h1>
+            <p style="text-align: center; color: #b8b8b8; font-size: 1.1rem; max-width: 800px; margin: 0 auto 60px; line-height: 1.8;">
+                This page will showcase traditional arts and cultural expressions from around the world. Content coming soon.
+            </p>
         </div>
-    </section>
+    </div>
 
     <!-- Footer -->
     <footer>
@@ -45,7 +45,6 @@
     </footer>
 
     <script>
-        // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
 
@@ -53,7 +52,6 @@
             navLinks.classList.toggle('active');
         });
 
-        // Close mobile menu when clicking a link
         document.querySelectorAll('.nav-links a').forEach(link => {
             link.addEventListener('click', () => {
                 navLinks.classList.remove('active');
@@ -62,3 +60,4 @@
     </script>
 </body>
 </html>
+

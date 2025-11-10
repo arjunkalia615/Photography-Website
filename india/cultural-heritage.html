@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cultural Heritage - India | ifeelworld</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">ifeelworld</a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../gallery.html">Gallery</a></li>
+                <li><a href="../traditional-arts.html">Traditional Arts</a></li>
+                <li><a href="../about.html">About</a></li>
+                <li><a href="../contact.html">Contact</a></li>
+            </ul>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="page-content">
+        <div class="container">
+            <h1 class="page-title">Cultural Heritage - India</h1>
+
+            <div class="photo-grid">
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar1.jpg" alt="Qutab Minar">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <a href="../product.html?image=../Images/India%20Photos/Sub-categories/Cultural%20Heritage/Qutab%20Minar1.jpg&title=Qutab%20Minar&back=india/cultural-heritage.html" class="photo-item-buy-btn">Buy</a>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar2.jpg" alt="Qutab Minar Details">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <a href="../product.html?image=../Images/India%20Photos/Sub-categories/Cultural%20Heritage/Qutab%20Minar2.jpg&title=Qutab%20Minar%20Details&back=india/cultural-heritage.html" class="photo-item-buy-btn">Buy</a>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar5.jpg" alt="Qutab Minar Architecture">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <a href="../product.html?image=../Images/India%20Photos/Sub-categories/Cultural%20Heritage/Qutab%20Minar5.jpg&title=Qutab%20Minar%20Architecture&back=india/cultural-heritage.html" class="photo-item-buy-btn">Buy</a>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar8.jpg" alt="Qutab Minar Perspective">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <a href="../product.html?image=../Images/India%20Photos/Sub-categories/Cultural%20Heritage/Qutab%20Minar8.jpg&title=Qutab%20Minar%20Perspective&back=india/cultural-heritage.html" class="photo-item-buy-btn">Buy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p class="footer-text">&copy; 2025 ifeelworld – All rights reserved</p>
+    </footer>
+
+    <script>
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const navLinks = document.getElementById('navLinks');
+
+        mobileMenuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>
+

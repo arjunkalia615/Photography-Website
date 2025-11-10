@@ -7,273 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0a0a0a;
-            color: #e8e8e8;
-            overflow-x: hidden;
-            line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            background: rgba(10, 10, 10, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            padding: 20px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: #ffffff;
-            text-decoration: none;
-            letter-spacing: 2px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 40px;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: #b8b8b8;
-            text-decoration: none;
-            font-weight: 400;
-            font-size: 0.95rem;
-            letter-spacing: 0.5px;
-            transition: color 0.3s ease;
-            position: relative;
-        }
-
-        .nav-links a:hover,
-        .nav-links a.active {
-            color: #ffffff;
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: #ffffff;
-            transition: width 0.3s ease;
-        }
-
-        .nav-links a:hover::after,
-        .nav-links a.active::after {
-            width: 100%;
-        }
-
-        .mobile-menu-toggle {
-            display: none;
-            flex-direction: column;
-            gap: 5px;
-            cursor: pointer;
-            background: none;
-            border: none;
-        }
-
-        .mobile-menu-toggle span {
-            width: 25px;
-            height: 2px;
-            background: #ffffff;
-            transition: all 0.3s ease;
-        }
-
-        /* Page Content */
-        .page-content {
-            margin-top: 80px;
-            padding: 80px 40px;
-            flex: 1;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .page-title {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 400;
-            text-align: center;
-            margin-bottom: 60px;
-            color: #ffffff;
-            letter-spacing: 1px;
-        }
-
-        .content-section {
-            margin-bottom: 50px;
-        }
-
-        .content-section h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(1.8rem, 3vw, 2.2rem);
-            font-weight: 400;
-            margin-bottom: 25px;
-            color: #ffffff;
-        }
-
-        .content-section p {
-            font-size: 1.1rem;
-            color: #b8b8b8;
-            line-height: 1.8;
-            margin-bottom: 20px;
-        }
-
-        .content-section p:last-child {
-            margin-bottom: 0;
-        }
-
-        .contact-info {
-            background: #1a1a1a;
-            padding: 40px;
-            border-radius: 8px;
-            margin-top: 40px;
-        }
-
-        .contact-info h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            color: #ffffff;
-        }
-
-        .contact-info p {
-            font-size: 1rem;
-            color: #b8b8b8;
-            margin-bottom: 15px;
-        }
-
-        .contact-info a {
-            color: #ffffff;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .contact-info a:hover {
-            color: #b8b8b8;
-        }
-
-        /* Footer */
-        footer {
-            background: #0a0a0a;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 60px 40px 30px;
-            margin-top: auto;
-        }
-
-        .footer-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-
-        .footer-section h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            color: #ffffff;
-        }
-
-        .footer-section p,
-        .footer-section a {
-            color: #888888;
-            text-decoration: none;
-            font-size: 0.9rem;
-            line-height: 2;
-            transition: color 0.3s ease;
-        }
-
-        .footer-section a:hover {
-            color: #ffffff;
-        }
-
-        .footer-bottom {
-            text-align: center;
-            padding-top: 30px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            color: #666666;
-            font-size: 0.85rem;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .nav-container {
-                padding: 0 20px;
-            }
-
-            .nav-links {
-                position: fixed;
-                top: 70px;
-                left: 0;
-                right: 0;
-                background: rgba(10, 10, 10, 0.98);
-                flex-direction: column;
-                padding: 30px 20px;
-                gap: 20px;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            }
-
-            .nav-links.active {
-                transform: translateX(0);
-            }
-
-            .mobile-menu-toggle {
-                display: flex;
-            }
-
-            .page-content {
-                padding: 60px 20px;
-            }
-
-            .contact-info {
-                padding: 30px 20px;
-            }
-
-            footer {
-                padding: 40px 20px 20px;
-            }
-
-            .footer-content {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Navigation -->
@@ -282,8 +16,8 @@
             <a href="index.html" class="logo">ifeelworld</a>
             <ul class="nav-links" id="navLinks">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="categories.html">Categories</a></li>
-                <li><a href="shop.html">Shop</a></li>
+                <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="traditional-arts.html">Traditional Arts</a></li>
                 <li><a href="about.html">About</a></li>
                 <li><a href="contact.html" class="active">Contact</a></li>
             </ul>
@@ -299,62 +33,18 @@
     <div class="page-content">
         <div class="container">
             <h1 class="page-title">Contact Us</h1>
-
-            <div class="content-section">
-                <h2>Get in Touch</h2>
-                <p>
-                    We'd love to hear from you! Whether you have questions about our artwork, need assistance with a purchase, or want to collaborate, we're here to help.
-                </p>
-                <p>
-                    Feel free to reach out to us through any of the contact methods below, and we'll get back to you as soon as possible.
-                </p>
-            </div>
-
-            <div class="contact-info">
-                <h3>Contact Information</h3>
-                <p><strong>Email:</strong> <a href="mailto:hello@ifeelworld.com">hello@ifeelworld.com</a></p>
-                <p><strong>Phone:</strong> +1 (555) 123-4567</p>
-                <p><strong>Business Hours:</strong> Monday - Friday, 9:00 AM - 6:00 PM EST</p>
-                <p><strong>Address:</strong> 123 Art Street, Creative City, CC 12345</p>
-            </div>
-
-            <div class="content-section">
-                <h2>Follow Us</h2>
-                <p>
-                    Stay connected with us on social media to see our latest collections, behind-the-scenes content, and special offers. Follow @ifeelworld on all major platforms.
-                </p>
-            </div>
+            <p style="text-align: center; color: #b8b8b8; font-size: 1.1rem; max-width: 800px; margin: 0 auto 60px; line-height: 1.8;">
+                This page will contain contact information and a contact form. Content coming soon.
+            </p>
         </div>
     </div>
 
     <!-- Footer -->
     <footer>
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>ifeelworld</h3>
-                <p>Curating the world's most beautiful moments through art and photography.</p>
-            </div>
-            <div class="footer-section">
-                <h3>Quick Links</h3>
-                <p><a href="index.html">Home</a></p>
-                <p><a href="categories.html">Categories</a></p>
-                <p><a href="shop.html">Shop</a></p>
-                <p><a href="about.html">About</a></p>
-                <p><a href="contact.html">Contact</a></p>
-            </div>
-            <div class="footer-section">
-                <h3>Connect</h3>
-                <p>Follow us on social media</p>
-                <p>Email: hello@ifeelworld.com</p>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2024 ifeelworld. All rights reserved.</p>
-        </div>
+        <p class="footer-text">&copy; 2025 ifeelworld – All rights reserved</p>
     </footer>
 
     <script>
-        // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
 
@@ -362,7 +52,6 @@
             navLinks.classList.toggle('active');
         });
 
-        // Close mobile menu when clicking a link
         document.querySelectorAll('.nav-links a').forEach(link => {
             link.addEventListener('click', () => {
                 navLinks.classList.remove('active');
@@ -371,4 +60,3 @@
     </script>
 </body>
 </html>
-
