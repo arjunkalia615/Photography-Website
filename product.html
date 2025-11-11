@@ -36,7 +36,7 @@
             
             <div class="product-container">
                 <div class="product-image-wrapper">
-                    <img src="" alt="Product Image" class="product-image" id="productImage" style="display: none;">
+                    <img src="" alt="Product Image" class="product-image" id="productImage">
                     <div class="product-image-placeholder" id="productImagePlaceholder">
                         <p>Loading image...</p>
                     </div>
@@ -87,7 +87,8 @@
     <script>
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
-        const image = urlParams.get('image');
+        // Support both 'img' and 'image' parameters for backward compatibility
+        const image = urlParams.get('img') || urlParams.get('image');
         const title = urlParams.get('title');
         const back = urlParams.get('back');
         const priceParam = urlParams.get('price');
@@ -96,21 +97,38 @@
         const basePrice = priceParam ? parseFloat(priceParam) : 0.99;
         
         // Set product details
+        const imgElement = document.getElementById('productImage');
+        const placeholder = document.getElementById('productImagePlaceholder');
+        
+        // Function to normalize image path to work from root directory
+        function normalizeImagePath(path) {
+            // Remove all leading ../ or ./ sequences to ensure path works from root
+            let normalized = path.replace(/^(\.\.\/)+/, '').replace(/^(\.\/)+/, '');
+            // Remove any leading slashes
+            normalized = normalized.replace(/^\/+/, '');
+            return normalized;
+        }
+        
         if (image) {
-            const imgElement = document.getElementById('productImage');
-            const placeholder = document.getElementById('productImagePlaceholder');
-            const imageSrc = decodeURIComponent(image);
+            let imageSrc = decodeURIComponent(image);
+            // Normalize the path to work from root directory
+            imageSrc = normalizeImagePath(imageSrc);
+            
+            // Initially hide image and show placeholder
+            imgElement.style.opacity = '0';
+            placeholder.style.display = 'flex';
+            
             imgElement.src = imageSrc;
             imgElement.alt = title || 'Product Image';
             
             // Check if image is already loaded (cached)
             if (imgElement.complete && imgElement.naturalHeight !== 0) {
-                imgElement.style.display = 'block';
+                imgElement.style.opacity = '1';
                 placeholder.style.display = 'none';
             } else {
                 // Show image when loaded, hide placeholder
                 imgElement.onload = function() {
-                    imgElement.style.display = 'block';
+                    imgElement.style.opacity = '1';
                     placeholder.style.display = 'none';
                 };
                 
@@ -118,12 +136,14 @@
                 imgElement.onerror = function() {
                     placeholder.innerHTML = '<p>Image not available</p>';
                     placeholder.style.display = 'flex';
-                    imgElement.style.display = 'none';
+                    imgElement.style.opacity = '0';
                 };
             }
         } else {
-            // If no image parameter, show placeholder
-            document.getElementById('productImagePlaceholder').innerHTML = '<p>No image selected</p>';
+            // If no image parameter, show default placeholder
+            placeholder.innerHTML = '<p>Image not available</p>';
+            placeholder.style.display = 'flex';
+            imgElement.style.opacity = '0';
         }
         if (title) {
             document.getElementById('productTitle').textContent = decodeURIComponent(title);
