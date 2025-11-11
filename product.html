@@ -41,7 +41,10 @@
                 
                 <div class="product-details">
                     <h1 class="product-title" id="productTitle">Product Title</h1>
-                    <div class="product-price" id="productPrice">$0.99</div>
+                    <div class="product-price-container">
+                        <div class="product-price" id="productPrice">$0.99</div>
+                        <div class="price-per-item" id="pricePerItem"></div>
+                    </div>
                     
                     <div class="product-options">
                         <div class="option-group">
@@ -76,6 +79,10 @@
         const image = urlParams.get('image');
         const title = urlParams.get('title');
         const back = urlParams.get('back');
+        const priceParam = urlParams.get('price');
+        
+        // Base price per item (default $0.99, or use price from URL if provided)
+        const basePrice = priceParam ? parseFloat(priceParam) : 0.99;
         
         // Set product details
         if (image) {
@@ -95,12 +102,34 @@
             document.getElementById('backButton').textContent = '← Back to Gallery';
         }
         
+        // Function to calculate and update price based on quantity
+        function updatePrice() {
+            const quantity = parseInt(document.getElementById('quantity').value) || 1;
+            const totalPrice = basePrice * quantity;
+            document.getElementById('productPrice').textContent = '$' + totalPrice.toFixed(2);
+            
+            // Update price per item text
+            if (quantity > 1) {
+                document.getElementById('pricePerItem').textContent = '$' + basePrice.toFixed(2) + ' per item × ' + quantity;
+            } else {
+                document.getElementById('pricePerItem').textContent = '';
+            }
+        }
+        
+        // Initialize price display
+        updatePrice();
+        
+        // Add event listener to quantity input
+        document.getElementById('quantity').addEventListener('input', updatePrice);
+        document.getElementById('quantity').addEventListener('change', updatePrice);
+        
         // Handle buy button (placeholder)
         function handleBuy() {
             const dimension = document.getElementById('dimension').value;
             const quantity = document.getElementById('quantity').value;
+            const totalPrice = (basePrice * parseInt(quantity)).toFixed(2);
             const productTitle = title ? decodeURIComponent(title) : 'Product';
-            alert('Purchase functionality coming soon!\n\nProduct: ' + productTitle + '\nDimension: ' + dimension + '\nQuantity: ' + quantity);
+            alert('Purchase functionality coming soon!\n\nProduct: ' + productTitle + '\nDimension: ' + dimension + '\nQuantity: ' + quantity + '\nTotal Price: $' + totalPrice);
         }
         
         // Mobile menu toggle

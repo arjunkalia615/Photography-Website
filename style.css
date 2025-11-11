@@ -381,11 +381,23 @@ nav {
     margin-bottom: 10px;
 }
 
+.product-price-container {
+    margin-bottom: 20px;
+}
+
 .product-price {
     font-family: 'Playfair Display', serif;
     font-size: 2rem;
     font-weight: 500;
     color: #ffffff;
+    margin-bottom: 5px;
+}
+
+.price-per-item {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #b8b8b8;
 }
 
 .product-options {
