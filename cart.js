@@ -1,151 +1,161 @@
-// Cart Management System
+const CART_DIMENSION_OPTIONS = [
+    { value: '4x6', label: 'Classic 4" × 6"', price: 0.99, featured: true },
+    { value: '5x7', label: 'Art Print 5" × 7"', price: 0.99, featured: false },
+    { value: '8x10', label: 'Gallery 8" × 10"', price: 0.99, featured: true },
+    { value: '11x14', label: 'Statement 11" × 14"', price: 0.99, featured: true }
+];
+
+const DIMENSION_PRICE_MAP = CART_DIMENSION_OPTIONS.reduce((map, option) => {
+    map[option.value] = option.price;
+    return map;
+}, {});
+
+const STORAGE_KEY = 'ifeelworld_cart';
+
+const clampQuantity = (quantity) => {
+    return Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
+};
+
+const getDimensionPriceValue = (dimension) => {
+    return DIMENSION_PRICE_MAP[dimension] ?? CART_DIMENSION_OPTIONS[0].price;
+};
+
+const formatCurrency = (value) => {
+    const number = Number.isFinite(value) ? value : 0;
+    return `$${number.toFixed(2)}`;
+};
+
 class Cart {
     constructor() {
         this.items = this.loadCart();
+        this.elements = {
+            navContainer: null,
+            cartWrapper: null,
+            cartIcon: null,
+            cartBadge: null,
+            cartDropdown: null,
+            cartItemsContainer: null,
+            cartTotal: null,
+            cartCheckout: null
+        };
+        this.listenersAttached = {
+            icon: false,
+            dropdownClick: false,
+            dropdownChange: false,
+            checkout: false,
+            document: false
+        };
+
+        this.handleCartIconClick = this.handleCartIconClick.bind(this);
+        this.handleDocumentClick = this.handleDocumentClick.bind(this);
+        this.handleCartDropdownClick = this.handleCartDropdownClick.bind(this);
+        this.handleCartDropdownChange = this.handleCartDropdownChange.bind(this);
+        this.navigateToCheckout = this.navigateToCheckout.bind(this);
+
         this.init();
     }
 
     init() {
-        this.renderCartIcon();
-        this.setupEventListeners();
+        this.ensureCartStructure();
+        this.attachUIEventListeners();
+        this.renderCart();
+        this.dispatchCartEvent('cart:updated');
+        this.dispatchCartEvent('cart:ready');
     }
 
-    // Load cart from localStorage
     loadCart() {
         try {
-            const cartData = localStorage.getItem('ifeelworld_cart');
-            return cartData ? JSON.parse(cartData) : [];
-        } catch (e) {
-            console.error('Error loading cart:', e);
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return [];
+            const parsed = JSON.parse(stored);
+            if (!Array.isArray(parsed)) return [];
+            return parsed.map(item => this.normalizeItem(item)).filter(Boolean);
+        } catch (error) {
+            console.error('Error loading cart:', error);
             return [];
         }
     }
 
-    // Save cart to localStorage
     saveCart() {
         try {
-            localStorage.setItem('ifeelworld_cart', JSON.stringify(this.items));
-            this.updateCartIcon();
-            this.renderCart();
-        } catch (e) {
-            console.error('Error saving cart:', e);
+            const payload = this.items.map(item => this.serializeItem(item));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        } catch (error) {
+            console.error('Error saving cart:', error);
         }
     }
 
-    // Generate unique ID for cart item
+    normalizeItem(item) {
+        if (!item || !item.imageSrc) return null;
+
+        const dimension = DIMENSION_PRICE_MAP[item.dimension]
+            ? item.dimension
+            : CART_DIMENSION_OPTIONS[0].value;
+
+        const id = typeof item.id === 'string' && item.id.trim().length
+            ? item.id
+            : this.generateItemId(item.imageSrc, dimension);
+
+        return {
+            id,
+            imageSrc: item.imageSrc,
+            title: typeof item.title === 'string' ? item.title : '',
+            dimension,
+            quantity: clampQuantity(item.quantity),
+            price: getDimensionPriceValue(dimension)
+        };
+    }
+
+    serializeItem(item) {
+        return {
+            id: item.id,
+            imageSrc: item.imageSrc,
+            title: item.title,
+            dimension: item.dimension,
+            quantity: item.quantity
+        };
+    }
+
     generateItemId(imageSrc, dimension) {
         return `${imageSrc}_${dimension}`;
     }
 
-    // Add item to cart
-    addItem(imageSrc, title, dimension = '4x6', quantity = 1) {
-        const itemId = this.generateItemId(imageSrc, dimension);
-        const existingItem = this.items.find(item => item.id === itemId);
-
-        if (existingItem) {
-            existingItem.quantity += quantity;
-        } else {
-            this.items.push({
-                id: itemId,
-                imageSrc: imageSrc,
-                title: title,
-                dimension: dimension,
-                quantity: quantity,
-                price: 0.99
-            });
-        }
-
-        this.saveCart();
-        this.showAddToCartNotification();
-    }
-
-    // Remove item from cart
-    removeItem(itemId) {
-        this.items = this.items.filter(item => item.id !== itemId);
-        this.saveCart();
-    }
-
-    // Update item quantity
-    updateQuantity(itemId, quantity) {
-        const item = this.items.find(item => item.id === itemId);
-        if (item) {
-            if (quantity <= 0) {
-                this.removeItem(itemId);
-            } else {
-                item.quantity = quantity;
-                this.saveCart();
-            }
-        }
-    }
-
-    // Update item dimension
-    updateDimension(itemId, dimension) {
-        const item = this.items.find(item => item.id === itemId);
-        if (item) {
-            // If dimension changes, we need to create a new item and remove old one
-            if (item.dimension !== dimension) {
-                const newItemId = this.generateItemId(item.imageSrc, dimension);
-                const existingItem = this.items.find(i => i.id === newItemId);
-                
-                if (existingItem) {
-                    existingItem.quantity += item.quantity;
-                } else {
-                    this.items.push({
-                        id: newItemId,
-                        imageSrc: item.imageSrc,
-                        title: item.title,
-                        dimension: dimension,
-                        quantity: item.quantity,
-                        price: 0.99
-                    });
-                }
-                this.removeItem(itemId);
-            }
-        }
-    }
-
-    // Calculate total price
-    getTotalPrice() {
-        return this.items.reduce((total, item) => {
-            return total + (item.price * item.quantity);
-        }, 0);
-    }
-
-    // Get total items count
-    getTotalItems() {
-        return this.items.reduce((total, item) => total + item.quantity, 0);
-    }
-
-    // Update cart icon badge
-    updateCartIcon() {
-        const cartIcon = document.getElementById('cartIcon');
-        const cartBadge = document.getElementById('cartBadge');
-        
-        if (cartIcon && cartBadge) {
-            const totalItems = this.getTotalItems();
-            if (totalItems > 0) {
-                cartBadge.textContent = totalItems;
-                cartBadge.style.display = 'flex';
-            } else {
-                cartBadge.style.display = 'none';
-            }
-        }
-    }
-
-    // Render cart icon
-    renderCartIcon() {
+    ensureCartStructure() {
         const navContainer = document.querySelector('.nav-container');
         if (!navContainer) return;
+        this.elements.navContainer = navContainer;
 
-        // Check if cart icon already exists
-        if (document.getElementById('cartIcon')) {
-            this.updateCartIcon();
-            return;
+        let cartWrapper = navContainer.querySelector('.cart-icon-wrapper');
+        if (!cartWrapper) {
+            cartWrapper = this.createCartIconMarkup();
+            const mobileToggle = navContainer.querySelector('.mobile-menu-toggle');
+            if (mobileToggle) {
+                mobileToggle.insertAdjacentElement('afterend', cartWrapper);
+            } else {
+                navContainer.appendChild(cartWrapper);
+            }
         }
 
-        const cartIconWrapper = document.createElement('div');
-        cartIconWrapper.className = 'cart-icon-wrapper';
-        cartIconWrapper.innerHTML = `
+        this.elements.cartWrapper = cartWrapper;
+        this.elements.cartIcon = cartWrapper.querySelector('#cartIcon');
+        this.elements.cartBadge = cartWrapper.querySelector('#cartBadge');
+
+        const dropdown = document.getElementById('cartDropdown');
+        if (dropdown) {
+            if (dropdown.parentNode !== cartWrapper) {
+                cartWrapper.appendChild(dropdown);
+            }
+            this.elements.cartDropdown = dropdown;
+            this.elements.cartItemsContainer = dropdown.querySelector('#cartItems');
+            this.elements.cartTotal = dropdown.querySelector('#cartTotal');
+            this.elements.cartCheckout = dropdown.querySelector('#cartCheckout');
+        }
+    }
+
+    createCartIconMarkup() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cart-icon-wrapper';
+        wrapper.innerHTML = `
             <button class="cart-icon" id="cartIcon" type="button" aria-label="Shopping Cart">
                 <span class="cart-icon-graphic" aria-hidden="true">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -158,156 +168,291 @@ class Cart {
                 <span class="cart-badge" id="cartBadge" aria-live="polite">0</span>
             </button>
         `;
-
-        // Insert before mobile menu toggle
-        const mobileToggle = document.querySelector('.mobile-menu-toggle');
-        if (mobileToggle) {
-            mobileToggle.insertAdjacentElement('afterend', cartIconWrapper);
-        } else {
-            navContainer.appendChild(cartIconWrapper);
-        }
-
-        // Move cart dropdown into cart icon wrapper if it exists
-        const existingCartDropdown = document.getElementById('cartDropdown');
-        if (existingCartDropdown && existingCartDropdown.parentNode !== cartIconWrapper) {
-            cartIconWrapper.appendChild(existingCartDropdown);
-        }
-
-        this.updateCartIcon();
+        return wrapper;
     }
 
-    // Render cart dropdown
+    attachUIEventListeners() {
+        if (this.elements.cartIcon && !this.listenersAttached.icon) {
+            this.elements.cartIcon.addEventListener('click', this.handleCartIconClick);
+            this.listenersAttached.icon = true;
+        }
+
+        if (!this.listenersAttached.document) {
+            document.addEventListener('click', this.handleDocumentClick);
+            this.listenersAttached.document = true;
+        }
+
+        if (this.elements.cartDropdown && !this.listenersAttached.dropdownClick) {
+            this.elements.cartDropdown.addEventListener('click', this.handleCartDropdownClick);
+            this.listenersAttached.dropdownClick = true;
+        }
+
+        if (this.elements.cartDropdown && !this.listenersAttached.dropdownChange) {
+            this.elements.cartDropdown.addEventListener('change', this.handleCartDropdownChange);
+            this.listenersAttached.dropdownChange = true;
+        }
+
+        if (this.elements.cartCheckout && !this.listenersAttached.checkout) {
+            this.elements.cartCheckout.addEventListener('click', this.navigateToCheckout);
+            this.listenersAttached.checkout = true;
+        }
+    }
+
+    handleCartIconClick(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.toggleCartDropdown();
+    }
+
+    handleDocumentClick(event) {
+        if (!this.elements.cartDropdown || !this.elements.cartIcon) return;
+        const isIcon = this.elements.cartIcon.contains(event.target);
+        const isDropdown = this.elements.cartDropdown.contains(event.target);
+        if (!isIcon && !isDropdown) {
+            this.toggleCartDropdown(false);
+        }
+    }
+
+    handleCartDropdownClick(event) {
+        const target = event.target;
+        if (!target) return;
+
+        const quantityBtn = target.closest('.quantity-btn');
+        if (quantityBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+            const itemId = quantityBtn.dataset.itemId;
+            const action = quantityBtn.dataset.action;
+            if (itemId) {
+                const delta = action === 'increase' ? 1 : -1;
+                this.adjustQuantity(itemId, delta);
+            }
+            return;
+        }
+
+        if (target.classList.contains('cart-item-remove')) {
+            event.preventDefault();
+            event.stopPropagation();
+            const itemId = target.dataset.itemId;
+            if (itemId) {
+                this.removeItem(itemId);
+            }
+        }
+    }
+
+    handleCartDropdownChange(event) {
+        const target = event.target;
+        if (!target) return;
+
+        if (target.classList.contains('quantity-input')) {
+            const itemId = target.dataset.itemId;
+            const quantity = target.value;
+            if (itemId) {
+                this.updateQuantity(itemId, quantity);
+            }
+        }
+    }
+
+    toggleCartDropdown(forceState) {
+        if (!this.elements.cartDropdown) return;
+        const shouldActivate = typeof forceState === 'boolean'
+            ? forceState
+            : !this.elements.cartDropdown.classList.contains('active');
+        if (shouldActivate) {
+            this.elements.cartDropdown.classList.add('active');
+        } else {
+            this.elements.cartDropdown.classList.remove('active');
+        }
+    }
+
     renderCart() {
-        const cartDropdown = document.getElementById('cartDropdown');
-        if (!cartDropdown) return;
+        this.ensureCartStructure();
+        this.attachUIEventListeners();
 
-        const cartItemsContainer = document.getElementById('cartItems');
-        if (!cartItemsContainer) return;
+        const {
+            cartItemsContainer,
+            cartTotal,
+            cartCheckout,
+            cartBadge
+        } = this.elements;
 
-        if (this.items.length === 0) {
+        if (!cartItemsContainer || !cartTotal || !cartBadge) {
+            return;
+        }
+
+        const totalItems = this.getTotalItems();
+        if (totalItems > 0) {
+            cartBadge.textContent = totalItems;
+            cartBadge.style.display = 'flex';
+        } else {
+            cartBadge.style.display = 'none';
+        }
+
+        if (!this.items.length) {
             cartItemsContainer.innerHTML = `
                 <div class="cart-empty">
                     <p>Your cart is empty</p>
                 </div>
             `;
-            document.getElementById('cartTotal').textContent = '$0.00';
-            document.getElementById('cartCheckout').style.display = 'none';
+            cartTotal.textContent = '$0.00';
+            if (cartCheckout) {
+                cartCheckout.style.display = 'none';
+            }
             return;
         }
 
-        document.getElementById('cartCheckout').style.display = 'block';
-        
-        cartItemsContainer.innerHTML = this.items.map(item => `
-            <div class="cart-item" data-item-id="${item.id}">
-                <div class="cart-item-image">
-                    <img src="${item.imageSrc}" alt="${item.title}" loading="lazy">
-                </div>
-                <div class="cart-item-details">
-                    <div class="cart-item-title">${item.title}</div>
-                    <div class="cart-item-controls">
-                        <select class="cart-item-dimension" data-item-id="${item.id}">
-                            <option value="4x6" ${item.dimension === '4x6' ? 'selected' : ''}>4x6</option>
-                            <option value="5x7" ${item.dimension === '5x7' ? 'selected' : ''}>5x7</option>
-                            <option value="8x10" ${item.dimension === '8x10' ? 'selected' : ''}>8x10</option>
-                            <option value="11x14" ${item.dimension === '11x14' ? 'selected' : ''}>11x14</option>
-                        </select>
-                        <div class="cart-item-quantity">
-                            <button class="quantity-btn minus" data-item-id="${item.id}">−</button>
-                            <input type="number" class="quantity-input" value="${item.quantity}" min="1" data-item-id="${item.id}">
-                            <button class="quantity-btn plus" data-item-id="${item.id}">+</button>
+        cartItemsContainer.innerHTML = this.items.map(item => {
+            const dimensionLabel = this.getDimensionLabel(item.dimension);
+            const ariaTitle = item.title || 'Photo';
+
+            return `
+                <div class="cart-item" data-item-id="${item.id}">
+                    <div class="cart-item-image">
+                        <img src="${item.imageSrc}" alt="${ariaTitle}" loading="lazy">
+                    </div>
+                    <div class="cart-item-details">
+                        <div class="cart-item-title">${item.title || 'Untitled Photo'}</div>
+                        <p class="cart-item-dimension-note">${dimensionLabel}</p>
+                        <div class="cart-item-controls">
+                            <div class="cart-item-quantity">
+                                <button class="quantity-btn minus" data-item-id="${item.id}" data-action="decrease" aria-label="Decrease quantity for ${ariaTitle}">−</button>
+                                <input type="number" class="quantity-input" value="${item.quantity}" min="1" max="10" data-item-id="${item.id}" aria-label="Quantity for ${ariaTitle}">
+                                <button class="quantity-btn plus" data-item-id="${item.id}" data-action="increase" aria-label="Increase quantity for ${ariaTitle}">+</button>
+                            </div>
+                            <div class="cart-item-price">${formatCurrency(item.price * item.quantity)}</div>
                         </div>
                     </div>
-                    <div class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</div>
+                    <button class="cart-item-remove" data-item-id="${item.id}" aria-label="Remove ${ariaTitle}">×</button>
                 </div>
-                <button class="cart-item-remove" data-item-id="${item.id}" aria-label="Remove item">×</button>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
-        // Update total
-        document.getElementById('cartTotal').textContent = `$${this.getTotalPrice().toFixed(2)}`;
-
-        // Attach event listeners to cart items
-        this.attachCartItemListeners();
-    }
-
-    // Attach event listeners to cart items
-    attachCartItemListeners() {
-        // Quantity controls
-        document.querySelectorAll('.quantity-btn.minus').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const itemId = e.target.getAttribute('data-item-id');
-                const item = this.items.find(i => i.id === itemId);
-                if (item) {
-                    this.updateQuantity(itemId, item.quantity - 1);
-                }
-            });
-        });
-
-        document.querySelectorAll('.quantity-btn.plus').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const itemId = e.target.getAttribute('data-item-id');
-                const item = this.items.find(i => i.id === itemId);
-                if (item) {
-                    this.updateQuantity(itemId, item.quantity + 1);
-                }
-            });
-        });
-
-        document.querySelectorAll('.quantity-input').forEach(input => {
-            input.addEventListener('change', (e) => {
-                const itemId = e.target.getAttribute('data-item-id');
-                const quantity = parseInt(e.target.value) || 1;
-                this.updateQuantity(itemId, quantity);
-            });
-        });
-
-        // Dimension select
-        document.querySelectorAll('.cart-item-dimension').forEach(select => {
-            select.addEventListener('change', (e) => {
-                const itemId = e.target.getAttribute('data-item-id');
-                const dimension = e.target.value;
-                this.updateDimension(itemId, dimension);
-            });
-        });
-
-        // Remove buttons
-        document.querySelectorAll('.cart-item-remove').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const itemId = e.target.getAttribute('data-item-id');
-                this.removeItem(itemId);
-            });
-        });
-    }
-
-    // Setup event listeners
-    setupEventListeners() {
-        // Cart icon click
-        document.addEventListener('click', (e) => {
-            const cartIcon = document.getElementById('cartIcon');
-            const cartDropdown = document.getElementById('cartDropdown');
-            
-            if (cartIcon && cartDropdown) {
-                if (cartIcon.contains(e.target) || cartIcon === e.target) {
-                    e.stopPropagation();
-                    cartDropdown.classList.toggle('active');
-                } else if (!cartDropdown.contains(e.target)) {
-                    cartDropdown.classList.remove('active');
-                }
-            }
-        });
-
-        // Checkout button
-        const checkoutBtn = document.getElementById('cartCheckout');
-        if (checkoutBtn) {
-            checkoutBtn.addEventListener('click', () => {
-                alert('Checkout functionality coming soon!');
-            });
+        cartTotal.textContent = formatCurrency(this.getTotalPrice());
+        if (cartCheckout) {
+            cartCheckout.style.display = 'block';
         }
     }
 
-    // Show add to cart notification
-    showAddToCartNotification() {
-        // Create notification if it doesn't exist
+    addItem(imageSrc, title, dimension = '4x6', quantity = 1) {
+        const validDimension = DIMENSION_PRICE_MAP[dimension]
+            ? dimension
+            : CART_DIMENSION_OPTIONS[0].value;
+        const itemId = this.generateItemId(imageSrc, validDimension);
+        const existingItem = this.items.find(item => item.id === itemId);
+
+        if (existingItem) {
+            const nextQuantity = clampQuantity(existingItem.quantity + quantity);
+            if (nextQuantity !== existingItem.quantity) {
+                existingItem.quantity = nextQuantity;
+            }
+            existingItem.price = getDimensionPriceValue(existingItem.dimension);
+        } else {
+            this.items.push({
+                id: itemId,
+                imageSrc,
+                title,
+                dimension: validDimension,
+                quantity: clampQuantity(quantity),
+                price: getDimensionPriceValue(validDimension)
+            });
+        }
+
+        this.persistAndUpdate();
+        this.showAddToCartNotification();
+    }
+
+    removeItem(itemId) {
+        const nextItems = this.items.filter(item => item.id !== itemId);
+        if (nextItems.length === this.items.length) return;
+        this.items = nextItems;
+        this.persistAndUpdate();
+    }
+
+    adjustQuantity(itemId, delta) {
+        const item = this.items.find(i => i.id === itemId);
+        if (!item) return;
+        const nextQuantity = clampQuantity(item.quantity + delta);
+        this.updateQuantity(itemId, nextQuantity);
+    }
+
+    updateQuantity(itemId, quantity) {
+        const item = this.items.find(i => i.id === itemId);
+        if (!item) return;
+
+        const normalizedQuantity = clampQuantity(quantity);
+        if (normalizedQuantity <= 0) {
+            this.removeItem(itemId);
+            return;
+        }
+
+        if (normalizedQuantity === item.quantity) return;
+
+        item.quantity = normalizedQuantity;
+        item.price = getDimensionPriceValue(item.dimension);
+        this.persistAndUpdate();
+    }
+
+    updateDimension(itemId, dimension) {
+        if (!DIMENSION_PRICE_MAP[dimension]) return;
+        const item = this.items.find(i => i.id === itemId);
+        if (!item || item.dimension === dimension) return;
+
+        const newItemId = this.generateItemId(item.imageSrc, dimension);
+        const existingItem = this.items.find(i => i.id === newItemId);
+
+        if (existingItem) {
+            existingItem.quantity = clampQuantity(existingItem.quantity + item.quantity);
+            existingItem.price = getDimensionPriceValue(existingItem.dimension);
+            this.items = this.items.filter(i => i.id !== itemId);
+        } else {
+            item.id = newItemId;
+            item.dimension = dimension;
+            item.price = getDimensionPriceValue(dimension);
+        }
+
+        this.persistAndUpdate();
+    }
+
+    persistAndUpdate() {
+        this.items = this.items.map(item => this.normalizeItem(item)).filter(Boolean);
+        this.saveCart();
+        this.renderCart();
+        this.dispatchCartEvent('cart:updated');
+    }
+
+    getTotalPrice() {
+        return this.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    }
+
+    getTotalItems() {
+        return this.items.reduce((total, item) => total + item.quantity, 0);
+    }
+
+    getItems() {
+        return this.items.map(item => ({ ...item }));
+    }
+
+    getDimensionOptions({ includeAll = false } = {}) {
+        const source = includeAll
+            ? CART_DIMENSION_OPTIONS
+            : CART_DIMENSION_OPTIONS.filter(option => option.featured !== false);
+        return source.map(option => ({ ...option }));
+    }
+
+    getDimensionPrice(dimension) {
+        return getDimensionPriceValue(dimension);
+    }
+
+    getDimensionLabel(dimension) {
+        const option = CART_DIMENSION_OPTIONS.find(opt => opt.value === dimension);
+        return option ? option.label : dimension;
+    }
+
+    dispatchCartEvent(name) {
+        document.dispatchEvent(new CustomEvent(name, { detail: { cart: this } }));
+    }
+
+    showAddToCartNotification(message = 'Added to cart!') {
         let notification = document.getElementById('cartNotification');
         if (!notification) {
             notification = document.createElement('div');
@@ -316,7 +461,7 @@ class Cart {
             document.body.appendChild(notification);
         }
 
-        notification.textContent = 'Added to cart!';
+        notification.textContent = message;
         notification.classList.add('show');
 
         setTimeout(() => {
@@ -324,31 +469,26 @@ class Cart {
         }, 2000);
     }
 
-    // Get current image data from lightbox
-    getCurrentLightboxImage() {
-        const lightboxImage = document.getElementById('lightboxImage');
-        if (lightboxImage && lightboxImage.src) {
-            return {
-                src: lightboxImage.src,
-                alt: lightboxImage.alt || 'Photo'
-            };
+    navigateToCheckout(event) {
+        if (event) {
+            event.preventDefault();
         }
-        return null;
+        window.location.href = 'checkout.html';
     }
 }
 
-// Initialize cart when DOM is ready
 let cart;
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        cart = new Cart();
-    });
-} else {
+const initializeCart = () => {
     cart = new Cart();
-}
+    if (typeof window !== 'undefined') {
+        window.cart = cart;
+        window.CART_DIMENSION_OPTIONS = CART_DIMENSION_OPTIONS;
+    }
+};
 
-// Export for use in other scripts
-if (typeof window !== 'undefined') {
-    window.cart = cart;
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeCart);
+} else {
+    initializeCart();
 }
 
