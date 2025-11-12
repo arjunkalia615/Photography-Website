@@ -146,20 +146,23 @@ class Cart {
         const cartIconWrapper = document.createElement('div');
         cartIconWrapper.className = 'cart-icon-wrapper';
         cartIconWrapper.innerHTML = `
-            <button class="cart-icon" id="cartIcon" aria-label="Shopping Cart">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="9" cy="21" r="1"></circle>
-                    <circle cx="20" cy="21" r="1"></circle>
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-                <span class="cart-badge" id="cartBadge">0</span>
+            <button class="cart-icon" id="cartIcon" type="button" aria-label="Shopping Cart">
+                <span class="cart-icon-graphic" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                </span>
+                <span class="cart-icon-label">Cart</span>
+                <span class="cart-badge" id="cartBadge" aria-live="polite">0</span>
             </button>
         `;
 
         // Insert before mobile menu toggle
         const mobileToggle = document.querySelector('.mobile-menu-toggle');
         if (mobileToggle) {
-            navContainer.insertBefore(cartIconWrapper, mobileToggle);
+            mobileToggle.insertAdjacentElement('afterend', cartIconWrapper);
         } else {
             navContainer.appendChild(cartIconWrapper);
         }
