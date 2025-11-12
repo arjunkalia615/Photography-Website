@@ -34,6 +34,7 @@ nav {
     grid-template-columns: auto 1fr auto auto;
     align-items: center;
     gap: 24px;
+    position: relative;
 }
 
 .nav-container > * {
@@ -957,24 +958,33 @@ footer {
     }
 
     .nav-links {
-        position: fixed;
-        top: 70px;
+        position: absolute;
+        top: 100%;
         left: 0;
         right: 0;
         background: rgba(10, 10, 10, 0.98);
+        backdrop-filter: blur(10px);
         flex-direction: column;
         flex: initial;
-        padding: 30px 20px;
+        padding: 20px;
         gap: 20px;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         margin: 0;
         justify-content: flex-start;
+        align-items: flex-end;
     }
 
     .nav-links.active {
-        transform: translateX(0);
+        max-height: 500px;
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
     }
 
     .mobile-menu-toggle {
@@ -1671,18 +1681,60 @@ footer {
 }
 
 @media (max-width: 768px) {
+    .cart-icon-wrapper {
+        position: static;
+    }
+
     .cart-dropdown {
-        width: calc(100vw - 40px);
-        right: 20px;
+        position: fixed;
+        width: 87.5%;
+        max-width: 90vw;
+        left: 50%;
+        right: auto;
+        top: 80px;
+        transform: translateX(-50%) translateY(-10px);
+        margin-top: 0;
+    }
+
+    .cart-dropdown.active {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .cart-header {
+        padding: 16px;
+    }
+
+    .cart-header h3 {
+        font-size: 1.3rem;
     }
 
     .cart-item {
         flex-wrap: wrap;
+        padding: 12px;
     }
 
     .cart-item-image {
         width: 60px;
         height: 60px;
+    }
+
+    .cart-item-title {
+        font-size: 0.85rem;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+
+    .cart-item-controls {
+        width: 100%;
+    }
+
+    .cart-footer {
+        padding: 16px;
+    }
+
+    .cart-checkout-btn {
+        padding: 12px 20px;
+        font-size: 0.95rem;
     }
 
     .lightbox-add-to-cart {

@@ -95,8 +95,10 @@
         // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
+        const navContainer = document.querySelector('.nav-container');
 
-        mobileMenuToggle.addEventListener('click', () => {
+        mobileMenuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
             navLinks.classList.toggle('active');
         });
 
@@ -105,6 +107,16 @@
             link.addEventListener('click', () => {
                 navLinks.classList.remove('active');
             });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (navLinks && navLinks.classList.contains('active')) {
+                const isClickInsideNav = navContainer && navContainer.contains(e.target);
+                if (!isClickInsideNav) {
+                    navLinks.classList.remove('active');
+                }
+            }
         });
 
         // Cart close button
