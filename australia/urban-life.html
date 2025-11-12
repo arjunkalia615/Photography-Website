@@ -29,6 +29,22 @@
         </div>
     </nav>
 
+    <!-- Cart Dropdown -->
+    <div class="cart-dropdown" id="cartDropdown">
+        <div class="cart-header">
+            <h3>Shopping Cart</h3>
+            <button class="cart-close" id="cartClose">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span class="cart-total-label">Total:</span>
+                <span class="cart-total-price" id="cartTotal">$0.00</span>
+            </div>
+            <button class="cart-checkout-btn" id="cartCheckout">Checkout</button>
+        </div>
+    </div>
+
     <!-- Page Content -->
     <div class="page-content">
         <div class="container">
@@ -41,7 +57,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Urban/Sydney15.jpg&title=Sydney%20Skyline&back=australia/urban-life.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney15.jpg" data-title="Sydney Skyline">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -50,7 +66,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Urban/Sydney16.jpg&title=Sydney%20Streets&back=australia/urban-life.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney16.jpg" data-title="Sydney Streets">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -59,7 +75,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Urban/Sydney19.jpg&title=Sydney%20Harbor&back=australia/urban-life.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney19.jpg" data-title="Sydney Harbor">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -68,7 +84,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Urban/Sydney3.jpg&title=Sydney%20Views&back=australia/urban-life.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney3.jpg" data-title="Sydney Views">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -77,7 +93,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Urban/Sydney6.jpg&title=Sydney%20Landscapes&back=australia/urban-life.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney6.jpg" data-title="Sydney Landscapes">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -86,7 +102,106 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Urban/Sydney9.jpg&title=Sydney%20Cityscape&back=australia/urban-life.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney9.jpg" data-title="Sydney Cityscape">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/20250901_154619.jpg" alt="Urban Scene">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/20250901_154619.jpg" data-title="Urban Scene">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney1.jpg" alt="Sydney View 1">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney1.jpg" data-title="Sydney View 1">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney11.jpg" alt="Sydney Architecture">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney11.jpg" data-title="Sydney Architecture">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney13.jpg" alt="Sydney Streetscape">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney13.jpg" data-title="Sydney Streetscape">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney17.jpg" alt="Sydney Urban View">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney17.jpg" data-title="Sydney Urban View">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney18.jpg" alt="Sydney City Life">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney18.jpg" data-title="Sydney City Life">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney2.jpg" alt="Sydney View 2">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney2.jpg" data-title="Sydney View 2">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney20.jpg" alt="Sydney Skyline 2">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney20.jpg" data-title="Sydney Skyline 2">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney21.jpg" alt="Sydney Panorama">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney21.jpg" data-title="Sydney Panorama">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney4.jpg" alt="Sydney Urban Scene">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney4.jpg" data-title="Sydney Urban Scene">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Urban/Sydney5.jpg" alt="Sydney City View">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Urban/Sydney5.jpg" data-title="Sydney City View">Add to Cart</button>
                     </div>
                 </div>
             </div>
@@ -114,9 +229,11 @@
             <button class="lightbox-nav lightbox-next" id="lightboxNext">&#8250;</button>
             <img src="" alt="" class="lightbox-image" id="lightboxImage">
             <div class="lightbox-counter" id="lightboxCounter"></div>
+            <button class="lightbox-add-to-cart" id="lightboxAddToCart">Add to Cart</button>
         </div>
     </div>
 
+    <script src="../cart.js"></script>
     <script>
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
@@ -130,6 +247,15 @@
                 navLinks.classList.remove('active');
             });
         });
+
+        // Cart close button
+        const cartClose = document.getElementById('cartClose');
+        const cartDropdown = document.getElementById('cartDropdown');
+        if (cartClose && cartDropdown) {
+            cartClose.addEventListener('click', () => {
+                cartDropdown.classList.remove('active');
+            });
+        }
 
         // Lightbox functionality
         const lightbox = document.getElementById('lightbox');
@@ -166,6 +292,18 @@
             lightboxImage.src = image.src;
             lightboxImage.alt = image.alt;
             lightboxCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+        }
+
+        // Add to Cart from lightbox
+        const lightboxAddToCart = document.getElementById('lightboxAddToCart');
+        if (lightboxAddToCart) {
+            lightboxAddToCart.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const image = images[currentImageIndex];
+                if (window.cart && image) {
+                    window.cart.addItem(image.src, image.alt || 'Photo', '4x6', 1);
+                }
+            });
         }
 
         // Navigate to previous image
@@ -221,6 +359,18 @@
             } else if (e.key === 'ArrowRight') {
                 showNextImage();
             }
+        });
+
+        // Add to Cart buttons in gallery
+        document.querySelectorAll('.photo-item-add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const imageSrc = btn.getAttribute('data-image-src');
+                const title = btn.getAttribute('data-title') || 'Photo';
+                if (window.cart && imageSrc) {
+                    window.cart.addItem(imageSrc, title, '4x6', 1);
+                }
+            });
         });
     </script>
 </body>

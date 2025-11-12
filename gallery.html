@@ -29,6 +29,22 @@
         </div>
     </nav>
 
+    <!-- Cart Dropdown -->
+    <div class="cart-dropdown" id="cartDropdown">
+        <div class="cart-header">
+            <h3>Shopping Cart</h3>
+            <button class="cart-close" id="cartClose">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span class="cart-total-label">Total:</span>
+                <span class="cart-total-price" id="cartTotal">$0.00</span>
+            </div>
+            <button class="cart-checkout-btn" id="cartCheckout">Checkout</button>
+        </div>
+    </div>
+
     <!-- Page Content -->
     <div class="page-content">
         <div class="container">
@@ -74,6 +90,7 @@
         </div>
     </footer>
 
+    <script src="cart.js"></script>
     <script>
         // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
@@ -89,6 +106,15 @@
                 navLinks.classList.remove('active');
             });
         });
+
+        // Cart close button
+        const cartClose = document.getElementById('cartClose');
+        const cartDropdown = document.getElementById('cartDropdown');
+        if (cartClose && cartDropdown) {
+            cartClose.addEventListener('click', () => {
+                cartDropdown.classList.remove('active');
+            });
+        }
     </script>
 </body>
 </html>

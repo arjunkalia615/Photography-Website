@@ -29,6 +29,22 @@
         </div>
     </nav>
 
+    <!-- Cart Dropdown -->
+    <div class="cart-dropdown" id="cartDropdown">
+        <div class="cart-header">
+            <h3>Shopping Cart</h3>
+            <button class="cart-close" id="cartClose">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span class="cart-total-label">Total:</span>
+                <span class="cart-total-price" id="cartTotal">$0.00</span>
+            </div>
+            <button class="cart-checkout-btn" id="cartCheckout">Checkout</button>
+        </div>
+    </div>
+
     <!-- Page Content -->
     <div class="page-content">
         <div class="container">
@@ -41,7 +57,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/Beach.jpg&title=Beach&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/Beach.jpg" data-title="Beach">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -50,7 +66,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/Blue%20Mountain1.jpg&title=Blue%20Mountain&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain1.jpg" data-title="Blue Mountain">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -59,7 +75,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/Waterfall1.jpg&title=Waterfall&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/Waterfall1.jpg" data-title="Waterfall">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -68,7 +84,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/DSCF0219.jpg&title=Mountain%20Vista&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0219.jpg" data-title="Mountain Vista">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -77,7 +93,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/DSCF0243.jpg&title=Scenic%20Landscape&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0243.jpg" data-title="Scenic Landscape">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -86,7 +102,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/DSCF0286.jpg&title=Natural%20Beauty&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0286.jpg" data-title="Natural Beauty">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -95,7 +111,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/DSCF0301.jpg&title=Panoramic%20View&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0301.jpg" data-title="Panoramic View">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -104,7 +120,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/DSCF0310.jpg&title=Coastal%20Landscape&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0310.jpg" data-title="Coastal Landscape">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -113,7 +129,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/DSCF0316.jpg&title=Nature%20Trail&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0316.jpg" data-title="Nature Trail">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -122,7 +138,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/20250403_151656.jpg&title=Afternoon%20Light&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_151656.jpg" data-title="Afternoon Light">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -131,7 +147,286 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/Australia%20Photos/Sub-categories/Costal%20%26%20Nature/20250403_184708.jpg&title=Evening%20Sky&back=australia/coastal-and-nature.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_184708.jpg" data-title="Evening Sky">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250402_160309.jpg" alt="Coastal Scene">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250402_160309.jpg" data-title="Coastal Scene">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250402_160454.jpg" alt="Nature View">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250402_160454.jpg" data-title="Nature View">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250402_160755.jpg" alt="Scenic Vista">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250402_160755.jpg" data-title="Scenic Vista">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250402_161710.jpg" alt="Natural Landscape">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250402_161710.jpg" data-title="Natural Landscape">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_151512.jpg" alt="Afternoon Scene">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_151512.jpg" data-title="Afternoon Scene">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_151645.jpg" alt="Coastal View">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_151645.jpg" data-title="Coastal View">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_152310.jpg" alt="Mountain View">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_152310.jpg" data-title="Mountain View">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_152843.jpg" alt="Nature Photography">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_152843.jpg" data-title="Nature Photography">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_153143.jpg" alt="Landscape Shot">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_153143.jpg" data-title="Landscape Shot">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_153455.jpg" alt="Scenic Beauty">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_153455.jpg" data-title="Scenic Beauty">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_184010.jpg" alt="Evening Landscape">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_184010.jpg" data-title="Evening Landscape">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_184155.jpg" alt="Sunset View">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250403_184155.jpg" data-title="Sunset View">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250822_171224.jpg" alt="Coastal Photography">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250822_171224.jpg" data-title="Coastal Photography">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250829_161449.jpg" alt="Nature Capture">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/20250829_161449.jpg" data-title="Nature Capture">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain2.jpg" alt="Blue Mountain 2">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain2.jpg" data-title="Blue Mountain 2">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain3.jpg" alt="Blue Mountain 3">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain3.jpg" data-title="Blue Mountain 3">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain4.jpg" alt="Blue Mountain 4">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain4.jpg" data-title="Blue Mountain 4">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0011.jpg" alt="Nature Scene">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0011.jpg" data-title="Nature Scene">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0027.jpg" alt="Coastal Nature">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0027.jpg" data-title="Coastal Nature">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0062.jpg" alt="Natural Vista">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0062.jpg" data-title="Natural Vista">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0246.jpg" alt="Mountain Landscape">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0246.jpg" data-title="Mountain Landscape">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0251.jpg" alt="Scenic View">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0251.jpg" data-title="Scenic View">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0254.jpg" alt="Nature Photography 2">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0254.jpg" data-title="Nature Photography 2">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0255.jpg" alt="Coastal Scene 2">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0255.jpg" data-title="Coastal Scene 2">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0273.jpg" alt="Mountain View 2">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0273.jpg" data-title="Mountain View 2">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0274.jpg" alt="Natural Landscape 2">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0274.jpg" data-title="Natural Landscape 2">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0285.jpg" alt="Scenic Nature">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0285.jpg" data-title="Scenic Nature">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0297.jpg" alt="Coastal Vista">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0297.jpg" data-title="Coastal Vista">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0304.jpg" alt="Panoramic Nature">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0304.jpg" data-title="Panoramic Nature">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0307.jpg" alt="Nature View 2">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0307.jpg" data-title="Nature View 2">Add to Cart</button>
+                    </div>
+                </div>
+                <div class="photo-item">
+                    <div class="photo-item-image-wrapper">
+                        <img src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0308.jpg" alt="Coastal Beauty">
+                    </div>
+                    <div class="photo-item-info">
+                        <div class="photo-item-price">$0.99</div>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0308.jpg" data-title="Coastal Beauty">Add to Cart</button>
                     </div>
                 </div>
             </div>
@@ -159,9 +454,11 @@
             <button class="lightbox-nav lightbox-next" id="lightboxNext">&#8250;</button>
             <img src="" alt="" class="lightbox-image" id="lightboxImage">
             <div class="lightbox-counter" id="lightboxCounter"></div>
+            <button class="lightbox-add-to-cart" id="lightboxAddToCart">Add to Cart</button>
         </div>
     </div>
 
+    <script src="../cart.js"></script>
     <script>
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
@@ -175,6 +472,15 @@
                 navLinks.classList.remove('active');
             });
         });
+
+        // Cart close button
+        const cartClose = document.getElementById('cartClose');
+        const cartDropdown = document.getElementById('cartDropdown');
+        if (cartClose && cartDropdown) {
+            cartClose.addEventListener('click', () => {
+                cartDropdown.classList.remove('active');
+            });
+        }
 
         // Lightbox functionality
         const lightbox = document.getElementById('lightbox');
@@ -211,6 +517,18 @@
             lightboxImage.src = image.src;
             lightboxImage.alt = image.alt;
             lightboxCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+        }
+
+        // Add to Cart from lightbox
+        const lightboxAddToCart = document.getElementById('lightboxAddToCart');
+        if (lightboxAddToCart) {
+            lightboxAddToCart.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const image = images[currentImageIndex];
+                if (window.cart && image) {
+                    window.cart.addItem(image.src, image.alt || 'Photo', '4x6', 1);
+                }
+            });
         }
 
         // Navigate to previous image
@@ -266,6 +584,18 @@
             } else if (e.key === 'ArrowRight') {
                 showNextImage();
             }
+        });
+
+        // Add to Cart buttons in gallery
+        document.querySelectorAll('.photo-item-add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const imageSrc = btn.getAttribute('data-image-src');
+                const title = btn.getAttribute('data-title') || 'Photo';
+                if (window.cart && imageSrc) {
+                    window.cart.addItem(imageSrc, title, '4x6', 1);
+                }
+            });
         });
     </script>
 </body>

@@ -29,6 +29,22 @@
         </div>
     </nav>
 
+    <!-- Cart Dropdown -->
+    <div class="cart-dropdown" id="cartDropdown">
+        <div class="cart-header">
+            <h3>Shopping Cart</h3>
+            <button class="cart-close" id="cartClose">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span class="cart-total-label">Total:</span>
+                <span class="cart-total-price" id="cartTotal">$0.00</span>
+            </div>
+            <button class="cart-checkout-btn" id="cartCheckout">Checkout</button>
+        </div>
+    </div>
+
     <!-- Page Content -->
     <div class="page-content">
         <div class="container">
@@ -41,7 +57,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/India%20Photos/Sub-categories/Cultural%20Heritage/Qutab%20Minar1.jpg&title=Qutab%20Minar&back=india/cultural-heritage.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar1.jpg" data-title="Qutab Minar">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -50,7 +66,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/India%20Photos/Sub-categories/Cultural%20Heritage/Qutab%20Minar2.jpg&title=Qutab%20Minar%20Details&back=india/cultural-heritage.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar2.jpg" data-title="Qutab Minar Details">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -59,7 +75,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/India%20Photos/Sub-categories/Cultural%20Heritage/Qutab%20Minar5.jpg&title=Qutab%20Minar%20Architecture&back=india/cultural-heritage.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar5.jpg" data-title="Qutab Minar Architecture">Add to Cart</button>
                     </div>
                 </div>
                 <div class="photo-item">
@@ -68,7 +84,7 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.99</div>
-                        <a href="../product.html?img=../Images/India%20Photos/Sub-categories/Cultural%20Heritage/Qutab%20Minar8.jpg&title=Qutab%20Minar%20Perspective&back=india/cultural-heritage.html" class="photo-item-buy-btn">Buy</a>
+                        <button class="photo-item-add-to-cart-btn" data-image-src="../Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar8.jpg" data-title="Qutab Minar Perspective">Add to Cart</button>
                     </div>
                 </div>
             </div>
@@ -96,9 +112,11 @@
             <button class="lightbox-nav lightbox-next" id="lightboxNext">&#8250;</button>
             <img src="" alt="" class="lightbox-image" id="lightboxImage">
             <div class="lightbox-counter" id="lightboxCounter"></div>
+            <button class="lightbox-add-to-cart" id="lightboxAddToCart">Add to Cart</button>
         </div>
     </div>
 
+    <script src="../cart.js"></script>
     <script>
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
@@ -112,6 +130,15 @@
                 navLinks.classList.remove('active');
             });
         });
+
+        // Cart close button
+        const cartClose = document.getElementById('cartClose');
+        const cartDropdown = document.getElementById('cartDropdown');
+        if (cartClose && cartDropdown) {
+            cartClose.addEventListener('click', () => {
+                cartDropdown.classList.remove('active');
+            });
+        }
 
         // Lightbox functionality
         const lightbox = document.getElementById('lightbox');
@@ -148,6 +175,18 @@
             lightboxImage.src = image.src;
             lightboxImage.alt = image.alt;
             lightboxCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+        }
+
+        // Add to Cart from lightbox
+        const lightboxAddToCart = document.getElementById('lightboxAddToCart');
+        if (lightboxAddToCart) {
+            lightboxAddToCart.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const image = images[currentImageIndex];
+                if (window.cart && image) {
+                    window.cart.addItem(image.src, image.alt || 'Photo', '4x6', 1);
+                }
+            });
         }
 
         // Navigate to previous image
@@ -203,6 +242,18 @@
             } else if (e.key === 'ArrowRight') {
                 showNextImage();
             }
+        });
+
+        // Add to Cart buttons in gallery
+        document.querySelectorAll('.photo-item-add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const imageSrc = btn.getAttribute('data-image-src');
+                const title = btn.getAttribute('data-title') || 'Photo';
+                if (window.cart && imageSrc) {
+                    window.cart.addItem(imageSrc, title, '4x6', 1);
+                }
+            });
         });
     </script>
 </body>
