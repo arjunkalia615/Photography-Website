@@ -92,13 +92,23 @@ class Cart {
             ? item.dimension
             : CART_DIMENSION_OPTIONS[0].value;
 
+        // Normalize image path to be relative to root
+        let normalizedImageSrc = item.imageSrc;
+        if (normalizedImageSrc.startsWith('../')) {
+            // Remove leading ../ to make path relative to root
+            normalizedImageSrc = normalizedImageSrc.replace(/^\.\.\//, '');
+        } else if (normalizedImageSrc.startsWith('./')) {
+            // Remove leading ./
+            normalizedImageSrc = normalizedImageSrc.replace(/^\.\//, '');
+        }
+
         const id = typeof item.id === 'string' && item.id.trim().length
             ? item.id
-            : this.generateItemId(item.imageSrc, dimension);
+            : this.generateItemId(normalizedImageSrc, dimension);
 
         return {
             id,
-            imageSrc: item.imageSrc,
+            imageSrc: normalizedImageSrc,
             title: typeof item.title === 'string' ? item.title : '',
             dimension,
             quantity: clampQuantity(item.quantity),
@@ -276,16 +286,20 @@ class Cart {
             cartBadge
         } = this.elements;
 
-        if (!cartItemsContainer || !cartTotal || !cartBadge) {
-            return;
+        // Always update cart badge if it exists (even if dropdown doesn't exist)
+        const totalItems = this.getTotalItems();
+        if (cartBadge) {
+            if (totalItems > 0) {
+                cartBadge.textContent = totalItems;
+                cartBadge.style.display = 'flex';
+            } else {
+                cartBadge.style.display = 'none';
+            }
         }
 
-        const totalItems = this.getTotalItems();
-        if (totalItems > 0) {
-            cartBadge.textContent = totalItems;
-            cartBadge.style.display = 'flex';
-        } else {
-            cartBadge.style.display = 'none';
+        // Only render dropdown content if dropdown elements exist
+        if (!cartItemsContainer || !cartTotal) {
+            return;
         }
 
         if (!this.items.length) {
