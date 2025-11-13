@@ -166,7 +166,7 @@ const setupCheckoutInteractions = (cartInstance) => {
 
     buyNowButton.addEventListener('click', () => {
         if (buyNowButton.disabled) return;
-        window.location.href = 'payment.html';
+        window.location.href = `${window.location.origin}/Photography-Website/payment.html`;
     });
 };
 
