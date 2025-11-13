@@ -26,24 +26,21 @@
                 <span></span>
                 <span></span>
             </button>
+            <div class="cart-icon-wrapper">
+                <a href="cart.html" class="cart-icon" id="cartIcon" aria-label="Shopping Cart">
+                    <span class="cart-icon-graphic" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                    </span>
+                    <span class="cart-icon-label">Cart</span>
+                    <span class="cart-badge" id="cartBadge" aria-live="polite" style="display: none;">0</span>
+                </a>
+            </div>
         </div>
     </nav>
-
-    <!-- Cart Dropdown (hidden, only for cart icon) -->
-    <div class="cart-dropdown" id="cartDropdown" style="display: none;">
-        <div class="cart-header">
-            <h3>Shopping Cart</h3>
-            <button class="cart-close" id="cartClose" aria-label="Close cart">&times;</button>
-        </div>
-        <div class="cart-items" id="cartItems"></div>
-        <div class="cart-footer">
-            <div class="cart-total">
-                <span class="cart-total-label">Total:</span>
-                <span class="cart-total-price" id="cartTotal">$0.00</span>
-            </div>
-            <button class="cart-checkout-btn" id="cartCheckout">Checkout</button>
-        </div>
-    </div>
 
     <main class="cart-page">
         <div class="cart-page-container">
@@ -53,7 +50,7 @@
             </header>
 
             <div class="cart-page-content">
-                <!-- Left Column: Cart Items -->
+                <!-- Cart Items Section -->
                 <div class="cart-items-section">
                     <div class="cart-items-list" id="cartItemsList">
                         <!-- Items will be dynamically inserted here -->
@@ -64,7 +61,7 @@
                     </div>
                 </div>
 
-                <!-- Right Column: Order Summary -->
+                <!-- Order Summary Section -->
                 <div class="cart-summary-section">
                     <div class="cart-summary-card">
                         <h2 class="cart-summary-title">Order Summary</h2>
@@ -78,7 +75,7 @@
                                 <span id="summaryTotal">$0.00</span>
                             </div>
                         </div>
-                        <button class="cart-proceed-btn" id="proceedToCheckout" disabled>Proceed to Checkout</button>
+                        <button class="cart-proceed-btn" id="proceedToPayment" disabled>Proceed to Payment</button>
                         <a href="gallery.html" class="cart-continue-shopping">Continue Shopping</a>
                     </div>
                 </div>
@@ -100,33 +97,133 @@
     </footer>
 
     <script src="cart.js"></script>
-    <script src="cart-page.js"></script>
     <script>
+        // Cart Page Script
+        function renderCart() {
+            const cart = CartUtils.getCart();
+            const itemsList = document.getElementById('cartItemsList');
+            const emptyState = document.getElementById('cartEmpty');
+            const itemCountEl = document.getElementById('cartItemCount');
+            const summaryItemCount = document.getElementById('summaryItemCount');
+            const summarySubtotal = document.getElementById('summarySubtotal');
+            const summaryTotal = document.getElementById('summaryTotal');
+            const proceedBtn = document.getElementById('proceedToPayment');
+
+            // Calculate totals
+            const totalItems = Cart.getTotalItems();
+            const totalPrice = Cart.getTotalPrice();
+
+            // Update item count
+            if (itemCountEl) {
+                itemCountEl.textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'items'}`;
+            }
+
+            // Show empty state or items
+            if (cart.length === 0) {
+                if (itemsList) itemsList.style.display = 'none';
+                if (emptyState) emptyState.style.display = 'block';
+                if (proceedBtn) proceedBtn.disabled = true;
+                if (summaryItemCount) summaryItemCount.textContent = '0';
+                if (summarySubtotal) summarySubtotal.textContent = '$0.00';
+                if (summaryTotal) summaryTotal.textContent = '$0.00';
+                return;
+            }
+
+            if (itemsList) itemsList.style.display = 'block';
+            if (emptyState) emptyState.style.display = 'none';
+            if (proceedBtn) proceedBtn.disabled = false;
+
+            // Render items
+            if (itemsList) {
+                itemsList.innerHTML = cart.map(item => {
+                    const itemTotal = item.price * item.quantity;
+                    return `
+                        <div class="cart-page-item" data-item-id="${item.id}">
+                            <div class="cart-page-item-thumbnail">
+                                <img src="${item.imageSrc}" alt="${item.title}" loading="lazy">
+                            </div>
+                            <div class="cart-page-item-details">
+                                <h3 class="cart-page-item-title">${item.title}</h3>
+                                <div class="cart-page-item-quantity-controls">
+                                    <button class="cart-qty-btn cart-qty-decrease" data-item-id="${item.id}" aria-label="Decrease quantity">−</button>
+                                    <input type="number" class="cart-qty-input" value="${item.quantity}" min="1" max="10" data-item-id="${item.id}" readonly>
+                                    <button class="cart-qty-btn cart-qty-increase" data-item-id="${item.id}" aria-label="Increase quantity">+</button>
+                                </div>
+                            </div>
+                            <div class="cart-page-item-price-section">
+                                <div class="cart-page-item-unit-price">${CartUtils.formatPrice(item.price)}</div>
+                                <div class="cart-page-item-total-price">${CartUtils.formatPrice(itemTotal)}</div>
+                                <button class="cart-item-remove-btn" data-item-id="${item.id}" aria-label="Remove item">×</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Update summary
+            if (summaryItemCount) summaryItemCount.textContent = totalItems;
+            if (summarySubtotal) summarySubtotal.textContent = CartUtils.formatPrice(totalPrice);
+            if (summaryTotal) summaryTotal.textContent = CartUtils.formatPrice(totalPrice);
+        }
+
+        // Handle quantity changes and removal
+        document.addEventListener('click', (e) => {
+            const itemId = e.target.getAttribute('data-item-id');
+            if (!itemId) return;
+
+            if (e.target.classList.contains('cart-qty-increase')) {
+                const cart = CartUtils.getCart();
+                const item = cart.find(i => i.id === itemId);
+                if (item) {
+                    Cart.updateQuantity(itemId, item.quantity + 1);
+                    renderCart();
+                }
+            } else if (e.target.classList.contains('cart-qty-decrease')) {
+                const cart = CartUtils.getCart();
+                const item = cart.find(i => i.id === itemId);
+                if (item && item.quantity > 1) {
+                    Cart.updateQuantity(itemId, item.quantity - 1);
+                    renderCart();
+                }
+            } else if (e.target.classList.contains('cart-item-remove-btn')) {
+                Cart.removeItem(itemId);
+                renderCart();
+            }
+        });
+
+        // Proceed to payment
+        document.getElementById('proceedToPayment')?.addEventListener('click', () => {
+            window.location.href = 'payment.html';
+        });
+
+        // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
         const navContainer = document.querySelector('.nav-container');
 
-        mobileMenuToggle.addEventListener('click', (e) => {
+        mobileMenuToggle?.addEventListener('click', (e) => {
             e.stopPropagation();
-            navLinks.classList.toggle('active');
+            navLinks?.classList.toggle('active');
         });
 
         document.querySelectorAll('.nav-links a').forEach(link => {
             link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
+                navLinks?.classList.remove('active');
             });
         });
 
-        // Close menu when clicking outside
         document.addEventListener('click', (e) => {
-            if (navLinks && navLinks.classList.contains('active')) {
-                const isClickInsideNav = navContainer && navContainer.contains(e.target);
+            if (navLinks?.classList.contains('active')) {
+                const isClickInsideNav = navContainer?.contains(e.target);
                 if (!isClickInsideNav) {
                     navLinks.classList.remove('active');
                 }
             }
         });
+
+        // Initial render
+        Cart.updateBadge();
+        renderCart();
     </script>
 </body>
 </html>
-

@@ -26,30 +26,27 @@
                 <span></span>
                 <span></span>
             </button>
+            <div class="cart-icon-wrapper">
+                <a href="cart.html" class="cart-icon" id="cartIcon" aria-label="Shopping Cart">
+                    <span class="cart-icon-graphic" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="9" cy="21" r="1"></circle>
+                            <circle cx="20" cy="21" r="1"></circle>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                    </span>
+                    <span class="cart-icon-label">Cart</span>
+                    <span class="cart-badge" id="cartBadge" aria-live="polite" style="display: none;">0</span>
+                </a>
+            </div>
         </div>
     </nav>
-
-    <!-- Cart Dropdown -->
-    <div class="cart-dropdown" id="cartDropdown">
-        <div class="cart-header">
-            <h3>Shopping Cart</h3>
-            <button class="cart-close" id="cartClose" aria-label="Close cart">&times;</button>
-        </div>
-        <div class="cart-items" id="cartItems"></div>
-        <div class="cart-footer">
-            <div class="cart-total">
-                <span class="cart-total-label">Total:</span>
-                <span class="cart-total-price" id="cartTotal">$0.00</span>
-            </div>
-            <button class="cart-checkout-btn" id="cartCheckout">Checkout</button>
-        </div>
-    </div>
 
     <main class="payment-page">
         <div class="payment-container">
             <header class="payment-header">
-                <h1 class="payment-title">Payment Page</h1>
-                <p class="payment-subtitle">Review your order and proceed to payment.</p>
+                <h1 class="payment-title">Payment</h1>
+                <p class="payment-subtitle">Complete your purchase</p>
             </header>
 
             <div class="payment-content">
@@ -67,32 +64,34 @@
                     </div>
                 </section>
 
-                <!-- Payment Details Section -->
+                <!-- Payment Form Section -->
                 <section class="payment-details">
                     <h2 class="payment-section-title">Payment Details</h2>
-                    <div class="payment-details-content">
-                        <p class="payment-placeholder-text">Payment processing will be available soon. This is a placeholder for future payment integration.</p>
-                        <div class="payment-form-placeholder">
+                    <form class="payment-form" id="paymentForm">
+                        <div class="payment-form-field">
+                            <label for="customerName">Name</label>
+                            <input type="text" id="customerName" name="name" required placeholder="John Doe">
+                        </div>
+                        <div class="payment-form-field">
+                            <label for="customerEmail">Email</label>
+                            <input type="email" id="customerEmail" name="email" required placeholder="john@example.com">
+                        </div>
+                        <div class="payment-form-field">
+                            <label for="cardNumber">Card Number</label>
+                            <input type="text" id="cardNumber" name="cardNumber" required placeholder="1234 5678 9012 3456" maxlength="19">
+                        </div>
+                        <div class="payment-form-row">
                             <div class="payment-form-field">
-                                <label>Card Number</label>
-                                <input type="text" placeholder="1234 5678 9012 3456" disabled>
+                                <label for="expiryDate">Expiry Date</label>
+                                <input type="text" id="expiryDate" name="expiryDate" required placeholder="MM/YY" maxlength="5">
                             </div>
                             <div class="payment-form-field">
-                                <label>Expiry Date</label>
-                                <input type="text" placeholder="MM/YY" disabled>
-                            </div>
-                            <div class="payment-form-field">
-                                <label>CVV</label>
-                                <input type="text" placeholder="123" disabled>
-                            </div>
-                            <div class="payment-form-field">
-                                <label>Cardholder Name</label>
-                                <input type="text" placeholder="John Doe" disabled>
+                                <label for="cvv">CVV</label>
+                                <input type="text" id="cvv" name="cvv" required placeholder="123" maxlength="4">
                             </div>
                         </div>
-                        <button class="payment-pay-btn" id="payNowButton" disabled>Pay Now</button>
-                        <p class="payment-note">This is a placeholder button. Payment functionality coming soon.</p>
-                    </div>
+                        <button type="submit" class="payment-pay-btn" id="confirmPayBtn">Confirm and Pay</button>
+                    </form>
                 </section>
             </div>
         </div>
@@ -112,40 +111,102 @@
     </footer>
 
     <script src="cart.js"></script>
-    <script src="payment.js"></script>
     <script>
+        // Payment Page Script
+        function renderOrderSummary() {
+            const cart = CartUtils.getCart();
+            const itemsContainer = document.getElementById('paymentItems');
+            const totalEl = document.getElementById('paymentTotal');
+
+            if (cart.length === 0) {
+                if (itemsContainer) {
+                    itemsContainer.innerHTML = '<p>No items in cart. <a href="cart.html">Return to cart</a></p>';
+                }
+                return;
+            }
+
+            // Render items
+            if (itemsContainer) {
+                itemsContainer.innerHTML = cart.map(item => {
+                    const itemTotal = item.price * item.quantity;
+                    return `
+                        <div class="payment-item">
+                            <div class="payment-item-info">
+                                <span class="payment-item-name">${item.title}</span>
+                                <span class="payment-item-quantity">Qty: ${item.quantity}</span>
+                            </div>
+                            <span class="payment-item-price">${CartUtils.formatPrice(itemTotal)}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Update total
+            if (totalEl) {
+                totalEl.textContent = CartUtils.formatPrice(Cart.getTotalPrice());
+            }
+        }
+
+        // Format card number input
+        document.getElementById('cardNumber')?.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\s/g, '');
+            let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formatted;
+        });
+
+        // Format expiry date input
+        document.getElementById('expiryDate')?.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+
+        // Handle form submission
+        document.getElementById('paymentForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Show success message
+            alert('Payment Successful!');
+            
+            // Clear cart
+            Cart.clear();
+            
+            // Redirect to home or gallery
+            setTimeout(() => {
+                window.location.href = 'gallery.html';
+            }, 500);
+        });
+
+        // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
         const navContainer = document.querySelector('.nav-container');
 
-        mobileMenuToggle.addEventListener('click', (e) => {
+        mobileMenuToggle?.addEventListener('click', (e) => {
             e.stopPropagation();
-            navLinks.classList.toggle('active');
+            navLinks?.classList.toggle('active');
         });
 
         document.querySelectorAll('.nav-links a').forEach(link => {
             link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
+                navLinks?.classList.remove('active');
             });
         });
 
-        // Close menu when clicking outside
         document.addEventListener('click', (e) => {
-            if (navLinks && navLinks.classList.contains('active')) {
-                const isClickInsideNav = navContainer && navContainer.contains(e.target);
+            if (navLinks?.classList.contains('active')) {
+                const isClickInsideNav = navContainer?.contains(e.target);
                 if (!isClickInsideNav) {
                     navLinks.classList.remove('active');
                 }
             }
         });
 
-        const cartClose = document.getElementById('cartClose');
-        const cartDropdown = document.getElementById('cartDropdown');
-        if (cartClose && cartDropdown) {
-            cartClose.addEventListener('click', () => {
-                cartDropdown.classList.remove('active');
-            });
-        }
+        // Initial render
+        Cart.updateBadge();
+        renderOrderSummary();
     </script>
 </body>
 </html>
