@@ -135,7 +135,8 @@ const setupCartPageInteractions = (cartInstance) => {
             
             // Store selected items for checkout
             localStorage.setItem('ifeelworld_checkout_items', JSON.stringify(selectedItems));
-            window.location.href = `${window.location.origin}/Photography-Website/payment.html`;
+            const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+            window.location.href = basePath ? `${basePath}/payment.html` : 'payment.html';
         });
     }
 };

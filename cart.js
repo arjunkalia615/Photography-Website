@@ -10,7 +10,8 @@ const DIMENSION_PRICE_MAP = CART_DIMENSION_OPTIONS.reduce((map, option) => {
     return map;
 }, {});
 
-const STORAGE_KEY = 'ifeelworld_cart';
+const STORAGE_KEY = 'cartItems';
+const OLD_STORAGE_KEY = 'ifeelworld_cart'; // For migration
 
 const clampQuantity = (quantity) => {
     return Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
@@ -65,7 +66,20 @@ class Cart {
 
     loadCart() {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
+            // Try new key first
+            let stored = localStorage.getItem(STORAGE_KEY);
+            
+            // Migrate from old key if new key doesn't exist
+            if (!stored) {
+                const oldStored = localStorage.getItem(OLD_STORAGE_KEY);
+                if (oldStored) {
+                    // Migrate data from old key to new key
+                    localStorage.setItem(STORAGE_KEY, oldStored);
+                    localStorage.removeItem(OLD_STORAGE_KEY);
+                    stored = oldStored;
+                }
+            }
+            
             if (!stored) return [];
             const parsed = JSON.parse(stored);
             if (!Array.isArray(parsed)) return [];
@@ -211,7 +225,9 @@ class Cart {
     handleCartIconClick(event) {
         event.preventDefault();
         event.stopPropagation();
-        window.location.href = `${window.location.origin}/Photography-Website/cart.html`;
+        // Redirect to cart.html (relative path works from any page)
+        const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+        window.location.href = basePath ? `${basePath}/cart.html` : 'cart.html';
     }
 
     handleDocumentClick(event) {
@@ -487,7 +503,8 @@ class Cart {
         if (event) {
             event.preventDefault();
         }
-        window.location.href = `${window.location.origin}/Photography-Website/cart.html`;
+        const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+        window.location.href = basePath ? `${basePath}/cart.html` : 'cart.html';
     }
 }
 
