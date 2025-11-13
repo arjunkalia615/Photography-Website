@@ -473,7 +473,7 @@ class Cart {
         if (event) {
             event.preventDefault();
         }
-        window.location.href = 'checkout.html';
+        window.location.href = 'payment.html';
     }
 }
 

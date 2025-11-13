@@ -45,15 +45,55 @@
         </div>
     </div>
 
-    <main class="checkout-page">
-        <div class="checkout-container" style="align-items: center; text-align: center;">
-            <header class="checkout-header">
-                <h1 class="checkout-title">Payment Coming Soon</h1>
-                <p class="checkout-subtitle">We’re putting the finishing touches on our secure payment experience. In the meantime, feel free to review your cart or explore more artwork.</p>
+    <main class="payment-page">
+        <div class="payment-container">
+            <header class="payment-header">
+                <h1 class="payment-title">Payment Page</h1>
+                <p class="payment-subtitle">Review your order and proceed to payment.</p>
             </header>
-            <div class="checkout-empty" style="max-width: 520px; margin: 0 auto;">
-                <p>Want to make changes to your cart?</p>
-                <a href="checkout.html" class="checkout-empty-link">Return to Checkout</a>
+
+            <div class="payment-content">
+                <!-- Order Summary Section -->
+                <section class="payment-order-summary">
+                    <h2 class="payment-section-title">Order Summary</h2>
+                    <div class="payment-items" id="paymentItems">
+                        <!-- Items will be dynamically inserted here -->
+                    </div>
+                    <div class="payment-total-section">
+                        <div class="payment-total-line">
+                            <span class="payment-total-label">Total:</span>
+                            <span class="payment-total-price" id="paymentTotal">$0.00</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Payment Details Section -->
+                <section class="payment-details">
+                    <h2 class="payment-section-title">Payment Details</h2>
+                    <div class="payment-details-content">
+                        <p class="payment-placeholder-text">Payment processing will be available soon. This is a placeholder for future payment integration.</p>
+                        <div class="payment-form-placeholder">
+                            <div class="payment-form-field">
+                                <label>Card Number</label>
+                                <input type="text" placeholder="1234 5678 9012 3456" disabled>
+                            </div>
+                            <div class="payment-form-field">
+                                <label>Expiry Date</label>
+                                <input type="text" placeholder="MM/YY" disabled>
+                            </div>
+                            <div class="payment-form-field">
+                                <label>CVV</label>
+                                <input type="text" placeholder="123" disabled>
+                            </div>
+                            <div class="payment-form-field">
+                                <label>Cardholder Name</label>
+                                <input type="text" placeholder="John Doe" disabled>
+                            </div>
+                        </div>
+                        <button class="payment-pay-btn" id="payNowButton" disabled>Pay Now</button>
+                        <p class="payment-note">This is a placeholder button. Payment functionality coming soon.</p>
+                    </div>
+                </section>
             </div>
         </div>
     </main>
@@ -72,6 +112,7 @@
     </footer>
 
     <script src="cart.js"></script>
+    <script src="payment.js"></script>
     <script>
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
@@ -105,14 +146,6 @@
                 cartDropdown.classList.remove('active');
             });
         }
-
-        const cartCheckout = document.getElementById('cartCheckout');
-        if (cartCheckout) {
-            cartCheckout.addEventListener('click', () => {
-                window.location.href = 'checkout.html';
-            });
-        }
     </script>
 </body>
 </html>
-
