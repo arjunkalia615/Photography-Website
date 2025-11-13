@@ -90,10 +90,8 @@ const renderCartPage = (cartInstance) => {
         `;
     }).join('');
 
-    // Update summary
-    if (summaryItemCount) summaryItemCount.textContent = totalItems;
-    if (summarySubtotal) summarySubtotal.textContent = formatCurrency(totalPrice);
-    if (summaryTotal) summaryTotal.textContent = formatCurrency(totalPrice);
+    // Update summary - show totals for ALL items in cart
+    updateSummary(cartInstance);
 };
 
 const setupCartPageInteractions = (cartInstance) => {
@@ -120,10 +118,12 @@ const setupCartPageInteractions = (cartInstance) => {
         }
     });
 
-    // Checkbox changes
+    // Checkbox changes - only affect checkout selection, not summary totals
+    // Summary always shows all items, so we don't need to update it here
     itemsList.addEventListener('change', (e) => {
         if (e.target.classList.contains('cart-item-checkbox')) {
-            updateSummary(cartInstance);
+            // Checkboxes are for checkout selection only
+            // Summary totals remain for all items
         }
     });
 
@@ -147,12 +147,10 @@ const getSelectedItems = (cartInstance) => {
 };
 
 const updateSummary = (cartInstance) => {
-    const selectedItems = getSelectedItems(cartInstance);
-    const totalItems = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = selectedItems.reduce((sum, item) => {
-        const itemPrice = cartInstance.getDimensionPrice(item.dimension);
-        return sum + (itemPrice * item.quantity);
-    }, 0);
+    // Calculate totals for ALL items in cart (not just selected)
+    const allItems = cartInstance.getItems();
+    const totalItems = cartInstance.getTotalItems();
+    const totalPrice = cartInstance.getTotalPrice();
 
     const summaryItemCount = document.getElementById('summaryItemCount');
     const summarySubtotal = document.getElementById('summarySubtotal');
@@ -163,14 +161,19 @@ const updateSummary = (cartInstance) => {
     if (summarySubtotal) summarySubtotal.textContent = formatCurrency(totalPrice);
     if (summaryTotal) summaryTotal.textContent = formatCurrency(totalPrice);
     if (proceedBtn) {
-        proceedBtn.disabled = selectedItems.length === 0;
+        // Disable proceed button only if cart is empty
+        proceedBtn.disabled = allItems.length === 0;
     }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     waitForCartInstance().then((cartInstance) => {
+        // Initial render
         renderCartPage(cartInstance);
         setupCartPageInteractions(cartInstance);
+        
+        // Listen for cart updates (when items are added/removed/quantity changed)
+        // Event delegation means we don't need to re-setup interactions after re-render
         document.addEventListener('cart:updated', () => {
             renderCartPage(cartInstance);
             updateSummary(cartInstance);
