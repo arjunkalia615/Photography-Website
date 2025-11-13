@@ -201,7 +201,7 @@ class Cart {
     handleCartIconClick(event) {
         event.preventDefault();
         event.stopPropagation();
-        this.toggleCartDropdown();
+        window.location.href = `${window.location.origin}/Photography-Website/cart.html`;
     }
 
     handleDocumentClick(event) {
@@ -473,7 +473,7 @@ class Cart {
         if (event) {
             event.preventDefault();
         }
-        window.location.href = `${window.location.origin}/Photography-Website/payment.html`;
+        window.location.href = `${window.location.origin}/Photography-Website/cart.html`;
     }
 }
 

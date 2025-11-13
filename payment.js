@@ -27,7 +27,24 @@ const renderPaymentItems = (cartInstance) => {
         return;
     }
 
-    const items = cartInstance.getItems();
+    // Get selected items from checkout (stored in localStorage)
+    let items = [];
+    try {
+        const selectedItemsData = localStorage.getItem('ifeelworld_checkout_items');
+        if (selectedItemsData) {
+            const selectedItems = JSON.parse(selectedItemsData);
+            // Match with current cart items to get full data
+            const allCartItems = cartInstance.getItems();
+            const selectedIds = selectedItems.map(item => item.id);
+            items = allCartItems.filter(item => selectedIds.includes(item.id));
+        } else {
+            // Fallback to all items if no selection stored
+            items = cartInstance.getItems();
+        }
+    } catch (error) {
+        console.error('Error loading selected items:', error);
+        items = cartInstance.getItems();
+    }
 
     if (!items.length) {
         itemsContainer.innerHTML = `

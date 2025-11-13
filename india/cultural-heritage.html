@@ -117,6 +117,7 @@
     </div>
 
     <script src="../cart.js"></script>
+    <script src="../gallery-quantity-controls.js"></script>
     <script>
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
@@ -256,17 +257,7 @@
             }
         });
 
-        // Add to Cart buttons in gallery
-        document.querySelectorAll('.photo-item-add-to-cart-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const imageSrc = btn.getAttribute('data-image-src');
-                const title = btn.getAttribute('data-title') || 'Photo';
-                if (window.cart && imageSrc) {
-                    window.cart.addItem(imageSrc, title, '4x6', 1);
-                }
-            });
-        });
+        // Quantity controls are handled by gallery-quantity-controls.js
     </script>
 </body>
 </html>
