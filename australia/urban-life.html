@@ -229,7 +229,6 @@
             <button class="lightbox-nav lightbox-next" id="lightboxNext">&#8250;</button>
             <img src="" alt="" class="lightbox-image" id="lightboxImage">
             <div class="lightbox-counter" id="lightboxCounter"></div>
-            <button class="lightbox-add-to-cart" id="lightboxAddToCart">Add to Cart</button>
         </div>
     </div>
 
@@ -305,18 +304,6 @@
             lightboxImage.src = image.src;
             lightboxImage.alt = image.alt;
             lightboxCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
-        }
-
-        // Add to Cart from lightbox
-        const lightboxAddToCart = document.getElementById('lightboxAddToCart');
-        if (lightboxAddToCart) {
-            lightboxAddToCart.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const image = images[currentImageIndex];
-                if (window.cart && image) {
-                    window.cart.addItem(image.src, image.alt || 'Photo', '4x6', 1);
-                }
-            });
         }
 
         // Navigate to previous image
