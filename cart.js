@@ -367,7 +367,16 @@ class Cart {
         const validDimension = DIMENSION_PRICE_MAP[dimension]
             ? dimension
             : CART_DIMENSION_OPTIONS[0].value;
-        const itemId = this.generateItemId(imageSrc, validDimension);
+        
+        // Normalize image path before generating ID
+        let normalizedImageSrc = imageSrc;
+        if (normalizedImageSrc.startsWith('../')) {
+            normalizedImageSrc = normalizedImageSrc.replace(/^\.\.\//, '');
+        } else if (normalizedImageSrc.startsWith('./')) {
+            normalizedImageSrc = normalizedImageSrc.replace(/^\.\//, '');
+        }
+        
+        const itemId = this.generateItemId(normalizedImageSrc, validDimension);
         const existingItem = this.items.find(item => item.id === itemId);
 
         if (existingItem) {
@@ -377,9 +386,10 @@ class Cart {
             }
             existingItem.price = getDimensionPriceValue(existingItem.dimension);
         } else {
+            // Use normalized imageSrc when creating new item
             this.items.push({
                 id: itemId,
-                imageSrc,
+                imageSrc: normalizedImageSrc,
                 title,
                 dimension: validDimension,
                 quantity: clampQuantity(quantity),

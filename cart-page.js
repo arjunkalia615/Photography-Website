@@ -5,17 +5,36 @@ const formatCurrency = (value) => {
 
 const waitForCartInstance = () => {
     return new Promise((resolve) => {
+        // Check if cart is already available
         if (window.cart) {
             resolve(window.cart);
             return;
         }
 
+        // Wait for cart:ready event
         const handleReady = (event) => {
             document.removeEventListener('cart:ready', handleReady);
             resolve(event.detail.cart);
         };
 
-        document.addEventListener('cart:ready', handleReady);
+        // If event already fired, check again after a short delay
+        const checkCart = () => {
+            if (window.cart) {
+                resolve(window.cart);
+            } else {
+                document.addEventListener('cart:ready', handleReady);
+                // Fallback: resolve after timeout if cart still not ready
+                setTimeout(() => {
+                    if (window.cart) {
+                        document.removeEventListener('cart:ready', handleReady);
+                        resolve(window.cart);
+                    }
+                }, 1000);
+            }
+        };
+
+        // Check immediately and also listen for event
+        checkCart();
     });
 };
 
@@ -28,11 +47,22 @@ const renderCartPage = (cartInstance) => {
     const summaryTotal = document.getElementById('summaryTotal');
     const proceedBtn = document.getElementById('proceedToCheckout');
 
-    if (!itemsList || !emptyState) return;
+    if (!itemsList || !emptyState) {
+        console.error('Cart page elements not found:', { itemsList, emptyState });
+        return;
+    }
 
     const items = cartInstance.getItems();
     const totalItems = cartInstance.getTotalItems();
     const totalPrice = cartInstance.getTotalPrice();
+
+    // Debug logging
+    console.log('Rendering cart page:', {
+        itemsCount: items.length,
+        totalItems,
+        totalPrice,
+        items: items
+    });
 
     // Update item count
     if (itemCountEl) {
@@ -168,7 +198,13 @@ const updateSummary = (cartInstance) => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Cart page DOM loaded, waiting for cart instance...');
+    
     waitForCartInstance().then((cartInstance) => {
+        console.log('Cart instance received:', cartInstance);
+        console.log('Cart items from instance:', cartInstance.getItems());
+        console.log('Total items:', cartInstance.getTotalItems());
+        
         // Initial render
         renderCartPage(cartInstance);
         setupCartPageInteractions(cartInstance);
@@ -176,9 +212,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Listen for cart updates (when items are added/removed/quantity changed)
         // Event delegation means we don't need to re-setup interactions after re-render
         document.addEventListener('cart:updated', () => {
+            console.log('Cart updated event received, re-rendering...');
             renderCartPage(cartInstance);
             updateSummary(cartInstance);
         });
+    }).catch((error) => {
+        console.error('Error waiting for cart instance:', error);
+        // Fallback: try to render with window.cart if available
+        if (window.cart) {
+            console.log('Using window.cart as fallback');
+            renderCartPage(window.cart);
+            setupCartPageInteractions(window.cart);
+        } else {
+            console.error('No cart instance available');
+        }
     });
 });
 
