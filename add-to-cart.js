@@ -16,10 +16,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const imageSrc = button.getAttribute('data-image-src');
                 const title = button.getAttribute('data-title') || 'Photo';
+                const productId = button.getAttribute('data-product-id');
                 
                 if (imageSrc && title) {
-                    // Add item to cart
-                    Cart.addItem(imageSrc, title);
+                    // Add item to cart with product ID (UUID)
+                    Cart.addItem(imageSrc, title, undefined, productId);
                     
                     // Show visual feedback
                     button.textContent = 'Added!';

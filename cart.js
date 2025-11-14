@@ -29,7 +29,16 @@ const CartUtils = {
         return `$${price.toFixed(2)}`;
     },
 
-    // Generate unique ID for item
+    // Generate UUID v4
+    generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    },
+
+    // Generate unique ID for item (fallback if no UUID provided)
     generateItemId(imageSrc, title) {
         return `${imageSrc}_${title}`.replace(/[^a-zA-Z0-9]/g, '_');
     },
@@ -49,10 +58,11 @@ const CartUtils = {
 // Cart Operations
 const Cart = {
     // Add item to cart
-    addItem(imageSrc, title, price = ITEM_PRICE) {
+    addItem(imageSrc, title, price = ITEM_PRICE, productId = null) {
         const cart = CartUtils.getCart();
         const normalizedPath = CartUtils.normalizeImagePath(imageSrc);
-        const itemId = CartUtils.generateItemId(normalizedPath, title);
+        // Use provided productId (UUID) or generate one
+        const itemId = productId || CartUtils.generateUUID();
         
         const existingItem = cart.find(item => item.id === itemId);
         
