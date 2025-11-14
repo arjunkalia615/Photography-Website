@@ -49,15 +49,68 @@
     <div class="page-content">
         <div class="container">
             <h1 class="page-title">Contact Us</h1>
-            <p style="text-align: center; color: #b8b8b8; font-size: 1.1rem; max-width: 800px; margin: 0 auto 60px; line-height: 1.8;">
-                This page will contain contact information and a contact form. Content coming soon.
-            </p>
+            <div class="contact-content">
+                <div class="contact-intro">
+                    <p>We'd love to hear from you! Whether you have questions about our photography, need assistance with an order, or want to discuss licensing opportunities, please don't hesitate to reach out.</p>
+                </div>
+
+                <div class="contact-form-wrapper">
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-group">
+                            <label for="contactName">Name *</label>
+                            <input type="text" id="contactName" name="name" required placeholder="Your name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contactEmail">Email *</label>
+                            <input type="email" id="contactEmail" name="email" required placeholder="your.email@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contactSubject">Subject *</label>
+                            <select id="contactSubject" name="subject" required>
+                                <option value="">Select a subject</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="order">Order Question</option>
+                                <option value="refund">Refund Request</option>
+                                <option value="licensing">Licensing Inquiry</option>
+                                <option value="technical">Technical Support</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contactMessage">Message *</label>
+                            <textarea id="contactMessage" name="message" rows="6" required placeholder="Please provide details about your inquiry..."></textarea>
+                        </div>
+
+                        <button type="submit" class="contact-submit-btn">Send Message</button>
+                    </form>
+
+                    <div class="contact-info">
+                        <p class="contact-note"><em>[Placeholder: Contact form submission will be implemented. For now, this is a demonstration form.]</em></p>
+                        <p>For immediate assistance, you can also reach us through:</p>
+                        <ul>
+                            <li><strong>Instagram:</strong> <a href="https://www.instagram.com/zenvision.gallery/" target="_blank" rel="noopener noreferrer">@zenvision.gallery</a></li>
+                            <li><em>[Placeholder: Additional contact methods will be added here]</em></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Footer -->
     <footer>
         <div class="footer-content">
+            <div class="footer-links">
+                <a href="terms-and-conditions.html">Terms & Conditions</a>
+                <a href="privacy-policy.html">Privacy Policy</a>
+                <a href="refund-policy.html">Refund Policy</a>
+                <a href="disclaimer.html">Disclaimer</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </div>
             <p class="footer-text">&copy; 2025 ifeelworld – All rights reserved</p>
             <a href="https://www.instagram.com/zenvision.gallery/" target="_blank" rel="noopener noreferrer" class="instagram-link">
                 <svg class="instagram-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -101,6 +154,29 @@
         if (cartClose && cartDropdown) {
             cartClose.addEventListener('click', () => {
                 cartDropdown.classList.remove('active');
+            });
+        }
+
+        // Contact Form Handler
+        const contactForm = document.getElementById('contactForm');
+        if (contactForm) {
+            contactForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                // Get form data
+                const formData = {
+                    name: document.getElementById('contactName').value,
+                    email: document.getElementById('contactEmail').value,
+                    subject: document.getElementById('contactSubject').value,
+                    message: document.getElementById('contactMessage').value
+                };
+
+                // Placeholder: Form submission will be implemented
+                // For now, show a confirmation message
+                alert('Thank you for your message! [Placeholder: Form submission will be implemented. Your message: ' + formData.subject + ']');
+                
+                // Reset form
+                contactForm.reset();
             });
         }
     </script>
