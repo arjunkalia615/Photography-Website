@@ -1280,10 +1280,20 @@ footer {
     margin-top: 10px;
 }
 
-.contact-submit-btn:hover {
+.contact-submit-btn:hover:not(:disabled) {
     background: #e0e0e0;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.contact-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.contact-submit-btn .btn-loader {
+    display: inline-block;
 }
 
 .contact-info {
@@ -1323,6 +1333,61 @@ footer {
     font-style: italic;
     font-size: 0.9rem;
     margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+/* Form Error Messages */
+.form-error {
+    display: none;
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.form-group input:invalid:not(:placeholder-shown),
+.form-group select:invalid:not(:placeholder-shown),
+.form-group textarea:invalid:not(:placeholder-shown) {
+    border-color: rgba(255, 107, 107, 0.5);
+}
+
+.form-group input:valid:not(:placeholder-shown),
+.form-group select:valid:not(:placeholder-shown),
+.form-group textarea:valid:not(:placeholder-shown) {
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+/* Form Success/Error Messages */
+.form-message {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    animation: slideDown 0.3s ease;
+}
+
+.form-message-success {
+    background: rgba(76, 175, 80, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #81c784;
+}
+
+.form-message-error {
+    background: rgba(255, 107, 107, 0.15);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    color: #ff8a80;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Animations */
