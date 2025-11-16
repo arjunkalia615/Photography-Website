@@ -56,8 +56,8 @@
 
                 <div class="contact-form-wrapper">
                     <form class="contact-form" id="contactForm" action="https://api.web3forms.com/submit" method="POST">
-                        <!-- Web3Forms Access Key -->
-                        <input type="hidden" name="access_key" value="bc1058e1-0790-4eb3-8753-594625ba06ea">
+                        <!-- Web3Forms Access Key (will be set via JavaScript to ensure no spaces) -->
+                        <input type="hidden" name="access_key" id="access_key" value="">
                         
                         <!-- Web3Forms Configuration -->
                         <input type="hidden" name="subject" value="New Contact Form Submission from ifeelworld.com">
@@ -183,6 +183,12 @@
         const btnLoader = submitBtn.querySelector('.btn-loader');
         const formMessage = document.getElementById('formMessage');
         
+        // Set access key in hidden field (trimmed to ensure no spaces)
+        const accessKeyInput = document.getElementById('access_key');
+        if (accessKeyInput) {
+            accessKeyInput.value = "bc1058e1-0790-4eb3-8753-594625ba06ea".trim();
+        }
+        
         // Clear all error messages
         function clearErrors() {
             document.querySelectorAll('.form-error').forEach(error => {
@@ -272,8 +278,9 @@
                     // Prepare form data for Web3Forms
                     const formData = new FormData(contactForm);
                     
-                    // Ensure access key is included
-                    formData.append("access_key", "bc1058e1-0790-4eb3-8753-594625ba06ea");
+                    // Get and set access key (trim to remove any spaces)
+                    const accessKey = "bc1058e1-0790-4eb3-8753-594625ba06ea".trim();
+                    formData.set("access_key", accessKey);
                     
                     // Get form values for formatting
                     const subject = document.getElementById('contactSubject').value;
