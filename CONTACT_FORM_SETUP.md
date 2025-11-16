@@ -11,7 +11,7 @@ The form is ready to use! Web3Forms is already configured with your access key.
 1. **Go to Web3Forms Dashboard**
    - Visit https://web3forms.com
    - Sign in or create an account (free)
-   - Find your form with access key: `bc1058e1-0790-4eb3-8753-594625ba06ea`
+   - Find your form with access key: `4a8d406c-49ac-40b2-a6da-e0de60f7e727`
 
 2. **Configure Email Settings**
    - Set **Email to receive submissions**: `hello@ifeelworld.com`
@@ -28,7 +28,7 @@ The form is ready to use! Web3Forms is already configured with your access key.
 
 The form is set up with:
 - **Email Service**: Web3Forms
-- **Access Key**: `bc1058e1-0790-4eb3-8753-594625ba06ea`
+- **Access Key**: `4a8d406c-49ac-40b2-a6da-e0de60f7e727`
 - **Recipient Email**: hello@ifeelworld.com (configured in Web3Forms dashboard)
 - **Spam Protection**: Honeypot field (`botcheck`) + Web3Forms built-in protection
 - **Form Validation**: Client-side validation with error messages
@@ -85,7 +85,7 @@ Web3Forms provides:
 - Verify internet connection
 - Try a different browser
 - Check that all required fields are filled
-- Verify your access key is correct: `bc1058e1-0790-4eb3-8753-594625ba06ea`
+- Verify your access key is correct: `4a8d406c-49ac-40b2-a6da-e0de60f7e727`
 
 ### Web3Forms Errors
 - **"Invalid access key"**: Verify the access key in contact.html matches your Web3Forms dashboard
