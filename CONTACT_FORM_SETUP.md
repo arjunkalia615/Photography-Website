@@ -1,65 +1,58 @@
 # Contact Form Setup Instructions
 
-The contact form on your website is configured to send emails to **hello@ifeelworld.com** using Formsubmit.co.
+The contact form on your website is configured to send emails to **hello@ifeelworld.com** using Web3Forms.
 
-## ✅ Quick Setup (2 minutes)
+## ✅ Setup Complete!
 
-The form is ready to use! You just need to confirm your email address on the first submission.
+The form is ready to use! Web3Forms is already configured with your access key.
 
-### First-Time Activation
+### First-Time Configuration (One-Time)
 
-1. **Submit a test form** from your contact page
-2. **Check hello@ifeelworld.com** for a confirmation email from Formsubmit
-3. **Click the confirmation link** in the email
-4. **Done!** All future submissions will be delivered automatically
+1. **Go to Web3Forms Dashboard**
+   - Visit https://web3forms.com
+   - Sign in or create an account (free)
+   - Find your form with access key: `bc1058e1-0790-4eb3-8753-594625ba06ea`
 
-That's it! No signup or account creation required.
+2. **Configure Email Settings**
+   - Set **Email to receive submissions**: `hello@ifeelworld.com`
+   - Enable email notifications
+   - Configure any additional settings (auto-reply, redirect, etc.)
+
+3. **Test the Form**
+   - Visit your contact page
+   - Fill out and submit a test form
+   - Check hello@ifeelworld.com for the email
+   - You should receive the submission within seconds
 
 ## Current Configuration
 
 The form is set up with:
-- **Email Service**: Formsubmit.co (works immediately after email confirmation)
-- **Recipient Email**: hello@ifeelworld.com
-- **Spam Protection**: Honeypot field (`_honey`) + Formsubmit's built-in protection
+- **Email Service**: Web3Forms
+- **Access Key**: `bc1058e1-0790-4eb3-8753-594625ba06ea`
+- **Recipient Email**: hello@ifeelworld.com (configured in Web3Forms dashboard)
+- **Spam Protection**: Honeypot field (`botcheck`) + Web3Forms built-in protection
 - **Form Validation**: Client-side validation with error messages
 - **Success Messages**: User-friendly feedback
-- **Auto-Response**: Users receive a confirmation email automatically
 
 ## How It Works
 
 1. Users fill out the contact form on your website
 2. Form data is validated (client-side)
-3. Data is sent securely to Formsubmit.co
-4. Formsubmit.co forwards the email to hello@ifeelworld.com
+3. Data is sent securely to Web3Forms API
+4. Web3Forms forwards the email to hello@ifeelworld.com
 5. You receive a formatted email with all form details
 6. Your email address is never displayed on the website
 
-## Alternative: Formspree (More Features)
+## Web3Forms Features
 
-If you prefer Formspree (dashboard, analytics, more control), you can switch:
-
-1. **Sign up for Formspree** (Free)
-   - Go to https://formspree.io
-   - Sign up (free plan: 50 submissions/month)
-   - Create a new form
-   - Set email to: hello@ifeelworld.com
-   - Copy your Form ID (looks like: `xpwnqjdk`)
-
-2. **Update contact.html**
-   - Find line 58: `<form class="contact-form" id="contactForm" action="https://formsubmit.co/hello@ifeelworld.com" method="POST">`
-   - Replace with: `<form class="contact-form" id="contactForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">`
-   - Replace `YOUR_FORM_ID` with your Formspree form ID
-
-3. **Update hidden fields** to Formspree format:
-   ```html
-   <!-- Formspree configuration -->
-   <input type="hidden" name="_to" value="hello@ifeelworld.com">
-   <input type="hidden" name="_subject" value="New Contact Form Submission from ifeelworld.com">
-   <input type="hidden" name="_replyto" id="_replyto" value="">
-   <input type="hidden" name="_format" value="plain">
-   ```
-
-4. **Update JavaScript** - The current code already works with Formspree!
+Web3Forms provides:
+- ✅ **Free tier**: 250 submissions/month
+- ✅ **No email confirmation required**: Works immediately
+- ✅ **Dashboard**: View all submissions in one place
+- ✅ **Spam protection**: Built-in bot detection
+- ✅ **Email customization**: Configure subject, from name, etc.
+- ✅ **Auto-reply**: Send automatic responses to users
+- ✅ **Webhooks**: Get notified via webhooks (optional)
 
 ## Form Features
 
@@ -92,25 +85,27 @@ If you prefer Formspree (dashboard, analytics, more control), you can switch:
 - Verify internet connection
 - Try a different browser
 - Check that all required fields are filled
-- Make sure you clicked the confirmation link in the first email
+- Verify your access key is correct: `bc1058e1-0790-4eb3-8753-594625ba06ea`
 
-### Formsubmit Errors
-- **"Too many requests"**: You've hit the rate limit, wait a moment
-- **Emails going to spam**: Check spam folder, and consider adding Formsubmit to your contacts
-- **Not receiving emails**: Verify you clicked the confirmation link in the first email
+### Web3Forms Errors
+- **"Invalid access key"**: Verify the access key in contact.html matches your Web3Forms dashboard
+- **"Too many requests"**: You've hit the rate limit (250/month on free plan), wait or upgrade
+- **Emails going to spam**: Check spam folder, and verify email is configured correctly in Web3Forms dashboard
+- **"Form not found"**: Make sure your form is active in the Web3Forms dashboard
 
 ### Need Help?
-- **Formsubmit.co Documentation**: https://formsubmit.co/documentation
-- **Formsubmit.co Support**: https://formsubmit.co/contact
-- **Formspree Alternative**: https://formspree.io (requires signup but has more features)
+- **Web3Forms Documentation**: https://docs.web3forms.com
+- **Web3Forms Dashboard**: https://web3forms.com
+- **Web3Forms Support**: Check the documentation or contact support through the dashboard
 
 ## Security Notes
 
-- The honeypot field (`_honey`) helps prevent spam bots
+- The honeypot field (`botcheck`) helps prevent spam bots
 - All form submissions are validated before sending
 - Email addresses are not exposed in the HTML
 - Form data is sent over HTTPS (secure connection)
-- Formsubmit.co has built-in spam protection
+- Web3Forms has built-in spam protection and rate limiting
+- Access key is stored in HTML (this is normal for Web3Forms - the key is form-specific)
 
 ## Email Format
 
@@ -124,8 +119,8 @@ When you receive form submissions, the email will include:
 
 ## Rate Limits
 
-- **Formsubmit.co**: 100 submissions/day (free)
-- **Formspree**: 50 submissions/month (free)
+- **Web3Forms Free**: 250 submissions/month
+- **Web3Forms Pro**: Unlimited submissions (paid plans available)
 
-If you need more submissions, consider upgrading to a paid plan.
+If you need more submissions, consider upgrading to a paid plan in the Web3Forms dashboard.
 
