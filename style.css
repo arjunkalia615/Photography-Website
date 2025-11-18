@@ -1637,9 +1637,8 @@ footer {
     .checkout-form-section {
         padding: 20px;
     }
-}
 
-.nav-links {
+    .nav-links {
         position: absolute;
         top: 100%;
         left: 0;
