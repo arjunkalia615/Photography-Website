@@ -1,0 +1,27 @@
+{
+  "name": "ifeelworld-checkout",
+  "version": "1.0.0",
+  "description": "Stripe Checkout backend for ifeelworld digital photography store",
+  "main": "checkout.js",
+  "scripts": {
+    "start": "node checkout.js",
+    "dev": "nodemon checkout.js"
+  },
+  "keywords": [
+    "stripe",
+    "checkout",
+    "express",
+    "nodejs"
+  ],
+  "author": "ifeelworld",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "stripe": "^14.0.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+

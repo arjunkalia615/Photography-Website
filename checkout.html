@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - ifeelworld</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Stripe.js library -->
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">ifeelworld</a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="traditional-arts.html">Traditional Arts</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Cart Dropdown -->
+    <div class="cart-dropdown" id="cartDropdown">
+        <div class="cart-header">
+            <h3>Shopping Cart</h3>
+            <button class="cart-close" id="cartClose">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span class="cart-total-label">Total:</span>
+                <span class="cart-total-price" id="cartTotal">$0.00</span>
+            </div>
+            <button class="cart-checkout-btn" id="cartCheckout">Checkout</button>
+        </div>
+    </div>
+
+    <!-- Page Content -->
+    <div class="page-content">
+        <div class="container">
+            <h1 class="page-title">Checkout</h1>
+            
+            <div class="checkout-content">
+                <!-- Order Summary -->
+                <div class="checkout-summary" id="checkoutSummary">
+                    <h2>Order Summary</h2>
+                    <div id="checkoutItems">
+                        <!-- Items will be populated from cart or passed data -->
+                    </div>
+                    <div class="checkout-total">
+                        <span>Total:</span>
+                        <span id="checkoutTotal">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Checkout Form -->
+                <div class="checkout-form-section">
+                    <h2>Complete Your Purchase</h2>
+                    <p class="checkout-description">
+                        You will be redirected to Stripe's secure checkout page to complete your payment.
+                        After successful payment, you'll receive your digital photo downloads via email.
+                    </p>
+                    
+                    <form id="checkoutForm">
+                        <div class="form-group">
+                            <label for="customerEmail">Email Address *</label>
+                            <input 
+                                type="email" 
+                                id="customerEmail" 
+                                name="customerEmail" 
+                                required 
+                                placeholder="your.email@example.com"
+                                autocomplete="email"
+                            >
+                            <small>We'll send your download links to this email</small>
+                        </div>
+
+                        <!-- Error/Success Messages -->
+                        <div id="checkoutMessage" class="checkout-message" style="display: none;"></div>
+
+                        <button type="submit" id="buyNowBtn" class="buy-now-btn">
+                            <span id="btnText">Buy Now</span>
+                            <span id="btnLoader" style="display: none;">Processing...</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="terms-and-conditions.html">Terms & Conditions</a>
+                <a href="privacy-policy.html">Privacy Policy</a>
+                <a href="refund-policy.html">Refund Policy</a>
+                <a href="disclaimer.html">Disclaimer</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <p class="footer-text">&copy; 2025 ifeelworld – All rights reserved</p>
+            <p class="footer-email">Customer Support: <a href="mailto:hello@ifeelworld.com">hello@ifeelworld.com</a></p>
+            <a href="https://www.instagram.com/zenvision.gallery/" target="_blank" rel="noopener noreferrer" class="instagram-link">
+                <svg class="instagram-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.204-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                <span>zenvision.gallery</span>
+            </a>
+        </div>
+    </footer>
+
+    <script src="cart.js"></script>
+    <script src="blur-up.js"></script>
+    <script>
+        // Initialize Stripe with publishable key
+        const stripe = Stripe("pk_live_51SUISK2cmeiwN9KC1HMjyswAEDlAyQvn4mqB7DU37ZQRx1xJAtP6a7wDrFgRez0M0T499VhCcHYwAnuiba8uQixK00K82cy4wy");
+        
+        // Backend API endpoint
+        // Update this to your actual backend URL when deployed
+        // For local development: 'http://localhost:3000'
+        // For production: 'https://your-backend-domain.com'
+        const BACKEND_URL = 'http://localhost:3000'; // TODO: Update this to your deployed backend URL
+        const CHECKOUT_ENDPOINT = `${BACKEND_URL}/create-checkout-session`;
+
+        // Mobile menu toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const navLinks = document.getElementById('navLinks');
+        const navContainer = document.querySelector('.nav-container');
+
+        mobileMenuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navLinks.classList.toggle('active');
+        });
+
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (navLinks && navLinks.classList.contains('active')) {
+                const isClickInsideNav = navContainer && navContainer.contains(e.target);
+                if (!isClickInsideNav) {
+                    navLinks.classList.remove('active');
+                }
+            }
+        });
+
+        const cartClose = document.getElementById('cartClose');
+        const cartDropdown = document.getElementById('cartDropdown');
+        if (cartClose && cartDropdown) {
+            cartClose.addEventListener('click', () => {
+                cartDropdown.classList.remove('active');
+            });
+        }
+
+        // Load cart items and display order summary
+        function loadOrderSummary() {
+            const cart = CartUtils.getCart();
+            const checkoutItems = document.getElementById('checkoutItems');
+            const checkoutTotal = document.getElementById('checkoutTotal');
+            
+            if (!cart || cart.length === 0) {
+                checkoutItems.innerHTML = '<p>Your cart is empty. <a href="gallery.html">Continue Shopping</a></p>';
+                checkoutTotal.textContent = '$0.00';
+                document.getElementById('buyNowBtn').disabled = true;
+                return [];
+            }
+
+            // Display items
+            checkoutItems.innerHTML = cart.map(item => {
+                const itemTotal = item.price * item.quantity;
+                return `
+                    <div class="checkout-item">
+                        <span class="checkout-item-name">${item.title}</span>
+                        <span class="checkout-item-quantity">Qty: ${item.quantity}</span>
+                        <span class="checkout-item-price">${CartUtils.formatPrice(itemTotal)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Calculate and display total
+            const total = Cart.getTotalPrice();
+            checkoutTotal.textContent = CartUtils.formatPrice(total);
+
+            // Return cart items formatted for API
+            return cart.map(item => ({
+                name: item.title,
+                description: 'High-resolution digital photography print',
+                price: item.price,
+                quantity: item.quantity
+            }));
+        }
+
+        // Handle form submission
+        const checkoutForm = document.getElementById('checkoutForm');
+        const buyNowBtn = document.getElementById('buyNowBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoader = document.getElementById('btnLoader');
+        const checkoutMessage = document.getElementById('checkoutMessage');
+
+        checkoutForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get cart items
+            const items = loadOrderSummary();
+            
+            if (items.length === 0) {
+                showMessage('Your cart is empty. Please add items before checkout.', false);
+                return;
+            }
+
+            // Get customer email
+            const customerEmail = document.getElementById('customerEmail').value.trim();
+            if (!customerEmail) {
+                showMessage('Please enter your email address.', false);
+                return;
+            }
+
+            // Disable button and show loading
+            buyNowBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+
+            try {
+                // Create checkout session
+                const response = await fetch(CHECKOUT_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        items: items,
+                        customer_email: customerEmail,
+                        success_url: window.location.origin + '/payment-success.html?session_id={CHECKOUT_SESSION_ID}',
+                        cancel_url: window.location.origin + '/payment-cancel.html'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to create checkout session');
+                }
+
+                // Redirect to Stripe Checkout
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    throw new Error('No checkout URL received');
+                }
+
+            } catch (error) {
+                console.error('Checkout error:', error);
+                showMessage('An error occurred. Please try again. ' + error.message, false);
+                
+                // Re-enable button
+                buyNowBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+            }
+        });
+
+        function showMessage(message, isSuccess) {
+            checkoutMessage.textContent = message;
+            checkoutMessage.className = isSuccess ? 'checkout-message checkout-message-success' : 'checkout-message checkout-message-error';
+            checkoutMessage.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                checkoutMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize page
+        loadOrderSummary();
+        Cart.updateBadge();
+    </script>
+</body>
+</html>
+
