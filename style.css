@@ -1005,6 +1005,24 @@ footer {
     gap: 20px;
 }
 
+.footer-email {
+    color: #888888;
+    font-size: 0.9rem;
+    margin: 8px 0;
+    text-align: center;
+}
+
+.footer-email a {
+    color: #ffffff;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-email a:hover {
+    color: #d4af37;
+    text-decoration: underline;
+}
+
 .footer-text {
     color: #666666;
     font-size: 0.9rem;
