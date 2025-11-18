@@ -254,15 +254,29 @@
                     })
                 });
 
-                if (!res.ok) {
-                    const error = await res.json();
-                    throw new Error(error.message || 'Failed to create checkout session');
+                // Check if response is JSON
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await res.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    throw new Error('Backend server is not responding. Please ensure the checkout server is running.');
                 }
 
-                const { id } = await res.json();
+                if (!res.ok) {
+                    const error = await res.json().catch(() => {
+                        throw new Error(`Server error (${res.status}). Please check if the backend server is running.`);
+                    });
+                    throw new Error(error.message || error.error || 'Failed to create checkout session');
+                }
+
+                const data = await res.json();
+                
+                if (!data || !data.id) {
+                    throw new Error('Invalid response from server. Missing session ID.');
+                }
                 
                 // Redirect to Stripe Checkout
-                const result = await stripe.redirectToCheckout({ sessionId: id });
+                const result = await stripe.redirectToCheckout({ sessionId: data.id });
                 
                 if (result.error) {
                     throw new Error(result.error.message);
@@ -270,7 +284,19 @@
 
             } catch (error) {
                 console.error('Checkout error:', error);
-                alert('An error occurred. Please try again. ' + error.message);
+                
+                // Provide user-friendly error message
+                let errorMessage = 'An error occurred. Please try again.';
+                
+                if (error.message.includes('Backend server')) {
+                    errorMessage = 'The checkout server is not available. Please contact support or try again later.';
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMessage = 'Network error. Please check your internet connection and try again.';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                alert(errorMessage);
                 
                 // Re-enable button
                 const checkoutBtn = document.getElementById('checkoutBtn');
