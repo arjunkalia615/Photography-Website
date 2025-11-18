@@ -1,3 +1,5 @@
+// Explicitly set Node.js runtime (required for accessing environment variables)
+// Edge runtime cannot access secure environment variables like STRIPE_SECRET_KEY
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 /**
@@ -20,7 +22,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
  *   "cancel_url": "https://www.ifeelworld.com/payment-cancel.html"
  * }
  */
-module.exports = async (req, res) => {
+
+async function handler(req, res) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -40,12 +43,30 @@ module.exports = async (req, res) => {
     }
 
     try {
+        // Debug: Log environment variable status (without exposing the key)
+        const hasStripeKey = !!process.env.STRIPE_SECRET_KEY;
+        const keyLength = process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.length : 0;
+        const keyPrefix = process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 7) : 'none';
+        
+        console.log('Environment check:', {
+            hasStripeKey,
+            keyLength,
+            keyPrefix: keyPrefix + '...',
+            allEnvKeys: Object.keys(process.env).filter(k => k.includes('STRIPE')).join(', ')
+        });
+
         // Validate Stripe secret key is set
         if (!process.env.STRIPE_SECRET_KEY) {
             console.error('STRIPE_SECRET_KEY environment variable is not set');
+            console.error('Available environment variables with "STRIPE":', 
+                Object.keys(process.env).filter(k => k.includes('STRIPE')));
             return res.status(500).json({
                 error: 'Server configuration error',
-                message: 'Stripe secret key not configured. Please set STRIPE_SECRET_KEY environment variable in Vercel.'
+                message: 'Stripe secret key not configured. Please set STRIPE_SECRET_KEY environment variable in Vercel.',
+                debug: {
+                    hint: 'Check that the variable name is exactly "STRIPE_SECRET_KEY" (case-sensitive, no spaces)',
+                    availableStripeVars: Object.keys(process.env).filter(k => k.includes('STRIPE'))
+                }
             });
         }
 
@@ -158,5 +179,8 @@ module.exports = async (req, res) => {
             message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred while processing your request. Please try again.'
         });
     }
-};
+}
+
+// Export the handler function
+module.exports = handler;
 
