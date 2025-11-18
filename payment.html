@@ -70,32 +70,17 @@
 
                 <!-- Payment Form Section -->
                 <section class="payment-details">
-                    <h2 class="payment-section-title">Payment Details</h2>
-                    <form class="payment-form" id="paymentForm">
-                        <div class="payment-form-field">
-                            <label for="customerName">Name</label>
-                            <input type="text" id="customerName" name="name" required placeholder="John Doe">
-                        </div>
-                        <div class="payment-form-field">
-                            <label for="customerEmail">Email</label>
-                            <input type="email" id="customerEmail" name="email" required placeholder="john@example.com">
-                        </div>
-                        <div class="payment-form-field">
-                            <label for="cardNumber">Card Number</label>
-                            <input type="text" id="cardNumber" name="cardNumber" required placeholder="1234 5678 9012 3456" maxlength="19">
-                        </div>
-                        <div class="payment-form-row">
-                            <div class="payment-form-field">
-                                <label for="expiryDate">Expiry Date</label>
-                                <input type="text" id="expiryDate" name="expiryDate" required placeholder="MM/YY" maxlength="5">
-                            </div>
-                            <div class="payment-form-field">
-                                <label for="cvv">CVV</label>
-                                <input type="text" id="cvv" name="cvv" required placeholder="123" maxlength="4">
-                            </div>
-                        </div>
-                        <button type="submit" class="payment-pay-btn" id="confirmPayBtn">Confirm and Pay</button>
-                    </form>
+                    <h2 class="payment-section-title">Complete Your Purchase</h2>
+                    <p class="payment-description" style="color: #e0e0e0; margin-bottom: 25px; line-height: 1.6;">
+                        Click the button below to proceed to Stripe's secure checkout page. You'll be redirected to complete your payment safely.
+                    </p>
+                    <div class="payment-form-field">
+                        <label for="customerEmail">Email Address *</label>
+                        <input type="email" id="customerEmail" name="email" required placeholder="your.email@example.com" autocomplete="email">
+                        <small style="display: block; color: #888888; font-size: 0.85rem; margin-top: 5px;">We'll send your download links to this email</small>
+                    </div>
+                    <div id="paymentMessage" class="payment-message" style="display: none; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.95rem;"></div>
+                    <button type="button" class="payment-pay-btn" id="checkoutBtn">Checkout</button>
                 </section>
             </div>
         </div>
@@ -162,37 +147,93 @@
             }
         }
 
-        // Format card number input
-        document.getElementById('cardNumber')?.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\s/g, '');
-            let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
-            e.target.value = formatted;
-        });
-
-        // Format expiry date input
-        document.getElementById('expiryDate')?.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length >= 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+        // Stripe Checkout handler
+        async function handleCheckout() {
+            const cart = CartUtils.getCart();
+            const paymentMessage = document.getElementById('paymentMessage');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            const customerEmail = document.getElementById('customerEmail')?.value.trim();
+            
+            if (!cart || cart.length === 0) {
+                showPaymentMessage('Your cart is empty. Please add items before checkout.', false);
+                return;
             }
-            e.target.value = value;
-        });
 
-        // Handle form submission
-        document.getElementById('paymentForm')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            // Show success message
-            alert('Payment Successful!');
-            
-            // Clear cart
-            Cart.clear();
-            
-            // Redirect to home or gallery
-            setTimeout(() => {
-                window.location.href = 'gallery.html';
-            }, 500);
-        });
+            if (!customerEmail) {
+                showPaymentMessage('Please enter your email address.', false);
+                return;
+            }
+
+            // Disable button and show loading
+            if (checkoutBtn) {
+                checkoutBtn.disabled = true;
+                checkoutBtn.textContent = 'Processing...';
+            }
+
+            try {
+                // Prepare cart items for Stripe
+                const items = cart.map(item => ({
+                    name: item.title,
+                    description: 'High-resolution digital photography print',
+                    price: item.price,
+                    quantity: item.quantity
+                }));
+
+                // Create checkout session
+                const res = await fetch(CHECKOUT_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        items: items,
+                        customer_email: customerEmail,
+                        success_url: window.location.origin + '/payment-success.html?session_id={CHECKOUT_SESSION_ID}',
+                        cancel_url: window.location.origin + '/payment-cancel.html'
+                    })
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.message || 'Failed to create checkout session');
+                }
+
+                const { id } = await res.json();
+                
+                // Redirect to Stripe Checkout
+                const result = await stripe.redirectToCheckout({ sessionId: id });
+                
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+
+            } catch (error) {
+                console.error('Checkout error:', error);
+                showPaymentMessage('An error occurred. Please try again. ' + error.message, false);
+                
+                // Re-enable button
+                if (checkoutBtn) {
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.textContent = 'Checkout';
+                }
+            }
+        }
+
+        function showPaymentMessage(message, isSuccess) {
+            const paymentMessage = document.getElementById('paymentMessage');
+            if (paymentMessage) {
+                paymentMessage.textContent = message;
+                paymentMessage.className = isSuccess ? 'payment-message payment-message-success' : 'payment-message payment-message-error';
+                paymentMessage.style.display = 'block';
+                
+                setTimeout(() => {
+                    paymentMessage.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Attach checkout handler
+        document.getElementById('checkoutBtn')?.addEventListener('click', handleCheckout);
 
         // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');

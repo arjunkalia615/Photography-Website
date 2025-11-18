@@ -79,7 +79,7 @@
                             <h3 style="font-size: 1rem; margin-bottom: 10px; color: #ffffff;">📦 Digital Product Delivery</h3>
                             <p style="color: #e0e0e0; line-height: 1.6; margin: 0;">After payment, you will receive a download link via email within 24 hours. Your digital photography prints will be delivered as high-resolution JPEG files suitable for printing.</p>
                         </div>
-                        <button class="cart-proceed-btn" id="proceedToPayment" disabled>Proceed to Payment</button>
+                        <button class="cart-proceed-btn" id="checkoutBtn" disabled>Checkout</button>
                         <a href="gallery.html" class="cart-continue-shopping">Continue Shopping</a>
                     </div>
                 </div>
@@ -109,10 +109,18 @@
         </div>
     </footer>
 
+    <!-- Stripe.js library -->
+    <script src="https://js.stripe.com/v3/"></script>
     <script src="cart.js"></script>
     <script src="watermark-protection.js"></script>
     <script src="blur-up.js"></script>
     <script>
+        // Initialize Stripe with publishable key
+        const stripe = Stripe("pk_live_51SUISK2cmeiwN9KC1HMjyswAEDlAyQvn4mqB7DU37ZQRx1xJAtP6a7wDrFgRez0M0T499VhCcHYwAnuiba8uQixK00K82cy4wy");
+        
+        // Backend API endpoint (update this to your actual backend URL when deployed)
+        const API_BASE_URL = window.location.origin; // Use same origin, or set to your backend URL
+        const CHECKOUT_ENDPOINT = `${API_BASE_URL}/api/create-checkout-session`;
         // Cart Page Script
         function renderCart() {
             const cart = CartUtils.getCart();
@@ -137,7 +145,8 @@
             if (cart.length === 0) {
                 if (itemsList) itemsList.style.display = 'none';
                 if (emptyState) emptyState.style.display = 'block';
-                if (proceedBtn) proceedBtn.disabled = true;
+                const checkoutBtn = document.getElementById('checkoutBtn');
+            if (checkoutBtn) checkoutBtn.disabled = true;
                 if (summaryItemCount) summaryItemCount.textContent = '0';
                 if (summarySubtotal) summarySubtotal.textContent = '$0.00';
                 if (summaryTotal) summaryTotal.textContent = '$0.00';
@@ -146,7 +155,8 @@
 
             if (itemsList) itemsList.style.display = 'block';
             if (emptyState) emptyState.style.display = 'none';
-            if (proceedBtn) proceedBtn.disabled = false;
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            if (checkoutBtn) checkoutBtn.disabled = false;
 
             // Render items
             if (itemsList) {
@@ -206,10 +216,73 @@
             }
         });
 
-        // Proceed to payment
-        document.getElementById('proceedToPayment')?.addEventListener('click', () => {
-            window.location.href = 'payment.html';
-        });
+        // Stripe Checkout handler
+        async function handleCheckout() {
+            const cart = CartUtils.getCart();
+            
+            if (!cart || cart.length === 0) {
+                alert('Your cart is empty. Please add items before checkout.');
+                return;
+            }
+
+            // Disable button and show loading
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            if (checkoutBtn) {
+                checkoutBtn.disabled = true;
+                checkoutBtn.textContent = 'Processing...';
+            }
+
+            try {
+                // Prepare cart items for Stripe
+                const items = cart.map(item => ({
+                    name: item.title,
+                    description: 'High-resolution digital photography print',
+                    price: item.price,
+                    quantity: item.quantity
+                }));
+
+                // Create checkout session
+                const res = await fetch(CHECKOUT_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        items: items,
+                        success_url: window.location.origin + '/payment-success.html?session_id={CHECKOUT_SESSION_ID}',
+                        cancel_url: window.location.origin + '/payment-cancel.html'
+                    })
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.message || 'Failed to create checkout session');
+                }
+
+                const { id } = await res.json();
+                
+                // Redirect to Stripe Checkout
+                const result = await stripe.redirectToCheckout({ sessionId: id });
+                
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('An error occurred. Please try again. ' + error.message);
+                
+                // Re-enable button
+                const checkoutBtn = document.getElementById('checkoutBtn');
+                if (checkoutBtn) {
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.textContent = 'Checkout';
+                }
+            }
+        }
+
+        // Attach checkout handler
+        document.getElementById('checkoutBtn')?.addEventListener('click', handleCheckout);
 
         // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');

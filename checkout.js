@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.static('public')); // Serve static files if needed
 
 /**
- * POST /create-checkout-session
+ * POST /api/create-checkout-session
  * Creates a Stripe Checkout session for digital photo downloads
  * 
  * Expected request body:
@@ -27,7 +27,7 @@ app.use(express.static('public')); // Serve static files if needed
  *   "cancel_url": "https://www.ifeelworld.com/payment-cancel.html"
  * }
  */
-app.post('/create-checkout-session', async (req, res) => {
+app.post('/api/create-checkout-session', async (req, res) => {
     try {
         // Validate Stripe secret key is set
         if (!process.env.STRIPE_SECRET_KEY) {
@@ -105,10 +105,9 @@ app.post('/create-checkout-session', async (req, res) => {
             billing_address_collection: 'auto', // 'auto', 'required', or 'auto'
         });
 
-        // Return the session URL for redirect
+        // Return the session ID for redirect (matching Stripe.js redirectToCheckout pattern)
         res.json({
-            sessionId: session.id,
-            url: session.url
+            id: session.id
         });
 
     } catch (error) {
@@ -152,7 +151,7 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`Stripe Checkout endpoint: http://localhost:${PORT}/create-checkout-session`);
+    console.log(`Stripe Checkout endpoint: http://localhost:${PORT}/api/create-checkout-session`);
 });
 
 module.exports = app;
