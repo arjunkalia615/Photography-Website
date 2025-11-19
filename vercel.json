@@ -3,12 +3,6 @@
     "api/**/*.{js,ts}": {
       "runtime": "nodejs22.x"
     }
-  },
-  "rewrites": [
-    {
-      "source": "/api/create-checkout-session",
-      "destination": "/api/create-checkout-session.js"
-    }
-  ]
+  }
 }
 
