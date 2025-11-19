@@ -4,7 +4,7 @@
   "description": "Stripe Checkout backend for ifeelworld digital photography store",
   "main": "checkout.js",
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   },
   "scripts": {
     "start": "node checkout.js",
