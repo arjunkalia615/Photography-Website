@@ -1,8 +1,6 @@
 {
   "functions": {
-    "api/**/*.{js,ts}": {
-      "runtime": "nodejs22.x"
-    }
+    "api/**/*.{js,ts}": {}
   }
 }
 

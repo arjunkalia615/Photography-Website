@@ -2,6 +2,9 @@
   "name": "ifeelworld-checkout",
   "version": "1.0.0",
   "description": "Stripe Checkout backend for ifeelworld digital photography store",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {},
   "dependencies": {
     "stripe": "^14.0.0"
