@@ -6,7 +6,7 @@
 **Problem**: The API route didn't explicitly specify Node.js runtime, which could cause Vercel to use Edge runtime by default. Edge runtime cannot access secure environment variables.
 
 **Fix Applied**:
-- Added explicit `runtime: "nodejs18.x"` in `vercel.json`
+- Added explicit `runtime: "nodejs22.x"` in `vercel.json`
 - This ensures the function uses Node.js runtime which can access `process.env.STRIPE_SECRET_KEY`
 
 ### 2. ✅ **Variable Name Verification** (ENHANCED)
@@ -32,7 +32,7 @@
 - ✅ Enhanced error messages with available env vars
 
 ### `vercel.json`
-- ✅ Added explicit `"runtime": "nodejs18.x"` to function config
+- ✅ Added explicit `"runtime": "nodejs22.x"` to function config
 - ✅ This ensures Node.js runtime (not Edge) is used
 
 ## Verification Steps
@@ -116,11 +116,11 @@ If you still get the error after these fixes:
 
 4. **Check Runtime**:
    - In Vercel Dashboard → Functions → `api/create-checkout-session`
-   - Verify it shows "Node.js 18.x" runtime (not Edge)
+   - Verify it shows "Node.js 22.x" runtime (not Edge)
 
 ## Summary
 
-✅ **Runtime**: Now explicitly set to `nodejs18.x` in `vercel.json`
+✅ **Runtime**: Now explicitly set to `nodejs22.x` in `vercel.json`
 ✅ **Export Format**: Standard Vercel format
 ✅ **Debug Logging**: Added to help identify issues
 ✅ **Error Messages**: Enhanced with available env vars
