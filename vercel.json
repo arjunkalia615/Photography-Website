@@ -1,9 +1,7 @@
 {
-  "version": 2,
   "functions": {
-    "api/create-checkout-session.js": {
-      "runtime": "nodejs22.x",
-      "maxDuration": 10
+    "api/**/*.js": {
+      "runtime": "nodejs22.x"
     }
   },
   "rewrites": [
