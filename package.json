@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Stripe Checkout backend for ifeelworld digital photography store",
   "main": "checkout.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "start": "node checkout.js",
     "dev": "nodemon checkout.js"
