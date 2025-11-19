@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Stripe.js library -->
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -112,6 +114,13 @@
     <script src="watermark-protection.js"></script>
     <script src="blur-up.js"></script>
     <script>
+        // Initialize Stripe with publishable key
+        const stripe = Stripe("pk_live_51SUISK2cmeiwN9KC1HMjyswAEDlAyQvn4mqB7DU37ZQRx1xJAtP6a7wDrFgRez0M0T499VhCcHYwAnuiba8uQixK00K82cy4wy");
+        
+        // Backend API endpoint (update this to your actual backend URL when deployed)
+        const API_BASE_URL = window.location.origin; // Use same origin, or set to your backend URL
+        const CHECKOUT_ENDPOINT = `${API_BASE_URL}/api/create-checkout-session`;
+        
         // Payment Page Script
         function renderOrderSummary() {
             const cart = CartUtils.getCart();
