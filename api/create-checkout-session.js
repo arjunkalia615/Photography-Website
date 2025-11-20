@@ -1,6 +1,9 @@
 // Explicitly set Node.js runtime (required for accessing environment variables)
 // Edge runtime cannot access secure environment variables like STRIPE_SECRET_KEY
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// Note: Stripe instance is initialized inside the handler function
+// to dynamically select the correct key based on USE_TEST_STRIPE flag
+const stripe = require('stripe');
 
 /**
  * Vercel Serverless Function
@@ -42,36 +45,49 @@ async function handler(req, res) {
         });
     }
 
-    // Temporary debug log to check which Stripe key is being used
-    console.log("Stripe key prefix:", process.env.STRIPE_SECRET_KEY?.slice(0, 7));
-
     try {
-        // Debug: Log environment variable status (without exposing the key)
-        const hasStripeKey = !!process.env.STRIPE_SECRET_KEY;
-        const keyLength = process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.length : 0;
-        const keyPrefix = process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 7) : 'none';
+        // Determine which Stripe key to use based on USE_TEST_STRIPE flag
+        const useTestMode = process.env.USE_TEST_STRIPE === 'true';
+        const stripeSecretKey = useTestMode 
+            ? process.env.STRIPE_SECRET_KEY_TEST 
+            : process.env.STRIPE_SECRET_KEY;
         
-        console.log('Environment check:', {
-            hasStripeKey,
-            keyLength,
+        // Debug: Log environment variable status (without exposing the key)
+        const keyPrefix = stripeSecretKey ? stripeSecretKey.substring(0, 7) : 'none';
+        const mode = useTestMode ? 'TEST' : 'LIVE';
+        
+        console.log('Stripe Configuration:', {
+            mode: mode,
             keyPrefix: keyPrefix + '...',
-            allEnvKeys: Object.keys(process.env).filter(k => k.includes('STRIPE')).join(', ')
+            useTestMode: useTestMode,
+            hasTestKey: !!process.env.STRIPE_SECRET_KEY_TEST,
+            hasLiveKey: !!process.env.STRIPE_SECRET_KEY,
+            allStripeEnvKeys: Object.keys(process.env).filter(k => k.includes('STRIPE')).join(', ')
         });
 
+        // Temporary debug log to check which Stripe key is being used
+        console.log("Stripe key prefix:", stripeSecretKey?.slice(0, 7));
+
         // Validate Stripe secret key is set
-        if (!process.env.STRIPE_SECRET_KEY) {
-            console.error('STRIPE_SECRET_KEY environment variable is not set');
+        if (!stripeSecretKey) {
+            const expectedKey = useTestMode ? 'STRIPE_SECRET_KEY_TEST' : 'STRIPE_SECRET_KEY';
+            console.error(`${expectedKey} environment variable is not set`);
             console.error('Available environment variables with "STRIPE":', 
                 Object.keys(process.env).filter(k => k.includes('STRIPE')));
             return res.status(500).json({
                 error: 'Server configuration error',
-                message: 'Stripe secret key not configured. Please set STRIPE_SECRET_KEY environment variable in Vercel.',
+                message: `Stripe secret key not configured. Please set ${expectedKey} environment variable in Vercel.`,
                 debug: {
-                    hint: 'Check that the variable name is exactly "STRIPE_SECRET_KEY" (case-sensitive, no spaces)',
+                    mode: mode,
+                    expectedKey: expectedKey,
+                    hint: `Check that the variable name is exactly "${expectedKey}" (case-sensitive, no spaces)`,
                     availableStripeVars: Object.keys(process.env).filter(k => k.includes('STRIPE'))
                 }
             });
         }
+        
+        // Initialize Stripe with the correct key based on USE_TEST_STRIPE flag
+        const stripeInstance = stripe(stripeSecretKey);
 
         // Parse request body
         let body;
@@ -127,7 +143,7 @@ async function handler(req, res) {
         }));
 
         // Create Stripe Checkout Session
-        const session = await stripe.checkout.sessions.create({
+        const session = await stripeInstance.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: lineItems,
             mode: 'payment', // For one-time payments

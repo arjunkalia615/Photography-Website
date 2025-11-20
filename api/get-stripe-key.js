@@ -25,17 +25,37 @@ async function handler(req, res) {
     }
 
     try {
-        // Get publishable key from environment variable
-        // Vercel will automatically use the correct key based on environment:
-        // - Preview/Development: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (test key)
-        // - Production: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (live key)
-        const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+        // Determine which Stripe publishable key to use based on USE_TEST_STRIPE flag
+        // USE_TEST_STRIPE='true' → use test key (NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST)
+        // USE_TEST_STRIPE='false' or not set → use live key (NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+        const useTestMode = process.env.USE_TEST_STRIPE === 'true';
+        const publishableKey = useTestMode 
+            ? process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST 
+            : process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+        
+        const mode = useTestMode ? 'TEST' : 'LIVE';
+        const expectedKey = useTestMode 
+            ? 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST' 
+            : 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY';
+        
+        console.log('Stripe Publishable Key Configuration:', {
+            mode: mode,
+            useTestMode: useTestMode,
+            hasTestKey: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST,
+            hasLiveKey: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+            keyPrefix: publishableKey ? publishableKey.substring(0, 7) : 'none'
+        });
 
         if (!publishableKey) {
-            console.error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY environment variable is not set');
+            console.error(`${expectedKey} environment variable is not set`);
             return res.status(500).json({
                 error: 'Server configuration error',
-                message: 'Stripe publishable key not configured. Please set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY environment variable in Vercel.'
+                message: `Stripe publishable key not configured. Please set ${expectedKey} environment variable in Vercel.`,
+                debug: {
+                    mode: mode,
+                    expectedKey: expectedKey,
+                    availableStripeVars: Object.keys(process.env).filter(k => k.includes('STRIPE')).join(', ')
+                }
             });
         }
 
