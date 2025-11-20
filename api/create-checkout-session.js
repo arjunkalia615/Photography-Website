@@ -42,6 +42,9 @@ async function handler(req, res) {
         });
     }
 
+    // Temporary debug log to check which Stripe key is being used
+    console.log("Stripe key prefix:", process.env.STRIPE_SECRET_KEY?.slice(0, 7));
+
     try {
         // Debug: Log environment variable status (without exposing the key)
         const hasStripeKey = !!process.env.STRIPE_SECRET_KEY;
