@@ -114,12 +114,40 @@
     <script src="watermark-protection.js"></script>
     <script src="blur-up.js"></script>
     <script>
-        // Initialize Stripe with publishable key
-        const stripe = Stripe("pk_live_51SUISK2cmeiwN9KC1HMjyswAEDlAyQvn4mqB7DU37ZQRx1xJAtP6a7wDrFgRez0M0T499VhCcHYwAnuiba8uQixK00K82cy4wy");
+        // Initialize Stripe with publishable key from environment variable
+        let stripe = null;
         
         // Backend API endpoint (update this to your actual backend URL when deployed)
         const API_BASE_URL = window.location.origin; // Use same origin, or set to your backend URL
         const CHECKOUT_ENDPOINT = `${API_BASE_URL}/api/create-checkout-session`;
+        const STRIPE_KEY_ENDPOINT = `${API_BASE_URL}/api/get-stripe-key`;
+        
+        // Fetch Stripe publishable key from environment variable via API
+        async function initializeStripe() {
+            try {
+                const response = await fetch(STRIPE_KEY_ENDPOINT);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch Stripe publishable key');
+                }
+                const data = await response.json();
+                if (!data.publishableKey) {
+                    throw new Error('Stripe publishable key not found in response');
+                }
+                stripe = Stripe(data.publishableKey);
+            } catch (error) {
+                console.error('Error initializing Stripe:', error);
+                // Show user-friendly error message
+                const paymentMessage = document.getElementById('paymentMessage');
+                if (paymentMessage) {
+                    paymentMessage.textContent = 'Unable to initialize payment system. Please refresh the page or contact support.';
+                    paymentMessage.className = 'payment-message payment-message-error';
+                    paymentMessage.style.display = 'block';
+                }
+            }
+        }
+        
+        // Initialize Stripe on page load
+        initializeStripe();
         
         // Payment Page Script
         function renderOrderSummary() {
@@ -158,6 +186,15 @@
 
         // Stripe Checkout handler
         async function handleCheckout() {
+            // Ensure Stripe is initialized
+            if (!stripe) {
+                await initializeStripe();
+                if (!stripe) {
+                    showPaymentMessage('Payment system is not ready. Please try again in a moment.', false);
+                    return;
+                }
+            }
+            
             const cart = CartUtils.getCart();
             const paymentMessage = document.getElementById('paymentMessage');
             const checkoutBtn = document.getElementById('checkoutBtn');

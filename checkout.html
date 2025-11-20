@@ -125,15 +125,38 @@
     <script src="cart.js"></script>
     <script src="blur-up.js"></script>
     <script>
-        // Initialize Stripe with publishable key
-        const stripe = Stripe("pk_live_51SUISK2cmeiwN9KC1HMjyswAEDlAyQvn4mqB7DU37ZQRx1xJAtP6a7wDrFgRez0M0T499VhCcHYwAnuiba8uQixK00K82cy4wy");
+        // Initialize Stripe with publishable key from environment variable
+        let stripe = null;
         
         // Backend API endpoint
         // Update this to your actual backend URL when deployed
         // For local development: 'http://localhost:3000'
         // For production: 'https://your-backend-domain.com'
-        const BACKEND_URL = 'http://localhost:3000'; // TODO: Update this to your deployed backend URL
-        const CHECKOUT_ENDPOINT = `${BACKEND_URL}/create-checkout-session`;
+        const BACKEND_URL = window.location.origin; // Use same origin
+        const CHECKOUT_ENDPOINT = `${BACKEND_URL}/api/create-checkout-session`;
+        const STRIPE_KEY_ENDPOINT = `${BACKEND_URL}/api/get-stripe-key`;
+        
+        // Fetch Stripe publishable key from environment variable via API
+        async function initializeStripe() {
+            try {
+                const response = await fetch(STRIPE_KEY_ENDPOINT);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch Stripe publishable key');
+                }
+                const data = await response.json();
+                if (!data.publishableKey) {
+                    throw new Error('Stripe publishable key not found in response');
+                }
+                stripe = Stripe(data.publishableKey);
+            } catch (error) {
+                console.error('Error initializing Stripe:', error);
+                // Show user-friendly error message
+                showMessage('Unable to initialize payment system. Please refresh the page or contact support.', false);
+            }
+        }
+        
+        // Initialize Stripe on page load
+        initializeStripe();
 
         // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
@@ -216,6 +239,15 @@
         checkoutForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            // Ensure Stripe is initialized
+            if (!stripe) {
+                await initializeStripe();
+                if (!stripe) {
+                    showMessage('Payment system is not ready. Please try again in a moment.', false);
+                    return;
+                }
+            }
+
             // Get cart items
             const items = loadOrderSummary();
             
@@ -257,11 +289,16 @@
                     throw new Error(data.message || 'Failed to create checkout session');
                 }
 
-                // Redirect to Stripe Checkout
-                if (data.url) {
+                // Redirect to Stripe Checkout using session ID
+                if (data.id && stripe) {
+                    const result = await stripe.redirectToCheckout({ sessionId: data.id });
+                    if (result.error) {
+                        throw new Error(result.error.message);
+                    }
+                } else if (data.url) {
                     window.location.href = data.url;
                 } else {
-                    throw new Error('No checkout URL received');
+                    throw new Error('No checkout URL or session ID received');
                 }
 
             } catch (error) {
