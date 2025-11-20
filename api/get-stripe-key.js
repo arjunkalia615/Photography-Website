@@ -43,18 +43,39 @@ async function handler(req, res) {
             useTestMode: useTestMode,
             hasTestKey: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST,
             hasLiveKey: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-            keyPrefix: publishableKey ? publishableKey.substring(0, 7) : 'none'
+            keyPrefix: publishableKey ? publishableKey.substring(0, 7) : 'none',
+            keyLength: publishableKey ? publishableKey.length : 0
         });
 
         if (!publishableKey) {
             console.error(`${expectedKey} environment variable is not set`);
+            const availableVars = Object.keys(process.env).filter(k => k.includes('STRIPE'));
+            console.error('Available Stripe environment variables:', availableVars);
+            
             return res.status(500).json({
                 error: 'Server configuration error',
                 message: `Stripe publishable key not configured. Please set ${expectedKey} environment variable in Vercel.`,
                 debug: {
                     mode: mode,
                     expectedKey: expectedKey,
-                    availableStripeVars: Object.keys(process.env).filter(k => k.includes('STRIPE')).join(', ')
+                    availableStripeVars: availableVars,
+                    useTestMode: useTestMode
+                }
+            });
+        }
+
+        // Validate key format
+        if (typeof publishableKey !== 'string' || publishableKey.length < 10) {
+            console.error('Invalid publishable key format:', {
+                type: typeof publishableKey,
+                length: publishableKey?.length
+            });
+            return res.status(500).json({
+                error: 'Server configuration error',
+                message: 'Invalid Stripe publishable key format. Please check your environment variable.',
+                debug: {
+                    mode: mode,
+                    expectedKey: expectedKey
                 }
             });
         }

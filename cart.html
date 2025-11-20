@@ -117,6 +117,8 @@
     <script>
         // Initialize Stripe with publishable key from environment variable
         let stripe = null;
+        let stripeInitializing = false;
+        let stripeInitialized = false;
         
         // Backend API endpoint (update this to your actual backend URL when deployed)
         const API_BASE_URL = window.location.origin; // Use same origin, or set to your backend URL
@@ -125,20 +127,48 @@
         
         // Fetch Stripe publishable key from environment variable via API
         async function initializeStripe() {
+            // Prevent multiple simultaneous initialization attempts
+            if (stripeInitializing) {
+                return;
+            }
+            
+            if (stripeInitialized && stripe) {
+                return;
+            }
+            
+            stripeInitializing = true;
+            
             try {
+                console.log('Initializing Stripe...');
                 const response = await fetch(STRIPE_KEY_ENDPOINT);
+                
                 if (!response.ok) {
-                    throw new Error('Failed to fetch Stripe publishable key');
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Failed to fetch Stripe key:', response.status, errorData);
+                    throw new Error(errorData.message || `Server error: ${response.status}`);
                 }
+                
                 const data = await response.json();
+                console.log('Stripe key response:', { hasKey: !!data.publishableKey, keyPrefix: data.publishableKey?.substring(0, 7) });
+                
                 if (!data.publishableKey) {
                     throw new Error('Stripe publishable key not found in response');
                 }
+                
+                if (typeof data.publishableKey !== 'string' || data.publishableKey.length < 10) {
+                    throw new Error('Invalid Stripe publishable key format');
+                }
+                
                 stripe = Stripe(data.publishableKey);
+                stripeInitialized = true;
+                console.log('Stripe initialized successfully');
             } catch (error) {
                 console.error('Error initializing Stripe:', error);
-                // Show user-friendly error message
-                alert('Unable to initialize payment system. Please refresh the page or contact support.');
+                stripe = null;
+                stripeInitialized = false;
+                alert('Unable to initialize payment system. Please refresh the page or contact support. Error: ' + error.message);
+            } finally {
+                stripeInitializing = false;
             }
         }
         
@@ -242,10 +272,12 @@
         // Stripe Checkout handler
         async function handleCheckout() {
             // Ensure Stripe is initialized
-            if (!stripe) {
+            if (!stripe || !stripeInitialized) {
+                // Try to initialize
                 await initializeStripe();
-                if (!stripe) {
-                    alert('Payment system is not ready. Please try again in a moment.');
+                
+                if (!stripe || !stripeInitialized) {
+                    alert('Payment system initialization failed. Please refresh the page or contact support.');
                     return;
                 }
             }
