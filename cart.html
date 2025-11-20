@@ -145,7 +145,20 @@
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     console.error('Failed to fetch Stripe key:', response.status, errorData);
-                    throw new Error(errorData.message || `Server error: ${response.status}`);
+                    
+                    // Include debug info in error message if available
+                    let errorMsg = errorData.message || `Server error: ${response.status}`;
+                    if (errorData.debug) {
+                        console.error('Debug info:', errorData.debug);
+                        // Add helpful hint about Vercel environment
+                        if (errorData.debug.vercelEnv) {
+                            errorMsg += `\n\nVercel Environment: ${errorData.debug.vercelEnv}`;
+                        }
+                        if (errorData.debug.availableStripeVars && errorData.debug.availableStripeVars.length > 0) {
+                            errorMsg += `\nAvailable Variables: ${errorData.debug.availableStripeVars.join(', ')}`;
+                        }
+                    }
+                    throw new Error(errorMsg);
                 }
                 
                 const data = await response.json();

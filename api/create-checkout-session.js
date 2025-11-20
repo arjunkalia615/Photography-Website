@@ -52,21 +52,7 @@ async function handler(req, res) {
             ? process.env.STRIPE_SECRET_KEY_TEST 
             : process.env.STRIPE_SECRET_KEY;
         
-        // Debug: Log environment variable status (without exposing the key)
-        const keyPrefix = stripeSecretKey ? stripeSecretKey.substring(0, 7) : 'none';
         const mode = useTestMode ? 'TEST' : 'LIVE';
-        
-        console.log('Stripe Configuration:', {
-            mode: mode,
-            keyPrefix: keyPrefix + '...',
-            useTestMode: useTestMode,
-            hasTestKey: !!process.env.STRIPE_SECRET_KEY_TEST,
-            hasLiveKey: !!process.env.STRIPE_SECRET_KEY,
-            allStripeEnvKeys: Object.keys(process.env).filter(k => k.includes('STRIPE')).join(', ')
-        });
-
-        // Temporary debug log to check which Stripe key is being used
-        console.log("Stripe key prefix:", stripeSecretKey?.slice(0, 7));
 
         // Validate Stripe secret key is set
         if (!stripeSecretKey) {
