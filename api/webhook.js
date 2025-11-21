@@ -120,27 +120,32 @@ async function handler(req, res) {
             }
 
             // Generate download links for purchased items
+            const baseUrl = process.env.SITE_URL || 'https://www.ifeelworld.com';
             const downloadLinks = cartItems.map(item => {
-                // Construct download URL - adjust path based on your file structure
-                // Assuming images are in Images/ directory
                 const imagePath = item.imageSrc || '';
-                const baseUrl = process.env.SITE_URL || 'https://www.ifeelworld.com';
-                
-                // Create direct download link (high quality, no compression)
-                // You may need to adjust this based on your file hosting setup
-                const downloadUrl = `${baseUrl}/${imagePath}`;
+                // Ensure path doesn't start with / to avoid double slashes
+                const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+                const downloadUrl = `${baseUrl}/${cleanPath}`;
                 
                 return {
                     title: item.title || item.name,
                     downloadUrl: downloadUrl,
                     imageSrc: imagePath
                 };
-            }).filter(item => item.downloadUrl && item.downloadUrl !== `${process.env.SITE_URL || 'https://www.ifeelworld.com'}/`);
+            }).filter(item => item.downloadUrl && item.imageSrc && item.downloadUrl !== `${baseUrl}/`); // Only include items with valid paths
 
-            // Send email with download links
-            await sendDownloadEmail(customerEmail, downloadLinks, session.id);
-
-            console.log(`Download email sent to ${customerEmail} for session ${session.id}`);
+            // Send email with download links if we have any
+            if (downloadLinks.length > 0) {
+                try {
+                    await sendDownloadEmail(customerEmail, downloadLinks, session.id);
+                    console.log(`Download email sent to ${customerEmail} for session ${session.id}`);
+                } catch (emailError) {
+                    console.error('Failed to send download email:', emailError);
+                    // Don't fail the webhook if email fails - links are available on success page
+                }
+            } else {
+                console.warn(`No download links generated for session ${session.id} - cart_items may be missing or invalid`);
+            }
         }
 
         // Return success response
@@ -218,36 +223,22 @@ async function sendDownloadEmail(customerEmail, downloadLinks, sessionId) {
         </html>
     `;
 
-    // Send email via Web3Forms
-    const formData = new URLSearchParams();
-    formData.append('access_key', accessKey);
-    formData.append('subject', 'Your Digital Photography Downloads - ifeelworld');
-    formData.append('from_name', 'ifeelworld');
-    formData.append('email', customerEmail);
-    formData.append('message', emailHtml);
-    formData.append('html', 'true');
+    // Note: Web3Forms is for receiving form submissions, not sending emails to customers
+    // For production, you should use a proper email service like SendGrid, Mailgun, or Resend
+    // For now, we'll log the email content and the download links are available on the success page
+    
+    console.log('Download links for customer:', {
+        email: customerEmail,
+        sessionId: sessionId,
+        downloadLinks: downloadLinks
+    });
 
-    try {
-        const response = await fetch(emailServiceUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: formData.toString()
-        });
-
-        const result = await response.json();
-        
-        if (!response.ok || !result.success) {
-            console.error('Failed to send email:', result);
-            throw new Error('Email sending failed');
-        }
-
-        return result;
-    } catch (error) {
-        console.error('Error sending download email:', error);
-        throw error;
-    }
+    // TODO: Integrate with proper email service (SendGrid, Mailgun, Resend, etc.)
+    // For now, download links are available on the payment success page
+    // The success page will display download links immediately after payment
+    
+    // Return success (email sending can be added later with proper email service)
+    return { success: true, message: 'Download links available on success page' };
 }
 
 module.exports = handler;

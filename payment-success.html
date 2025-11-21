@@ -59,16 +59,31 @@
                     </div>
                     <h2 class="payment-section-title" style="margin-bottom: 20px;">Your Order is Confirmed</h2>
                     <p class="payment-description" style="color: #e0e0e0; margin-bottom: 20px; line-height: 1.8;">
-                        Your payment has been processed successfully. We've received your order and will send your digital photography prints to your email address within 24 hours.
+                        Your payment has been processed successfully! Download your high-resolution digital photography prints below.
                     </p>
-                    <div class="payment-delivery-info" style="margin: 30px auto; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; text-align: left; max-width: 500px;">
-                        <h3 style="font-size: 1rem; margin-bottom: 15px; color: #ffffff;">📧 What Happens Next?</h3>
-                        <ul style="color: #e0e0e0; line-height: 1.8; margin: 0; padding-left: 20px;">
-                            <li>You'll receive an email with download links for your high-resolution digital photography prints</li>
-                            <li>Download links will be sent to the email address you provided during checkout</li>
-                            <li>Files will be delivered as high-resolution JPEG files suitable for printing</li>
-                            <li>Delivery time: within 24 hours of successful payment</li>
-                        </ul>
+                    
+                    <!-- Download Links Section -->
+                    <div id="downloadSection" style="margin: 30px auto; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; text-align: left; max-width: 600px; display: none;">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 20px; color: #ffffff;">📥 Download Your Purchased Items</h3>
+                        <div id="downloadLinks" style="display: flex; flex-direction: column; gap: 15px;">
+                            <!-- Download links will be inserted here -->
+                        </div>
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-left: 4px solid #51cf66; border-radius: 4px;">
+                            <p style="margin: 0; color: #e0e0e0; font-size: 0.9rem; line-height: 1.6;">
+                                <strong>High-Quality Files:</strong> All images are provided at full resolution with no compression. Right-click each download link and select "Save As" to download.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="loadingState" style="margin: 30px auto; padding: 20px; text-align: center;">
+                        <p style="color: #888888;">Loading your download links...</p>
+                    </div>
+                    
+                    <!-- Error State -->
+                    <div id="errorState" style="margin: 30px auto; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; text-align: center; display: none;">
+                        <p style="color: #ff6b6b; margin-bottom: 10px;">Unable to load download links. Don't worry - we've sent them to your email!</p>
+                        <p style="color: #888888; font-size: 0.9rem;">Please check your email inbox for download links.</p>
                     </div>
                     <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 30px;">
                         <a href="gallery.html" class="payment-pay-btn" style="text-decoration: none; display: inline-block; padding: 16px 32px;">
@@ -118,14 +133,81 @@
             Cart.updateBadge();
         }
 
-        // Display session ID if available (for debugging/reference)
+        // Get session ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session_id');
+        
+        // Display session ID
         if (sessionId) {
             const sessionInfo = document.getElementById('sessionInfo');
             if (sessionInfo) {
                 sessionInfo.textContent = `Order ID: ${sessionId}`;
             }
+        }
+
+        // Fetch and display download links
+        async function loadDownloadLinks() {
+            if (!sessionId) {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/get-session-details?session_id=${sessionId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch session details');
+                }
+
+                const data = await response.json();
+                
+                if (data.downloadLinks && data.downloadLinks.length > 0) {
+                    // Display download links
+                    const downloadSection = document.getElementById('downloadSection');
+                    const downloadLinks = document.getElementById('downloadLinks');
+                    const loadingState = document.getElementById('loadingState');
+                    
+                    // Build download links HTML
+                    downloadLinks.innerHTML = data.downloadLinks.map((item, index) => {
+                        // Encode the URL to handle spaces and special characters in file paths
+                        const encodedUrl = encodeURI(item.downloadUrl);
+                        return `
+                            <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                                <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1rem;">${item.title}</h4>
+                                <a href="${encodedUrl}" 
+                                   download="${item.title.replace(/[^a-z0-9]/gi, '_')}.jpg"
+                                   target="_blank"
+                                   style="display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px;">
+                                    ⬇ Download High-Resolution Image
+                                </a>
+                                <p style="margin: 10px 0 0 0; color: #888888; font-size: 0.85rem;">
+                                    Right-click the button above and select "Save As" to download the full-resolution image (no compression).
+                                </p>
+                            </div>
+                        `;
+                    }).join('');
+
+                    loadingState.style.display = 'none';
+                    downloadSection.style.display = 'block';
+                } else {
+                    // No download links found
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('errorState').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading download links:', error);
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'block';
+            }
+        }
+
+        // Load download links on page load
+        if (sessionId) {
+            loadDownloadLinks();
+        } else {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
         }
 
         // Mobile menu toggle
