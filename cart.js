@@ -1,6 +1,6 @@
 // Simple Cart System - Clean Implementation
 const CART_STORAGE_KEY = 'shoppingCart';
-const ITEM_PRICE = 0.10; // Price per photo (temporarily set to $0.10 for testing - minimal charge to trigger card form)
+const ITEM_PRICE = 0.50; // Price per photo (temporarily set to $0.50 for testing - Stripe minimum is $0.50 AUD)
 
 // Cart Utilities
 const CartUtils = {
