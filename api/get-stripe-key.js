@@ -44,19 +44,15 @@ async function handler(req, res) {
             expectedKey = 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST';
             publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST;
             
-            // Fallback: if test key not found but live key exists, use live key
-            if (!publishableKey && hasLiveKey) {
-                publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-            }
+            // In test mode, only use test key (no fallback to live key)
+            // This prevents accidentally using live keys in test environments
         } else {
             mode = 'LIVE';
             expectedKey = 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY';
             publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
             
-            // Fallback: if live key not found but test key exists, use test key
-            if (!publishableKey && hasTestKey) {
-                publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST;
-            }
+            // In live mode, NEVER fallback to test key
+            // This ensures production always uses live keys
         }
         
         // Get Vercel environment info

@@ -138,6 +138,10 @@ async function handler(req, res) {
             success_url: finalSuccessUrl,
             cancel_url: cancelUrl,
             
+            // Locale setting - prevents "Cannot find module './en'" error
+            // Explicitly set to 'en' to avoid locale detection issues
+            locale: 'en',
+            
             // Metadata (useful for tracking)
             metadata: {
                 order_type: 'digital_photo_download',

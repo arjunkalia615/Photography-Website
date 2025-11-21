@@ -337,9 +337,16 @@
 
                 // Redirect to Stripe Checkout using session ID
                 if (data.id && stripe) {
-                    const result = await stripe.redirectToCheckout({ sessionId: data.id });
-                    if (result.error) {
-                        throw new Error(result.error.message);
+                    try {
+                        const result = await stripe.redirectToCheckout({ sessionId: data.id });
+                        if (result.error) {
+                            throw new Error(result.error.message);
+                        }
+                    } catch (redirectError) {
+                        // If redirect fails, try direct URL redirect as fallback
+                        console.warn('Stripe redirect failed, trying direct URL:', redirectError);
+                        // Stripe checkout sessions have a URL property we can use
+                        window.location.href = `https://checkout.stripe.com/pay/${data.id}`;
                     }
                 } else if (data.url) {
                     window.location.href = data.url;
