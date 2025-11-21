@@ -1,6 +1,6 @@
 // Simple Cart System - Clean Implementation
 const CART_STORAGE_KEY = 'shoppingCart';
-const ITEM_PRICE = 0.50; // Price per photo (temporarily set to $0.50 for live payment test)
+const ITEM_PRICE = 0.00; // Price per photo (temporarily set to $0.00 for email receipt testing)
 
 // Cart Utilities
 const CartUtils = {

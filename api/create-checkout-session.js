@@ -97,10 +97,10 @@ async function handler(req, res) {
 
         // Validate each item
         for (const item of body.items) {
-            if (!item.name || typeof item.price !== 'number' || item.price <= 0) {
+            if (!item.name || typeof item.price !== 'number' || item.price < 0) {
                 return res.status(400).json({
                     error: 'Invalid request',
-                    message: 'Each item must have a name and a valid price greater than 0'
+                    message: 'Each item must have a name and a valid price (price must be 0 or greater)'
                 });
             }
         }
