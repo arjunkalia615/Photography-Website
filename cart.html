@@ -172,7 +172,10 @@
                     throw new Error('Invalid Stripe publishable key format');
                 }
                 
-                stripe = Stripe(data.publishableKey);
+                // Initialize Stripe with explicit locale to prevent module loading errors
+                stripe = Stripe(data.publishableKey, {
+                    locale: 'en'
+                });
                 stripeInitialized = true;
                 console.log('Stripe initialized successfully');
             } catch (error) {

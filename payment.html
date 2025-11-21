@@ -114,6 +114,21 @@
     <script src="watermark-protection.js"></script>
     <script src="blur-up.js"></script>
     <script>
+        // Suppress unhandled promise rejections from Stripe checkout page
+        window.addEventListener('unhandledrejection', function(event) {
+            // Suppress "Cannot find module './en'" errors from Stripe's checkout page
+            if (event.reason && typeof event.reason === 'object' && event.reason.message) {
+                if (event.reason.message.includes("Cannot find module './en'") || 
+                    event.reason.message.includes("Cannot find module") && event.reason.message.includes("en")) {
+                    event.preventDefault();
+                    console.warn('Suppressed Stripe locale module error (non-critical):', event.reason.message);
+                    return;
+                }
+            }
+            // Let other errors through
+        });
+    </script>
+    <script>
         // Initialize Stripe with publishable key from environment variable
         let stripe = null;
         let stripeInitializing = false;
@@ -171,7 +186,10 @@
                     throw new Error('Invalid Stripe publishable key format');
                 }
                 
-                stripe = Stripe(data.publishableKey);
+                // Initialize Stripe with explicit locale to prevent module loading errors
+                stripe = Stripe(data.publishableKey, {
+                    locale: 'en'
+                });
                 stripeInitialized = true;
                 console.log('Stripe initialized successfully');
             } catch (error) {
