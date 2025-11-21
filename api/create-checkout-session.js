@@ -159,8 +159,14 @@ async function handler(req, res) {
             // Allow promotion codes
             allow_promotion_codes: true,
             
-            // Billing address collection
-            billing_address_collection: 'auto',
+            // Billing address collection - always collect for consistency
+            billing_address_collection: 'required',
+            
+            // Payment intent data - force payment method collection even for $0.00 payments
+            // This ensures the payment form is always shown, regardless of price
+            payment_intent_data: {
+                setup_future_usage: 'off_session'
+            },
         });
 
         // Return the session ID for redirect
