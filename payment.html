@@ -279,8 +279,18 @@
                 return;
             }
 
+            // Validate email is provided - REQUIRED field
             if (!customerEmail) {
-                showPaymentMessage('Please enter your email address.', false);
+                showPaymentMessage('Email address is required to proceed with payment. Please enter your email.', false);
+                document.getElementById('customerEmail')?.focus();
+                return;
+            }
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(customerEmail)) {
+                showPaymentMessage('Please enter a valid email address.', false);
+                document.getElementById('customerEmail')?.focus();
                 return;
             }
 
@@ -291,9 +301,11 @@
             }
 
             try {
-                // Prepare cart items for Stripe
+                // Prepare cart items for Stripe (include imageSrc for download links)
                 const items = cart.map(item => ({
                     name: item.title,
+                    title: item.title,
+                    imageSrc: item.imageSrc || '',
                     description: 'High-resolution digital photography print',
                     price: item.price,
                     quantity: item.quantity

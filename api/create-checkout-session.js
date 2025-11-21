@@ -144,11 +144,17 @@ async function handler(req, res) {
             // Explicitly set to 'en' to avoid locale detection issues
             locale: 'en',
             
-            // Metadata (useful for tracking)
+            // Metadata (useful for tracking and webhook processing)
             metadata: {
                 order_type: 'digital_photo_download',
                 website: 'ifeelworld.com',
-                item_count: body.items.length.toString()
+                item_count: body.items.length.toString(),
+                // Store cart items as JSON for webhook to process download links
+                cart_items: JSON.stringify(body.items.map(item => ({
+                    name: item.name,
+                    imageSrc: item.imageSrc || '',
+                    title: item.title || item.name
+                })))
             },
             
             // Customer email collection (if provided)

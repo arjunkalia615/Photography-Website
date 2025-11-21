@@ -313,9 +313,11 @@
             }
 
             try {
-                // Prepare cart items for Stripe
+                // Prepare cart items for Stripe (include imageSrc for download links)
                 const items = cart.map(item => ({
                     name: item.title,
+                    title: item.title,
+                    imageSrc: item.imageSrc || '',
                     description: 'High-resolution digital photography print',
                     price: item.price,
                     quantity: item.quantity
