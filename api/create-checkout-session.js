@@ -20,7 +20,7 @@ const stripe = require('stripe');
  *       "quantity": 1
  *     }
  *   ],
- *   "customer_email": "customer@example.com",
+ *   "customer_email": "customer@example.com", // Used for both customer_email and receipt_email
  *   "success_url": "https://www.ifeelworld.com/payment-success.html",
  *   "cancel_url": "https://www.ifeelworld.com/payment-cancel.html"
  * }
@@ -151,6 +151,10 @@ async function handler(req, res) {
             
             // Customer email collection (if provided)
             customer_email: body.customer_email || undefined,
+            
+            // Payment receipt email - ensures customer receives receipt after successful payment
+            // This overrides the Stripe dashboard setting and ensures emails are sent
+            receipt_email: body.customer_email || undefined,
             
             // Allow promotion codes
             allow_promotion_codes: true,
