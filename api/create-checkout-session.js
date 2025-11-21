@@ -129,6 +129,8 @@ async function handler(req, res) {
         }));
 
         // Create Stripe Checkout Session
+        // Always include payment_intent_data with setup_future_usage to ensure card collection
+        // This forces Stripe to show the card payment form even for $0.00 payments
         const session = await stripeInstance.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: lineItems,
@@ -159,11 +161,12 @@ async function handler(req, res) {
             // Allow promotion codes
             allow_promotion_codes: true,
             
-            // Billing address collection - always collect for consistency
-            billing_address_collection: 'required',
+            // Billing address collection - disabled (not required)
+            billing_address_collection: 'auto',
             
-            // Payment intent data - force payment method collection even for $0.00 payments
-            // This ensures the payment form is always shown, regardless of price
+            // Payment intent data - ALWAYS include to force card collection
+            // setup_future_usage: 'off_session' forces Stripe to collect card details
+            // This ensures the card payment form is shown even for $0.00 payments
             payment_intent_data: {
                 setup_future_usage: 'off_session'
             },
