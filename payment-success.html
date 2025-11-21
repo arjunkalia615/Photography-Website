@@ -145,7 +145,7 @@
             }
         }
 
-        // Fetch and display download links
+        // Fetch and display download links using secure download system
         async function loadDownloadLinks() {
             if (!sessionId) {
                 document.getElementById('loadingState').style.display = 'none';
@@ -154,35 +154,51 @@
             }
 
             try {
-                const response = await fetch(`/api/get-session-details?session_id=${sessionId}`);
+                const response = await fetch(`/api/get-download-links?session_id=${encodeURIComponent(sessionId)}`);
                 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch session details');
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Failed to fetch download links');
                 }
 
                 const data = await response.json();
                 
-                if (data.downloadLinks && data.downloadLinks.length > 0) {
+                if (data.items && data.items.length > 0) {
                     // Display download links
                     const downloadSection = document.getElementById('downloadSection');
                     const downloadLinks = document.getElementById('downloadLinks');
                     const loadingState = document.getElementById('loadingState');
                     
-                    // Build download links HTML
-                    downloadLinks.innerHTML = data.downloadLinks.map((item, index) => {
-                        // Encode the URL to handle spaces and special characters in file paths
-                        const encodedUrl = encodeURI(item.downloadUrl);
+                    // Build download links HTML with download count information
+                    downloadLinks.innerHTML = data.items.map((item, index) => {
+                        const downloadButtonText = item.canDownload 
+                            ? `⬇ Download High-Resolution Image (${item.remainingDownloads} remaining)`
+                            : `❌ Download Limit Reached (${item.downloadCount}/${item.maxDownloads} used)`;
+                        const buttonStyle = item.canDownload
+                            ? 'display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer;'
+                            : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.6;';
+                        
                         return `
                             <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
                                 <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1rem;">${item.title}</h4>
-                                <a href="${encodedUrl}" 
-                                   download="${item.title.replace(/[^a-z0-9]/gi, '_')}.jpg"
-                                   target="_blank"
-                                   style="display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px;">
-                                    ⬇ Download High-Resolution Image
-                                </a>
+                                ${item.canDownload ? `
+                                    <a href="${item.downloadUrl}" 
+                                       target="_blank"
+                                       style="${buttonStyle}">
+                                        ${downloadButtonText}
+                                    </a>
+                                ` : `
+                                    <div style="${buttonStyle}">
+                                        ${downloadButtonText}
+                                    </div>
+                                `}
                                 <p style="margin: 10px 0 0 0; color: #888888; font-size: 0.85rem;">
-                                    Right-click the button above and select "Save As" to download the full-resolution image (no compression).
+                                    ${item.canDownload 
+                                        ? 'Click to download the full-resolution image (no compression). Each download counts toward your limit.'
+                                        : 'You have reached the download limit for this item. Contact support if you need additional downloads.'}
+                                </p>
+                                <p style="margin: 5px 0 0 0; color: #666666; font-size: 0.8rem;">
+                                    Downloads: ${item.downloadCount} / ${item.maxDownloads} (${item.remainingDownloads} remaining)
                                 </p>
                             </div>
                         `;
@@ -198,7 +214,9 @@
             } catch (error) {
                 console.error('Error loading download links:', error);
                 document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('errorState').style.display = 'block';
+                const errorState = document.getElementById('errorState');
+                errorState.style.display = 'block';
+                errorState.querySelector('p').textContent = error.message || 'Unable to load download links. Please try refreshing the page.';
             }
         }
 

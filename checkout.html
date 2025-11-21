@@ -281,11 +281,12 @@
             const total = Cart.getTotalPrice();
             checkoutTotal.textContent = CartUtils.formatPrice(total);
 
-            // Return cart items formatted for API (include imageSrc for download links)
+            // Return cart items formatted for API (include imageSrc and productId for download links)
             return cart.map(item => ({
                 name: item.title,
                 title: item.title,
                 imageSrc: item.imageSrc || '',
+                productId: item.id || item.productId || null, // Use cart item ID as productId
                 description: 'High-resolution digital photography print',
                 price: item.price,
                 quantity: item.quantity

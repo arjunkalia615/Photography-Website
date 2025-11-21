@@ -301,11 +301,12 @@
             }
 
             try {
-                // Prepare cart items for Stripe (include imageSrc for download links)
+                // Prepare cart items for Stripe (include imageSrc and productId for download links)
                 const items = cart.map(item => ({
                     name: item.title,
                     title: item.title,
                     imageSrc: item.imageSrc || '',
+                    productId: item.id || item.productId || null, // Use cart item ID as productId
                     description: 'High-resolution digital photography print',
                     price: item.price,
                     quantity: item.quantity

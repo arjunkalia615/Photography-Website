@@ -6,6 +6,7 @@
  */
 
 const stripe = require('stripe');
+const db = require('./db');
 
 async function handler(req, res) {
     // Set CORS headers
@@ -109,7 +110,18 @@ async function handler(req, res) {
                 });
             }
 
-            // Extract cart items from metadata
+            // Fetch line items from Stripe (expanded)
+            let lineItems = [];
+            try {
+                const expandedSession = await stripeInstance.checkout.sessions.retrieve(session.id, {
+                    expand: ['line_items.data.price.product']
+                });
+                lineItems = expandedSession.line_items?.data || [];
+            } catch (error) {
+                console.error('Error fetching line items:', error);
+            }
+
+            // Extract cart items from metadata (fallback if line_items unavailable)
             let cartItems = [];
             if (session.metadata && session.metadata.cart_items) {
                 try {
@@ -119,32 +131,74 @@ async function handler(req, res) {
                 }
             }
 
-            // Generate download links for purchased items
-            const baseUrl = process.env.SITE_URL || 'https://www.ifeelworld.com';
-            const downloadLinks = cartItems.map(item => {
-                const imagePath = item.imageSrc || '';
-                // Ensure path doesn't start with / to avoid double slashes
-                const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-                const downloadUrl = `${baseUrl}/${cleanPath}`;
-                
-                return {
-                    title: item.title || item.name,
-                    downloadUrl: downloadUrl,
-                    imageSrc: imagePath
-                };
-            }).filter(item => item.downloadUrl && item.imageSrc && item.downloadUrl !== `${baseUrl}/`); // Only include items with valid paths
+            // Build purchased items array with productId, fileName, quantity
+            const purchasedItems = [];
+            const downloadCount = {};
 
-            // Send email with download links if we have any
-            if (downloadLinks.length > 0) {
-                try {
-                    await sendDownloadEmail(customerEmail, downloadLinks, session.id);
-                    console.log(`Download email sent to ${customerEmail} for session ${session.id}`);
-                } catch (emailError) {
-                    console.error('Failed to send download email:', emailError);
-                    // Don't fail the webhook if email fails - links are available on success page
+            // Process line items or fallback to metadata
+            if (lineItems.length > 0) {
+                for (const lineItem of lineItems) {
+                    // Try to get product info from line item
+                    const productName = lineItem.price?.product?.name || lineItem.description || 'Photo';
+                    const quantity = lineItem.quantity || 1;
+                    
+                    // Find matching cart item to get imageSrc
+                    const cartItem = cartItems.find(ci => ci.name === productName || ci.title === productName);
+                    const imageSrc = cartItem?.imageSrc || '';
+                    const productId = cartItem?.productId || cartItem?.id || lineItem.id || `item_${Date.now()}_${Math.random()}`;
+                    const fileName = imageSrc.split('/').pop() || `${productName.replace(/[^a-z0-9]/gi, '_')}.jpg`;
+
+                    purchasedItems.push({
+                        productId: productId,
+                        fileName: fileName,
+                        imageSrc: imageSrc,
+                        title: productName,
+                        quantity: quantity,
+                        max_downloads: quantity // Each quantity = 1 download
+                    });
+
+                    downloadCount[productId] = 0;
+                }
+            } else if (cartItems.length > 0) {
+                // Fallback: use cart items from metadata
+                for (const cartItem of cartItems) {
+                    const productId = cartItem.productId || cartItem.id || `item_${Date.now()}_${Math.random()}`;
+                    const imageSrc = cartItem.imageSrc || '';
+                    const fileName = imageSrc.split('/').pop() || `${(cartItem.title || cartItem.name).replace(/[^a-z0-9]/gi, '_')}.jpg`;
+                    const quantity = cartItem.quantity || 1;
+
+                    purchasedItems.push({
+                        productId: productId,
+                        fileName: fileName,
+                        imageSrc: imageSrc,
+                        title: cartItem.title || cartItem.name,
+                        quantity: quantity,
+                        max_downloads: quantity
+                    });
+
+                    downloadCount[productId] = 0;
+                }
+            }
+
+            // Save purchase to database
+            if (purchasedItems.length > 0) {
+                const purchaseData = {
+                    session_id: session.id,
+                    customer_email: customerEmail,
+                    purchased_items: purchasedItems,
+                    download_count: downloadCount,
+                    timestamp: new Date().toISOString(),
+                    payment_status: session.payment_status
+                };
+
+                const saved = db.savePurchase(session.id, purchaseData);
+                if (saved) {
+                    console.log(`Purchase saved for session ${session.id}`);
+                } else {
+                    console.error(`Failed to save purchase for session ${session.id}`);
                 }
             } else {
-                console.warn(`No download links generated for session ${session.id} - cart_items may be missing or invalid`);
+                console.warn(`No purchased items found for session ${session.id}`);
             }
         }
 

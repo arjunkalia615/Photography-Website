@@ -150,10 +150,13 @@ async function handler(req, res) {
                 website: 'ifeelworld.com',
                 item_count: body.items.length.toString(),
                 // Store cart items as JSON for webhook to process download links
+                // Include productId for proper tracking
                 cart_items: JSON.stringify(body.items.map(item => ({
                     name: item.name,
+                    title: item.title || item.name,
                     imageSrc: item.imageSrc || '',
-                    title: item.title || item.name
+                    productId: item.productId || item.id || null,
+                    quantity: item.quantity || 1
                 })))
             },
             
