@@ -42,10 +42,13 @@ async function handler(req, res) {
 
         // Determine file path
         let filePath;
+        let mappedPath = null;
+        
         if (itemId) {
             // Look up file path from mapping using itemId
-            const mappedPath = IMAGE_MAPPING[itemId];
+            mappedPath = IMAGE_MAPPING[itemId];
             if (!mappedPath) {
+                console.error(`❌ Item ID not found in mapping: ${itemId}`);
                 return res.status(404).json({
                     error: 'Image not found',
                     message: `No image found for itemId: ${itemId}`
@@ -53,12 +56,29 @@ async function handler(req, res) {
             }
             filePath = path.join(process.cwd(), mappedPath);
         } else if (imageSrc) {
+            // Decode URL-encoded path
+            let decodedPath = decodeURIComponent(imageSrc);
+            
             // Normalize path (remove ../ and ./)
-            const cleanPath = imageSrc.startsWith('/') 
-                ? imageSrc.substring(1) 
-                : imageSrc.replace(/^\.\.\//, '').replace(/^\.\//, '');
-            filePath = path.join(process.cwd(), cleanPath);
+            const cleanPath = decodedPath.startsWith('/') 
+                ? decodedPath.substring(1) 
+                : decodedPath.replace(/^\.\.\//, '').replace(/^\.\//, '');
+            
+            // Normalize path separators (handle both / and \)
+            const normalizedPath = cleanPath.replace(/\\/g, '/');
+            
+            filePath = path.join(process.cwd(), normalizedPath);
+            mappedPath = normalizedPath;
         }
+        
+        // Log the path resolution for debugging
+        console.log(`🔍 Download request:`, {
+            itemId: itemId || 'none',
+            imageSrc: imageSrc || 'none',
+            mappedPath: mappedPath,
+            resolvedPath: filePath,
+            cwd: process.cwd()
+        });
 
         // Security: Prevent directory traversal attacks
         const resolvedPath = path.resolve(filePath);
@@ -71,18 +91,79 @@ async function handler(req, res) {
             });
         }
 
-        // Check if file exists
-        if (!fs.existsSync(filePath)) {
-            console.error(`❌ File not found: ${filePath}`);
+        // Check if file exists - try multiple path formats
+        let finalFilePath = filePath;
+        let fileFound = fs.existsSync(finalFilePath);
+        
+        if (!fileFound && mappedPath) {
+            // Try different path formats
+            const alternatives = [
+                // Original path
+                filePath,
+                // Normalize separators
+                path.join(process.cwd(), mappedPath.replace(/\//g, path.sep)),
+                path.join(process.cwd(), mappedPath.replace(/\\/g, path.sep)),
+                // Try with leading slash removed
+                path.join(process.cwd(), mappedPath.replace(/^\//, '')),
+                // Try with Windows-style path
+                mappedPath.replace(/\//g, '\\'),
+                // Try direct path
+                mappedPath
+            ];
+            
+            for (const altPath of alternatives) {
+                if (fs.existsSync(altPath)) {
+                    finalFilePath = altPath;
+                    fileFound = true;
+                    console.log(`✅ Found file at alternative path: ${altPath}`);
+                    break;
+                }
+            }
+        }
+        
+        if (!fileFound) {
+            console.error(`❌ File not found after trying all alternatives`);
+            console.error(`📊 Debug info:`, {
+                originalPath: filePath,
+                mappedPath: mappedPath,
+                itemId: itemId,
+                imageSrc: imageSrc,
+                cwd: process.cwd(),
+                resolvedAbsolute: path.resolve(filePath),
+                // Check if Images folder exists
+                imagesFolderExists: fs.existsSync(path.join(process.cwd(), 'Images'))
+            });
+            
             return res.status(404).json({
                 error: 'File not found',
-                message: 'The requested file could not be found on the server'
+                message: 'The requested file could not be found on the server',
+                debug: process.env.NODE_ENV === 'development' ? {
+                    requestedPath: filePath,
+                    mappedPath: mappedPath,
+                    cwd: process.cwd(),
+                    itemId: itemId,
+                    imageSrc: imageSrc
+                } : undefined
             });
         }
+        
+        filePath = finalFilePath;
 
         // Get file stats
-        const stats = fs.statSync(filePath);
+        let stats;
+        try {
+            stats = fs.statSync(filePath);
+        } catch (statError) {
+            console.error(`❌ Error getting file stats: ${statError.message}`);
+            return res.status(404).json({
+                error: 'File not accessible',
+                message: 'The requested file could not be accessed',
+                debug: process.env.NODE_ENV === 'development' ? statError.message : undefined
+            });
+        }
+        
         if (!stats.isFile()) {
+            console.error(`❌ Path is not a file: ${filePath}`);
             return res.status(404).json({
                 error: 'Not a file',
                 message: 'The requested path is not a file'
