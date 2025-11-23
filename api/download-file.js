@@ -2,7 +2,7 @@
  * Vercel Serverless Function
  * GET /api/download-file
  * Secure file download endpoint with download limit enforcement
- * Validates session_id and productId, checks download limits, and serves file
+ * Validates session_id and productId, checks download limits in KV, and serves file
  */
 
 const db = require('./db');
@@ -48,11 +48,11 @@ async function handler(req, res) {
             });
         }
 
-        // Get purchase from database
-        const purchase = db.getPurchase(sessionId);
+        // Get purchase from Vercel KV
+        const purchase = await db.getPurchase(sessionId);
 
         if (!purchase) {
-            console.error(`Purchase not found for session: ${sessionId}`);
+            console.error(`❌ Purchase not found in KV for session: ${sessionId}`);
             return res.status(404).json({
                 error: 'Purchase not found',
                 message: 'No purchase found for this session ID'
@@ -63,7 +63,7 @@ async function handler(req, res) {
         const purchasedItem = purchase.purchased_items.find(item => item.productId === productId);
 
         if (!purchasedItem) {
-            console.error(`Product ${productId} not found in purchase ${sessionId}`);
+            console.error(`❌ Product ${productId} not found in purchase ${sessionId}`);
             return res.status(403).json({
                 error: 'Product not found',
                 message: 'This product was not part of your purchase'
@@ -75,7 +75,7 @@ async function handler(req, res) {
         const maxDownloads = purchasedItem.max_downloads;
 
         if (currentDownloadCount >= maxDownloads) {
-            console.warn(`Download limit reached for session ${sessionId}, product ${productId}: ${currentDownloadCount}/${maxDownloads}`);
+            console.warn(`⚠️ Download limit reached for session ${sessionId}, product ${productId}: ${currentDownloadCount}/${maxDownloads}`);
             return res.status(403).json({
                 error: 'Download limit reached',
                 message: `Download limit reached for this item. You have downloaded this item ${currentDownloadCount} time(s) out of ${maxDownloads} allowed.`,
@@ -84,15 +84,17 @@ async function handler(req, res) {
             });
         }
 
-        // Increment download count BEFORE serving file (atomic operation)
-        const incremented = db.incrementDownloadCount(sessionId, productId);
+        // Increment download count in KV BEFORE serving file (atomic operation)
+        const incremented = await db.incrementDownloadCount(sessionId, productId);
         if (!incremented) {
-            console.error(`Failed to increment download count for session ${sessionId}, product ${productId}`);
+            console.error(`❌ Failed to increment download count for session ${sessionId}, product ${productId}`);
             return res.status(500).json({
                 error: 'Database error',
                 message: 'Failed to update download count'
             });
         }
+
+        console.log(`✅ Download count incremented: ${currentDownloadCount + 1}/${maxDownloads} for ${productId}`);
 
         // Get file path
         const imageSrc = purchasedItem.imageSrc;
@@ -104,7 +106,6 @@ async function handler(req, res) {
         }
 
         // Construct full file path
-        // Remove leading slash if present, then join with project root
         const cleanPath = imageSrc.startsWith('/') ? imageSrc.substring(1) : imageSrc;
         const filePath = path.join(process.cwd(), cleanPath);
 
@@ -112,7 +113,7 @@ async function handler(req, res) {
         const resolvedPath = path.resolve(filePath);
         const projectRoot = path.resolve(process.cwd());
         if (!resolvedPath.startsWith(projectRoot)) {
-            console.error(`Directory traversal attempt detected: ${filePath}`);
+            console.error(`🚫 Directory traversal attempt detected: ${filePath}`);
             return res.status(403).json({
                 error: 'Access denied',
                 message: 'Invalid file path'
@@ -121,7 +122,7 @@ async function handler(req, res) {
 
         // Check if file exists
         if (!fs.existsSync(filePath)) {
-            console.error(`File not found: ${filePath}`);
+            console.error(`❌ File not found: ${filePath}`);
             return res.status(404).json({
                 error: 'File not found',
                 message: 'The requested file could not be found on the server'
@@ -151,7 +152,7 @@ async function handler(req, res) {
         const fileStream = fs.createReadStream(filePath);
         
         fileStream.on('error', (error) => {
-            console.error('Error streaming file:', error);
+            console.error('❌ Error streaming file:', error);
             if (!res.headersSent) {
                 res.status(500).json({
                     error: 'Download failed',
@@ -166,7 +167,7 @@ async function handler(req, res) {
         console.log(`✅ File downloaded: ${fileName} for session ${sessionId}, product ${productId} (${currentDownloadCount + 1}/${maxDownloads})`);
 
     } catch (error) {
-        console.error('Error downloading file:', error);
+        console.error('❌ Error downloading file:', error);
         
         // Don't send error if response already started (file streaming)
         if (!res.headersSent) {

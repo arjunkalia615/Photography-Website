@@ -2,7 +2,7 @@
  * Vercel Serverless Function
  * POST /api/webhook
  * Handles Stripe webhook events, particularly checkout.session.completed
- * Saves purchase data to database for download tracking
+ * Saves purchase data to Vercel KV for download tracking
  */
 
 const stripe = require('stripe');
@@ -32,7 +32,7 @@ async function handler(req, res) {
         const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
         
         if (!webhookSecret) {
-            console.error('STRIPE_WEBHOOK_SECRET is not set');
+            console.error('❌ STRIPE_WEBHOOK_SECRET is not set');
             return res.status(500).json({
                 error: 'Server configuration error',
                 message: 'Webhook secret not configured'
@@ -56,7 +56,7 @@ async function handler(req, res) {
             : process.env.STRIPE_SECRET_KEY;
 
         if (!stripeSecretKey) {
-            console.error(`Stripe secret key not configured (mode: ${useTestMode ? 'TEST' : 'LIVE'})`);
+            console.error(`❌ Stripe secret key not configured (mode: ${useTestMode ? 'TEST' : 'LIVE'})`);
             return res.status(500).json({
                 error: 'Server configuration error',
                 message: 'Stripe secret key not configured'
@@ -66,14 +66,12 @@ async function handler(req, res) {
         const stripeInstance = stripe(stripeSecretKey);
 
         // For Vercel, get raw body from request
-        // Vercel may pass body as string or buffer
         let rawBody;
         if (typeof req.body === 'string') {
             rawBody = req.body;
         } else if (Buffer.isBuffer(req.body)) {
             rawBody = req.body.toString('utf8');
         } else {
-            // If body is already parsed JSON, stringify it back
             rawBody = JSON.stringify(req.body);
         }
 
@@ -82,7 +80,7 @@ async function handler(req, res) {
         try {
             event = stripeInstance.webhooks.constructEvent(rawBody, signature, webhookSecret);
         } catch (err) {
-            console.error('Webhook signature verification failed:', err.message);
+            console.error('❌ Webhook signature verification failed:', err.message);
             return res.status(400).json({
                 error: 'Invalid signature',
                 message: 'Webhook signature verification failed'
@@ -92,14 +90,16 @@ async function handler(req, res) {
         // Handle checkout.session.completed event
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
+            const sessionId = session.id;
 
-            console.log(`Processing checkout.session.completed for session: ${session.id}`);
+            console.log(`✅ Webhook received for session ID: ${sessionId}`);
+            console.log(`📦 Event type: ${event.type}`);
 
             // Extract customer email (REQUIRED)
             const customerEmail = session.customer_email || session.customer_details?.email;
             
             if (!customerEmail) {
-                console.error('No customer email found in session', session.id);
+                console.error(`❌ No customer email found in session ${sessionId}`);
                 return res.status(400).json({
                     error: 'Missing email',
                     message: 'Customer email not found in checkout session'
@@ -109,13 +109,13 @@ async function handler(req, res) {
             // Fetch line items from Stripe (expanded to get full product details)
             let lineItems = [];
             try {
-                const expandedSession = await stripeInstance.checkout.sessions.retrieve(session.id, {
+                const expandedSession = await stripeInstance.checkout.sessions.retrieve(sessionId, {
                     expand: ['line_items.data.price.product']
                 });
                 lineItems = expandedSession.line_items?.data || [];
-                console.log(`Retrieved ${lineItems.length} line items for session ${session.id}`);
+                console.log(`📋 Retrieved ${lineItems.length} line items for session ${sessionId}`);
             } catch (error) {
-                console.error('Error fetching line items:', error);
+                console.error('❌ Error fetching line items:', error);
             }
 
             // Extract cart items from metadata (fallback if line_items unavailable)
@@ -123,9 +123,9 @@ async function handler(req, res) {
             if (session.metadata && session.metadata.cart_items) {
                 try {
                     cartItems = JSON.parse(session.metadata.cart_items);
-                    console.log(`Retrieved ${cartItems.length} cart items from metadata`);
+                    console.log(`📋 Retrieved ${cartItems.length} cart items from metadata`);
                 } catch (parseError) {
-                    console.error('Error parsing cart_items from metadata:', parseError);
+                    console.error('❌ Error parsing cart_items from metadata:', parseError);
                 }
             }
 
@@ -183,31 +183,33 @@ async function handler(req, res) {
                 }
             }
 
-            // Save purchase to database (REQUIRED for download system)
+            // Save purchase to Vercel KV (REQUIRED for download system)
             if (purchasedItems.length > 0) {
                 const purchaseData = {
-                    session_id: session.id,
+                    session_id: sessionId,
                     customer_email: customerEmail,
                     purchased_items: purchasedItems,
                     download_count: downloadCount,
                     timestamp: new Date().toISOString(),
-                    payment_status: session.payment_status
+                    payment_status: session.payment_status,
+                    // Additional fields for download tracking
+                    allowedDownloads: purchasedItems.reduce((sum, item) => sum + item.max_downloads, 0),
+                    downloadsUsed: 0
                 };
 
-                const saved = db.savePurchase(session.id, purchaseData);
+                const saved = await db.savePurchase(sessionId, purchaseData);
                 if (saved) {
-                    console.log(`✅ Purchase saved for session ${session.id}`, {
+                    console.log(`✅ Saved purchase for: ${sessionId}`, {
                         itemsCount: purchasedItems.length,
                         customerEmail: customerEmail,
                         mode: useTestMode ? 'TEST' : 'LIVE'
                     });
                 } else {
-                    console.error(`❌ Failed to save purchase for session ${session.id} - database write failed`);
-                    console.error('Purchase data:', JSON.stringify(purchaseData, null, 2));
+                    console.error(`❌ Failed to save purchase for session ${sessionId} - KV write failed`);
                     // Still return success to Stripe, but log the error
                 }
             } else {
-                console.warn(`⚠️ No purchased items found for session ${session.id}`);
+                console.warn(`⚠️ No purchased items found for session ${sessionId}`);
             }
 
             // Return success to Stripe
@@ -215,11 +217,11 @@ async function handler(req, res) {
         }
 
         // Handle other event types (log but don't error)
-        console.log(`Unhandled event type: ${event.type}`);
+        console.log(`ℹ️ Unhandled event type: ${event.type}`);
         return res.status(200).json({ received: true });
 
     } catch (error) {
-        console.error('Webhook error:', error);
+        console.error('❌ Webhook error:', error);
         return res.status(500).json({
             error: 'Webhook processing failed',
             message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred processing the webhook'

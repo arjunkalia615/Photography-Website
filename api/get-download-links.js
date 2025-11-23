@@ -1,12 +1,11 @@
 /**
  * Vercel Serverless Function
  * GET /api/get-download-links
- * Returns secure download information for purchased items
+ * Returns secure download information for purchased items from Vercel KV
  * Supports lookup by session_id or email (fallback)
  */
 
 const db = require('./db');
-const stripe = require('stripe');
 
 async function handler(req, res) {
     // Set CORS headers
@@ -34,52 +33,21 @@ async function handler(req, res) {
 
         // If no session_id, try to get last purchase by email
         if (!sessionId && email) {
-            console.log(`Looking up purchase by email: ${email}`);
-            
-            // Get all purchases and find by email
-            const allPurchases = db.readDB();
-            const purchases = Object.values(allPurchases)
-                .filter(p => p.customer_email === email)
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Most recent first
-            
-            if (purchases.length > 0) {
-                const latestPurchase = purchases[0];
-                console.log(`Found purchase by email: ${latestPurchase.session_id}`);
-                
-                // Return download info for latest purchase
-                const downloadInfo = latestPurchase.purchased_items.map(item => {
-                    const downloadCount = latestPurchase.download_count[item.productId] || 0;
-                    const remainingDownloads = Math.max(0, item.max_downloads - downloadCount);
-                    const canDownload = remainingDownloads > 0;
-
-                    return {
-                        productId: item.productId,
-                        title: item.title,
-                        fileName: item.fileName,
-                        quantity: item.quantity,
-                        maxDownloads: item.max_downloads,
-                        downloadCount: downloadCount,
-                        remainingDownloads: remainingDownloads,
-                        canDownload: canDownload,
-                        downloadUrl: `/api/download-file?session_id=${encodeURIComponent(latestPurchase.session_id)}&productId=${encodeURIComponent(item.productId)}`
-                    };
-                });
-
-                return res.status(200).json({
-                    sessionId: latestPurchase.session_id,
-                    customerEmail: latestPurchase.customer_email,
-                    purchaseDate: latestPurchase.timestamp,
-                    items: downloadInfo,
-                    totalItems: latestPurchase.purchased_items.length
-                });
-            }
+            console.log(`🔍 Looking up purchase by email: ${email}`);
+            // Note: KV doesn't support querying by email easily
+            // This would require a separate index or scanning
+            // For now, we'll require session_id
+            return res.status(400).json({
+                error: 'Missing parameter',
+                message: 'session_id query parameter is required'
+            });
         }
 
         // Validate session_id if provided
         if (!sessionId) {
             return res.status(400).json({
                 error: 'Missing parameter',
-                message: 'session_id query parameter is required (or email for fallback)'
+                message: 'session_id query parameter is required'
             });
         }
 
@@ -91,27 +59,18 @@ async function handler(req, res) {
             });
         }
 
-        // Get purchase from database
-        const purchase = db.getPurchase(sessionId);
+        // Get purchase from Vercel KV
+        const purchase = await db.getPurchase(sessionId);
 
         if (!purchase) {
-            console.log(`Purchase not found for session: ${sessionId}`);
-            
-            // Log database contents for debugging
-            const allPurchases = db.readDB();
-            const keys = Object.keys(allPurchases);
-            console.log(`Total purchases in database: ${keys.length}`);
-            if (keys.length > 0) {
-                console.log(`Sample session IDs: ${keys.slice(0, 3).join(', ')}`);
-            }
-            
+            console.log(`⚠️ Purchase not found in KV for session: ${sessionId}`);
             return res.status(404).json({
                 error: 'Purchase not found',
                 message: 'No purchase found for this session ID. The purchase may not have been processed yet, or the session ID is invalid.'
             });
         }
         
-        console.log(`Purchase found for session: ${sessionId}`, {
+        console.log(`✅ Purchase found in KV for session: ${sessionId}`, {
             itemsCount: purchase.purchased_items?.length || 0,
             customerEmail: purchase.customer_email
         });
@@ -146,7 +105,7 @@ async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error('Error getting download links:', error);
+        console.error('❌ Error getting download links:', error);
         return res.status(500).json({
             error: 'Failed to get download links',
             message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred while retrieving your download links.'
