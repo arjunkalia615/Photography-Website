@@ -1,52 +1,56 @@
 /**
  * Database utility for storing purchase data
- * Uses Vercel KV for persistent storage
+ * Uses Upstash Redis for persistent storage
  */
 
-// Vercel KV client
-let kv = null;
+const { Redis } = require('@upstash/redis');
 
-// Initialize KV client
-function initKV() {
-    if (kv) return kv;
+// Initialize Redis client (uses environment variables)
+let redis = null;
+
+// Initialize Redis client
+function initRedis() {
+    if (redis) return redis;
     
     try {
-        // Vercel KV is available via @vercel/kv package
-        const { kv: vercelKV } = require('@vercel/kv');
-        kv = vercelKV;
-        console.log('✅ Vercel KV initialized');
-        return vercelKV;
+        // Initialize Redis from environment variables
+        // Uses UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+        redis = Redis.fromEnv();
+        console.log('✅ Upstash Redis initialized');
+        return redis;
     } catch (error) {
-        console.error('❌ Failed to initialize Vercel KV:', error);
-        console.error('Make sure @vercel/kv is installed and KV_REST_API_URL is set');
+        console.error('❌ Failed to initialize Upstash Redis:', error);
+        console.error('Make sure @upstash/redis is installed and UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN are set');
         throw error;
     }
 }
 
-// Get KV client (lazy initialization)
-function getKV() {
-    if (!kv) {
-        initKV();
+// Get Redis client (lazy initialization)
+function getRedis() {
+    if (!redis) {
+        initRedis();
     }
-    return kv;
+    return redis;
 }
 
 // Get purchase by session ID
 async function getPurchase(sessionId) {
     try {
-        const kvClient = getKV();
-        const key = `purchases:${sessionId}`;
-        const purchase = await kvClient.get(key);
+        const redisClient = getRedis();
+        const key = `purchase:${sessionId}`;
+        const purchase = await redisClient.get(key);
         
         if (purchase) {
-            console.log(`✅ Purchase found in KV for session: ${sessionId}`);
+            console.log(`✅ Purchase found in Redis for session: ${sessionId}`);
+            console.log(`🔑 Redis key: ${key}`);
         } else {
-            console.log(`⚠️ Purchase not found in KV for session: ${sessionId}`);
+            console.log(`⚠️ Purchase not found in Redis for session: ${sessionId}`);
+            console.log(`🔑 Redis key checked: ${key}`);
         }
         
         return purchase;
     } catch (error) {
-        console.error(`Error getting purchase from KV for ${sessionId}:`, error);
+        console.error(`❌ Error getting purchase from Redis for ${sessionId}:`, error);
         return null;
     }
 }
@@ -54,20 +58,23 @@ async function getPurchase(sessionId) {
 // Save purchase
 async function savePurchase(sessionId, purchaseData) {
     try {
-        const kvClient = getKV();
-        const key = `purchases:${sessionId}`;
+        const redisClient = getRedis();
+        const key = `purchase:${sessionId}`;
         
-        // Store purchase data
-        await kvClient.set(key, purchaseData);
+        // Store purchase data in Redis
+        await redisClient.set(key, purchaseData);
         
-        console.log(`✅ Purchase saved to KV: ${key}`, {
+        console.log(`✅ Purchase saved to Redis: ${key}`, {
             itemsCount: purchaseData.purchased_items?.length || 0,
-            email: purchaseData.customer_email
+            email: purchaseData.customer_email,
+            sessionId: sessionId
         });
+        console.log(`🔑 Redis key: ${key}`);
         
         return true;
     } catch (error) {
-        console.error(`❌ Error saving purchase to KV for ${sessionId}:`, error);
+        console.error(`❌ Error saving purchase to Redis for ${sessionId}:`, error);
+        console.error(`🔑 Redis key attempted: purchase:${sessionId}`);
         return false;
     }
 }
@@ -75,18 +82,19 @@ async function savePurchase(sessionId, purchaseData) {
 // Update purchase (for download tracking)
 async function updatePurchase(sessionId, updates) {
     try {
-        const kvClient = getKV();
-        const key = `purchases:${sessionId}`;
+        const redisClient = getRedis();
+        const key = `purchase:${sessionId}`;
         
-        const purchase = await kvClient.get(key);
+        const purchase = await redisClient.get(key);
         if (purchase) {
             const updated = { ...purchase, ...updates };
-            await kvClient.set(key, updated);
+            await redisClient.set(key, updated);
+            console.log(`✅ Purchase updated in Redis: ${key}`);
             return true;
         }
         return false;
     } catch (error) {
-        console.error(`Error updating purchase in KV for ${sessionId}:`, error);
+        console.error(`❌ Error updating purchase in Redis for ${sessionId}:`, error);
         return false;
     }
 }
@@ -94,24 +102,30 @@ async function updatePurchase(sessionId, updates) {
 // Increment download count for a product
 async function incrementDownloadCount(sessionId, productId) {
     try {
-        const kvClient = getKV();
-        const key = `purchases:${sessionId}`;
+        const redisClient = getRedis();
+        const key = `purchase:${sessionId}`;
         
-        const purchase = await kvClient.get(key);
+        const purchase = await redisClient.get(key);
         if (purchase && purchase.download_count) {
             if (!purchase.download_count[productId]) {
                 purchase.download_count[productId] = 0;
             }
             purchase.download_count[productId] += 1;
             
-            await kvClient.set(key, purchase);
+            // Also update downloadsUsed if it exists
+            if (purchase.downloadsUsed !== undefined) {
+                purchase.downloadsUsed += 1;
+            }
+            
+            await redisClient.set(key, purchase);
             
             console.log(`✅ Download count incremented for ${productId}: ${purchase.download_count[productId]}`);
+            console.log(`🔑 Redis key: ${key}`);
             return true;
         }
         return false;
     } catch (error) {
-        console.error(`Error incrementing download count in KV for ${sessionId}/${productId}:`, error);
+        console.error(`❌ Error incrementing download count in Redis for ${sessionId}/${productId}:`, error);
         return false;
     }
 }
@@ -125,7 +139,7 @@ async function getDownloadCount(sessionId, productId) {
         }
         return 0;
     } catch (error) {
-        console.error(`Error getting download count for ${sessionId}/${productId}:`, error);
+        console.error(`❌ Error getting download count for ${sessionId}/${productId}:`, error);
         return 0;
     }
 }
@@ -142,7 +156,7 @@ async function canDownload(sessionId, productId) {
         const downloadCount = await getDownloadCount(sessionId, productId);
         return downloadCount < item.max_downloads;
     } catch (error) {
-        console.error(`Error checking download permission for ${sessionId}/${productId}:`, error);
+        console.error(`❌ Error checking download permission for ${sessionId}/${productId}:`, error);
         return false;
     }
 }
@@ -150,12 +164,11 @@ async function canDownload(sessionId, productId) {
 // Get all purchases (for debugging - optional)
 async function getAllPurchases() {
     try {
-        const kvClient = getKV();
-        // Note: KV doesn't support listing all keys easily
+        // Note: Redis doesn't support listing all keys easily without scanning
         // This is mainly for debugging
         return {};
     } catch (error) {
-        console.error('Error getting all purchases:', error);
+        console.error('❌ Error getting all purchases:', error);
         return {};
     }
 }

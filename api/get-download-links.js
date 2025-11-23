@@ -1,8 +1,8 @@
 /**
  * Vercel Serverless Function
  * GET /api/get-download-links
- * Returns secure download information for purchased items from Vercel KV
- * Supports lookup by session_id or email (fallback)
+ * Returns secure download information for purchased items from Upstash Redis
+ * Supports lookup by session_id
  */
 
 const db = require('./db');
@@ -59,49 +59,56 @@ async function handler(req, res) {
             });
         }
 
-        // Get purchase from Vercel KV
+        // Get purchase from Upstash Redis
         const purchase = await db.getPurchase(sessionId);
 
         if (!purchase) {
-            console.log(`⚠️ Purchase not found in KV for session: ${sessionId}`);
+            console.log(`⚠️ Purchase not found in Redis for session: ${sessionId}`);
+            console.log(`🔑 Redis key checked: purchase:${sessionId}`);
             return res.status(404).json({
                 error: 'Purchase not found',
                 message: 'No purchase found for this session ID. The purchase may not have been processed yet, or the session ID is invalid.'
             });
         }
         
-        console.log(`✅ Purchase found in KV for session: ${sessionId}`, {
-            itemsCount: purchase.purchased_items?.length || 0,
-            customerEmail: purchase.customer_email
+        console.log(`✅ Purchase found in Redis for session: ${sessionId}`, {
+            itemsCount: purchase.purchased_items?.length || purchase.products?.length || 0,
+            customerEmail: purchase.customer_email || purchase.email,
+            redisKey: `purchase:${sessionId}`
         });
 
+        // Use products array if available, fallback to purchased_items
+        const items = purchase.products || purchase.purchased_items || [];
+        
         // Build download information for each purchased item
-        const downloadInfo = purchase.purchased_items.map(item => {
-            const downloadCount = purchase.download_count[item.productId] || 0;
-            const remainingDownloads = Math.max(0, item.max_downloads - downloadCount);
+        const downloadInfo = items.map(item => {
+            const productId = item.productId;
+            const maxDownloads = item.maxDownloads || item.max_downloads || item.quantity || 1;
+            const downloadCount = purchase.download_count?.[productId] || 0;
+            const remainingDownloads = Math.max(0, maxDownloads - downloadCount);
             const canDownload = remainingDownloads > 0;
 
             return {
-                productId: item.productId,
+                productId: productId,
                 title: item.title,
                 fileName: item.fileName,
-                quantity: item.quantity,
-                maxDownloads: item.max_downloads,
+                quantity: item.quantity || 1,
+                maxDownloads: maxDownloads,
                 downloadCount: downloadCount,
                 remainingDownloads: remainingDownloads,
                 canDownload: canDownload,
                 // Secure download URL (points to download-file endpoint)
-                downloadUrl: `/api/download-file?session_id=${encodeURIComponent(sessionId)}&productId=${encodeURIComponent(item.productId)}`
+                downloadUrl: `/api/download-file?session_id=${encodeURIComponent(sessionId)}&productId=${encodeURIComponent(productId)}`
             };
         });
 
         // Return download information
         return res.status(200).json({
             sessionId: sessionId,
-            customerEmail: purchase.customer_email,
-            purchaseDate: purchase.timestamp,
+            customerEmail: purchase.customer_email || purchase.email,
+            purchaseDate: purchase.timestamp || purchase.createdAt,
             items: downloadInfo,
-            totalItems: purchase.purchased_items.length
+            totalItems: items.length
         });
 
     } catch (error) {

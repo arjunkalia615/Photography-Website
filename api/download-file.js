@@ -2,7 +2,7 @@
  * Vercel Serverless Function
  * GET /api/download-file
  * Secure file download endpoint with download limit enforcement
- * Validates session_id and productId, checks download limits in KV, and serves file
+ * Validates session_id and productId, checks download limits in Redis, and serves file
  */
 
 const db = require('./db');
@@ -48,19 +48,24 @@ async function handler(req, res) {
             });
         }
 
-        // Get purchase from Vercel KV
+        // Get purchase from Upstash Redis
         const purchase = await db.getPurchase(sessionId);
 
         if (!purchase) {
-            console.error(`❌ Purchase not found in KV for session: ${sessionId}`);
+            console.error(`❌ Purchase not found in Redis for session: ${sessionId}`);
+            console.error(`🔑 Redis key checked: purchase:${sessionId}`);
             return res.status(404).json({
                 error: 'Purchase not found',
                 message: 'No purchase found for this session ID'
             });
         }
 
-        // Find the purchased item
-        const purchasedItem = purchase.purchased_items.find(item => item.productId === productId);
+        console.log(`🔍 Download request for session: ${sessionId}, product: ${productId}`);
+        console.log(`🔑 Redis key: purchase:${sessionId}`);
+
+        // Find the purchased item (check both products and purchased_items arrays)
+        const items = purchase.products || purchase.purchased_items || [];
+        const purchasedItem = items.find(item => item.productId === productId);
 
         if (!purchasedItem) {
             console.error(`❌ Product ${productId} not found in purchase ${sessionId}`);
@@ -71,8 +76,8 @@ async function handler(req, res) {
         }
 
         // Check download limit BEFORE incrementing
-        const currentDownloadCount = purchase.download_count[purchasedItem.productId] || 0;
-        const maxDownloads = purchasedItem.max_downloads;
+        const currentDownloadCount = purchase.download_count?.[purchasedItem.productId] || 0;
+        const maxDownloads = purchasedItem.maxDownloads || purchasedItem.max_downloads || purchasedItem.quantity || 1;
 
         if (currentDownloadCount >= maxDownloads) {
             console.warn(`⚠️ Download limit reached for session ${sessionId}, product ${productId}: ${currentDownloadCount}/${maxDownloads}`);
@@ -84,17 +89,20 @@ async function handler(req, res) {
             });
         }
 
-        // Increment download count in KV BEFORE serving file (atomic operation)
+        // Increment download count in Redis BEFORE serving file (atomic operation)
         const incremented = await db.incrementDownloadCount(sessionId, productId);
         if (!incremented) {
             console.error(`❌ Failed to increment download count for session ${sessionId}, product ${productId}`);
+            console.error(`🔑 Redis key: purchase:${sessionId}`);
             return res.status(500).json({
                 error: 'Database error',
                 message: 'Failed to update download count'
             });
         }
 
-        console.log(`✅ Download count incremented: ${currentDownloadCount + 1}/${maxDownloads} for ${productId}`);
+        console.log(`✅ Download count incremented in Redis: ${currentDownloadCount + 1}/${maxDownloads} for ${productId}`);
+        console.log(`🔑 Redis key: purchase:${sessionId}`);
+        console.log(`📥 Download occurred for session: ${sessionId}, product: ${productId}`);
 
         // Get file path
         const imageSrc = purchasedItem.imageSrc;
@@ -164,7 +172,9 @@ async function handler(req, res) {
         fileStream.pipe(res);
 
         // Log successful download
-        console.log(`✅ File downloaded: ${fileName} for session ${sessionId}, product ${productId} (${currentDownloadCount + 1}/${maxDownloads})`);
+        console.log(`✅ File downloaded successfully: ${fileName}`);
+        console.log(`📊 Session: ${sessionId}, Product: ${productId}, Count: ${currentDownloadCount + 1}/${maxDownloads}`);
+        console.log(`🔑 Redis key: purchase:${sessionId}`);
 
     } catch (error) {
         console.error('❌ Error downloading file:', error);

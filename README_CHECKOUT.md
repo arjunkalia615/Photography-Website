@@ -41,8 +41,8 @@ BACKEND_URL=http://localhost:3000
 2. Copy your **Secret key** (starts with `sk_live_` for production or `sk_test_` for testing)
 3. Add it to your `.env` file
 
-**Publishable Key:** `pk_live_51SUISK2cmeiwN9KC1HMjyswAEDlAyQvn4mqB7DU37ZQRx1xJAtP6a7wDrFgRez0M0T499VhCcHYwAnuiba8uQixK00K82cy4wy`
-(This is already set in `checkout.html`)
+**Publishable Key:** Set `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` environment variable (starts with `pk_live_...` for production)
+(The frontend fetches this from `/api/get-stripe-key` endpoint - no hardcoded keys)
 
 ### 4. Start the Backend Server
 

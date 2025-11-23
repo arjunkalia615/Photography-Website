@@ -11,7 +11,7 @@
 
 ### 2. **cart.html** (Frontend)
 - ✅ Added Stripe.js library (`https://js.stripe.com/v3/`)
-- ✅ Initialized Stripe with publishable key: `pk_live_51SUISK2cmeiwN9KC1HMjyswAEDlAyQvn4mqB7DU37ZQRx1xJAtP6a7wDrFgRez0M0T499VhCcHYwAnuiba8uQixK00K82cy4wy`
+- ✅ Initialized Stripe with publishable key from `/api/get-stripe-key` endpoint (fetched from environment variables)
 - ✅ Changed "Proceed to Payment" button to "Checkout" button
 - ✅ Added `handleCheckout()` function that:
   - Gets cart items
@@ -77,12 +77,12 @@
 
 **Backend (.env file):**
 ```
-STRIPE_SECRET_KEY=sk_live_your_secret_key_here
+STRIPE_SECRET_KEY=sk_live_... (your actual secret key from Stripe Dashboard)
 PORT=3000
 ```
 
 **Frontend:**
-- Publishable key is hardcoded in HTML (as requested): `pk_live_51SUISK2cmeiwN9KC1HMjyswAEDlAyQvn4mqB7DU37ZQRx1xJAtP6a7wDrFgRez0M0T499VhCcHYwAnuiba8uQixK00K82cy4wy`
+- Publishable key is fetched from `/api/get-stripe-key` endpoint (uses environment variables: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` or `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST`)
 - Backend URL: Currently set to `window.location.origin` (same origin)
   - Update `API_BASE_URL` in `cart.html` and `payment.html` if backend is on different domain
 

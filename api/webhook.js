@@ -2,7 +2,7 @@
  * Vercel Serverless Function
  * POST /api/webhook
  * Handles Stripe webhook events, particularly checkout.session.completed
- * Saves purchase data to Vercel KV for download tracking
+ * Saves purchase data to Upstash Redis for download tracking
  */
 
 const stripe = require('stripe');
@@ -183,29 +183,46 @@ async function handler(req, res) {
                 }
             }
 
-            // Save purchase to Vercel KV (REQUIRED for download system)
+            // Save purchase to Upstash Redis (REQUIRED for download system)
             if (purchasedItems.length > 0) {
+                // Calculate total allowed downloads
+                const totalAllowedDownloads = purchasedItems.reduce((sum, item) => sum + item.max_downloads, 0);
+                
                 const purchaseData = {
                     session_id: sessionId,
-                    customer_email: customerEmail,
-                    purchased_items: purchasedItems,
+                    email: customerEmail, // Store as 'email' for consistency
+                    customer_email: customerEmail, // Also keep for backward compatibility
+                    products: purchasedItems.map(item => ({
+                        productId: item.productId,
+                        title: item.title,
+                        fileName: item.fileName,
+                        imageSrc: item.imageSrc,
+                        quantity: item.quantity,
+                        maxDownloads: item.max_downloads
+                    })),
+                    purchased_items: purchasedItems, // Keep for backward compatibility
+                    quantity: purchasedItems.reduce((sum, item) => sum + item.quantity, 0),
                     download_count: downloadCount,
-                    timestamp: new Date().toISOString(),
-                    payment_status: session.payment_status,
-                    // Additional fields for download tracking
-                    allowedDownloads: purchasedItems.reduce((sum, item) => sum + item.max_downloads, 0),
-                    downloadsUsed: 0
+                    downloadsUsed: 0, // Total downloads used across all products
+                    maxDownloads: totalAllowedDownloads, // Total allowed downloads
+                    allowedDownloads: totalAllowedDownloads, // Alias for consistency
+                    createdAt: new Date().toISOString(),
+                    timestamp: new Date().toISOString(), // Keep for backward compatibility
+                    payment_status: session.payment_status
                 };
 
                 const saved = await db.savePurchase(sessionId, purchaseData);
                 if (saved) {
-                    console.log(`✅ Saved purchase for: ${sessionId}`, {
+                    console.log(`✅ Saved purchase to Redis for: ${sessionId}`, {
                         itemsCount: purchasedItems.length,
                         customerEmail: customerEmail,
-                        mode: useTestMode ? 'TEST' : 'LIVE'
+                        mode: useTestMode ? 'TEST' : 'LIVE',
+                        redisKey: `purchase:${sessionId}`
                     });
+                    console.log(`🔑 Redis key: purchase:${sessionId}`);
                 } else {
-                    console.error(`❌ Failed to save purchase for session ${sessionId} - KV write failed`);
+                    console.error(`❌ Failed to save purchase for session ${sessionId} - Redis write failed`);
+                    console.error(`🔑 Redis key attempted: purchase:${sessionId}`);
                     // Still return success to Stripe, but log the error
                 }
             } else {
