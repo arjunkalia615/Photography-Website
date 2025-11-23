@@ -94,6 +94,13 @@ async function handler(req, res) {
 
             console.log(`✅ Webhook received for session ID: ${sessionId}`);
             console.log(`📦 Event type: ${event.type}`);
+            console.log(`🔍 Session details:`, {
+                id: sessionId,
+                payment_status: session.payment_status,
+                customer_email: session.customer_email || session.customer_details?.email,
+                has_metadata: !!session.metadata,
+                metadata_keys: session.metadata ? Object.keys(session.metadata) : []
+            });
 
             // Extract customer email (REQUIRED)
             const customerEmail = session.customer_email || session.customer_details?.email;
@@ -183,52 +190,71 @@ async function handler(req, res) {
                 }
             }
 
-            // Save purchase to Upstash Redis (REQUIRED for download system)
-            if (purchasedItems.length > 0) {
-                // Calculate total allowed downloads
-                const totalAllowedDownloads = purchasedItems.reduce((sum, item) => sum + item.max_downloads, 0);
-                
-                const purchaseData = {
-                    session_id: sessionId, // Exact session ID
-                    email: customerEmail,
-                    customer_email: customerEmail, // Backward compatibility
-                    products: purchasedItems.map(item => ({
-                        productId: item.productId,
-                        title: item.title,
-                        fileName: item.fileName,
-                        imageSrc: item.imageSrc,
-                        quantity: item.quantity,
-                        maxDownloads: item.max_downloads
-                    })),
-                    purchased_items: purchasedItems, // Backward compatibility
-                    quantity: purchasedItems.reduce((sum, item) => sum + item.quantity, 0),
-                    download_count: downloadCount,
-                    downloadsUsed: 0, // Total downloads used across all products
-                    maxDownloads: totalAllowedDownloads,
-                    allowedDownloads: totalAllowedDownloads,
-                    createdAt: new Date().toISOString(),
-                    timestamp: new Date().toISOString(),
-                    payment_status: session.payment_status
-                };
+            // ALWAYS save purchase to Upstash Redis, even if items are empty
+            // This ensures the purchase record exists for the success page
+            const totalAllowedDownloads = purchasedItems.reduce((sum, item) => sum + item.max_downloads, 0);
+            
+            const purchaseData = {
+                session_id: sessionId, // Exact session ID
+                email: customerEmail,
+                customer_email: customerEmail, // Backward compatibility
+                products: purchasedItems.map(item => ({
+                    productId: item.productId,
+                    title: item.title,
+                    fileName: item.fileName,
+                    imageSrc: item.imageSrc,
+                    quantity: item.quantity,
+                    maxDownloads: item.max_downloads
+                })),
+                purchased_items: purchasedItems, // Backward compatibility
+                quantity: purchasedItems.reduce((sum, item) => sum + item.quantity, 0),
+                download_count: downloadCount,
+                downloadsUsed: 0, // Total downloads used across all products
+                maxDownloads: totalAllowedDownloads,
+                allowedDownloads: totalAllowedDownloads,
+                createdAt: new Date().toISOString(),
+                timestamp: new Date().toISOString(),
+                payment_status: session.payment_status,
+                // Debug info
+                lineItemsCount: lineItems.length,
+                cartItemsCount: cartItems.length,
+                purchasedItemsCount: purchasedItems.length
+            };
 
-                // AWAIT the Redis write to guarantee it completes
-                const saved = await db.savePurchase(sessionId, purchaseData);
-                
-                if (saved) {
-                    console.log(`✅ Saved purchase to Redis for: ${sessionId}`, {
-                        itemsCount: purchasedItems.length,
-                        customerEmail: customerEmail,
-                        mode: useTestMode ? 'TEST' : 'LIVE',
-                        redisKey: `purchase:${sessionId}`
-                    });
-                    console.log(`🔑 Redis key: purchase:${sessionId}`);
-                } else {
-                    console.error(`❌ Failed to save purchase for session ${sessionId} - Redis write failed`);
-                    console.error(`🔑 Redis key attempted: purchase:${sessionId}`);
-                    // Still return success to Stripe, but log the error
-                }
+            // Log before saving
+            console.log(`💾 Attempting to save purchase for session: ${sessionId}`, {
+                purchasedItemsCount: purchasedItems.length,
+                lineItemsCount: lineItems.length,
+                cartItemsCount: cartItems.length,
+                customerEmail: customerEmail,
+                redisKey: `purchase:${sessionId}`
+            });
+
+            // AWAIT the Redis write to guarantee it completes
+            const saved = await db.savePurchase(sessionId, purchaseData);
+            
+            if (saved) {
+                console.log(`✅ Saved purchase to Redis for: ${sessionId}`, {
+                    itemsCount: purchasedItems.length,
+                    customerEmail: customerEmail,
+                    mode: useTestMode ? 'TEST' : 'LIVE',
+                    redisKey: `purchase:${sessionId}`
+                });
+                console.log(`🔑 Redis key: purchase:${sessionId}`);
             } else {
-                console.warn(`⚠️ No purchased items found for session ${sessionId}`);
+                console.error(`❌ CRITICAL: Failed to save purchase for session ${sessionId} - Redis write failed`);
+                console.error(`🔑 Redis key attempted: purchase:${sessionId}`);
+                console.error(`📊 Purchase data:`, JSON.stringify(purchaseData, null, 2));
+                // Still return success to Stripe, but log the error
+            }
+
+            if (purchasedItems.length === 0) {
+                console.warn(`⚠️ WARNING: No purchased items found for session ${sessionId}`, {
+                    lineItemsCount: lineItems.length,
+                    cartItemsCount: cartItems.length,
+                    hasMetadata: !!session.metadata,
+                    metadataKeys: session.metadata ? Object.keys(session.metadata) : []
+                });
             }
 
             // Return success to Stripe

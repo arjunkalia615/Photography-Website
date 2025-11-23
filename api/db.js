@@ -43,14 +43,16 @@ async function getPurchase(sessionId) {
         if (purchase) {
             console.log(`✅ Purchase found in Redis for session: ${sessionId}`);
             console.log(`🔑 Redis key: ${key}`);
+            return purchase;
         } else {
             console.log(`⚠️ Purchase not found in Redis for session: ${sessionId}`);
             console.log(`🔑 Redis key checked: ${key}`);
         }
         
-        return purchase;
+        return null;
     } catch (error) {
         console.error(`❌ Error getting purchase from Redis for ${sessionId}:`, error);
+        console.error('Error details:', error.message);
         return null;
     }
 }
@@ -61,20 +63,32 @@ async function savePurchase(sessionId, purchaseData) {
         const redisClient = getRedis();
         const key = `purchase:${sessionId}`; // Exact session ID as Redis key
         
+        console.log(`💾 Saving to Redis: ${key}`, {
+            sessionId: sessionId,
+            itemsCount: purchaseData.purchased_items?.length || purchaseData.products?.length || 0,
+            email: purchaseData.customer_email || purchaseData.email
+        });
+        
         // Store purchase data in Redis - AWAIT to guarantee it completes
-        await redisClient.set(key, purchaseData);
+        // Upstash Redis handles object serialization automatically
+        const result = await redisClient.set(key, purchaseData);
+        
+        console.log(`📝 Redis SET result:`, result);
         
         // Verify the write succeeded by reading it back
         const verify = await redisClient.get(key);
         if (!verify) {
             console.error(`❌ Purchase write verification failed for ${sessionId}`);
+            console.error(`🔑 Redis key: ${key}`);
+            console.error(`📊 SET result was:`, result);
             return false;
         }
         
         console.log(`✅ Purchase saved to Redis: ${key}`, {
-            itemsCount: purchaseData.purchased_items?.length || purchaseData.products?.length || 0,
-            email: purchaseData.customer_email || purchaseData.email,
-            sessionId: sessionId
+            itemsCount: verify.purchased_items?.length || verify.products?.length || 0,
+            email: verify.customer_email || verify.email,
+            sessionId: sessionId,
+            verified: true
         });
         console.log(`🔑 Redis key: ${key}`);
         
@@ -83,6 +97,7 @@ async function savePurchase(sessionId, purchaseData) {
         console.error(`❌ Error saving purchase to Redis for ${sessionId}:`, error);
         console.error(`🔑 Redis key attempted: purchase:${sessionId}`);
         console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
         return false;
     }
 }

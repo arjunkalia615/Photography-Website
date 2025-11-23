@@ -231,6 +231,7 @@
             if (itemsList) {
                 itemsList.innerHTML = cart.map(item => {
                     const itemTotal = item.price * item.quantity;
+                    const downloadUrl = `/api/get-download-link?imageSrc=${encodeURIComponent(item.imageSrc)}`;
                     return `
                         <div class="cart-page-item" data-item-id="${item.id}">
                             <div class="cart-page-item-thumbnail">
@@ -242,6 +243,15 @@
                                     <button class="cart-qty-btn cart-qty-decrease" data-item-id="${item.id}" aria-label="Decrease quantity">−</button>
                                     <input type="number" class="cart-qty-input" value="${item.quantity}" min="1" max="10" data-item-id="${item.id}" readonly>
                                     <button class="cart-qty-btn cart-qty-increase" data-item-id="${item.id}" aria-label="Increase quantity">+</button>
+                                </div>
+                                <!-- Test Download Link (for testing purposes) -->
+                                <div style="margin-top: 10px;">
+                                    <a href="${downloadUrl}" 
+                                       target="_blank" 
+                                       class="test-download-link"
+                                       style="display: inline-block; padding: 6px 12px; background: #51cf66; color: #000; text-decoration: none; border-radius: 4px; font-size: 0.85rem; font-weight: 500; transition: background 0.3s;">
+                                        🧪 Test Download (High-Res)
+                                    </a>
                                 </div>
                             </div>
                             <div class="cart-page-item-price-section">
