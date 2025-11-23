@@ -49,11 +49,25 @@ async function handler(req, res) {
         const purchase = db.getPurchase(sessionId);
 
         if (!purchase) {
+            console.log(`Purchase not found for session: ${sessionId}`);
+            // Log database contents for debugging (first few keys only)
+            const allPurchases = db.readDB();
+            const keys = Object.keys(allPurchases);
+            console.log(`Total purchases in database: ${keys.length}`);
+            if (keys.length > 0) {
+                console.log(`Sample session IDs: ${keys.slice(0, 3).join(', ')}`);
+            }
+            
             return res.status(404).json({
                 error: 'Purchase not found',
                 message: 'No purchase found for this session ID. The purchase may not have been processed yet, or the session ID is invalid.'
             });
         }
+        
+        console.log(`Purchase found for session: ${sessionId}`, {
+            itemsCount: purchase.purchased_items?.length || 0,
+            customerEmail: purchase.customer_email
+        });
 
         // Build download information for each purchased item
         const downloadInfo = purchase.purchased_items.map(item => {
@@ -94,4 +108,6 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
+
+
 

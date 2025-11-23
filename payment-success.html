@@ -82,8 +82,9 @@
                     
                     <!-- Error State -->
                     <div id="errorState" style="margin: 30px auto; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; text-align: center; display: none;">
-                        <p style="color: #ff6b6b; margin-bottom: 10px;">Unable to load download links. Don't worry - we've sent them to your email!</p>
-                        <p style="color: #888888; font-size: 0.9rem;">Please check your email inbox for download links.</p>
+                        <p style="color: #ff6b6b; margin-bottom: 10px;">Unable to load download links.</p>
+                        <p style="color: #888888; font-size: 0.9rem; margin-bottom: 10px;">The purchase may still be processing. Please wait a moment and refresh the page.</p>
+                        <p style="color: #888888; font-size: 0.85rem;">If the problem persists, check your browser console for details or contact support.</p>
                     </div>
                     <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 30px;">
                         <a href="gallery.html" class="payment-pay-btn" style="text-decoration: none; display: inline-block; padding: 16px 32px;">
@@ -146,22 +147,39 @@
         }
 
         // Fetch and display download links using secure download system
-        async function loadDownloadLinks() {
+        // Retry mechanism in case webhook hasn't processed yet
+        async function loadDownloadLinks(retryCount = 0) {
             if (!sessionId) {
                 document.getElementById('loadingState').style.display = 'none';
                 document.getElementById('errorState').style.display = 'block';
                 return;
             }
 
+            const maxRetries = 5;
+            const retryDelay = 2000; // 2 seconds
+
             try {
+                console.log(`Fetching download links for session: ${sessionId} (attempt ${retryCount + 1})`);
                 const response = await fetch(`/api/get-download-links?session_id=${encodeURIComponent(sessionId)}`);
+                
+                console.log('Response status:', response.status);
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.message || 'Failed to fetch download links');
+                    console.error('Error response:', errorData);
+                    
+                    // If purchase not found and we haven't retried too many times, retry
+                    if (response.status === 404 && retryCount < maxRetries) {
+                        console.log(`Purchase not found yet, retrying in ${retryDelay}ms...`);
+                        setTimeout(() => loadDownloadLinks(retryCount + 1), retryDelay);
+                        return;
+                    }
+                    
+                    throw new Error(errorData.message || `Failed to fetch download links (${response.status})`);
                 }
 
                 const data = await response.json();
+                console.log('Download links data:', data);
                 
                 if (data.items && data.items.length > 0) {
                     // Display download links
@@ -208,15 +226,30 @@
                     downloadSection.style.display = 'block';
                 } else {
                     // No download links found
+                    console.warn('No items found in download links response');
                     document.getElementById('loadingState').style.display = 'none';
-                    document.getElementById('errorState').style.display = 'block';
+                    const errorState = document.getElementById('errorState');
+                    errorState.style.display = 'block';
+                    const errorText = errorState.querySelector('p');
+                    if (errorText) {
+                        errorText.textContent = 'No download links found. The purchase may still be processing. Please wait a moment and refresh the page.';
+                    }
                 }
             } catch (error) {
                 console.error('Error loading download links:', error);
                 document.getElementById('loadingState').style.display = 'none';
                 const errorState = document.getElementById('errorState');
                 errorState.style.display = 'block';
-                errorState.querySelector('p').textContent = error.message || 'Unable to load download links. Please try refreshing the page.';
+                const errorText = errorState.querySelector('p');
+                if (errorText) {
+                    errorText.textContent = error.message || 'Unable to load download links. Please try refreshing the page.';
+                }
+                // Also log to console for debugging
+                console.error('Full error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    sessionId: sessionId
+                });
             }
         }
 

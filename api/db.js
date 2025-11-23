@@ -48,10 +48,18 @@ function readDB() {
 function writeDB(data) {
     try {
         ensureDataDir();
-        fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
+        const jsonData = JSON.stringify(data, null, 2);
+        fs.writeFileSync(DB_PATH, jsonData, 'utf8');
+        console.log(`Database written successfully to ${DB_PATH}`);
         return true;
     } catch (error) {
         console.error('Error writing database:', error);
+        console.error('DB_PATH:', DB_PATH);
+        console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            stack: error.stack
+        });
         return false;
     }
 }

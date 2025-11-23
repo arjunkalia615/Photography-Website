@@ -193,9 +193,14 @@ async function handler(req, res) {
 
                 const saved = db.savePurchase(session.id, purchaseData);
                 if (saved) {
-                    console.log(`Purchase saved for session ${session.id}`);
+                    console.log(`Purchase saved for session ${session.id}`, {
+                        itemsCount: purchasedItems.length,
+                        customerEmail: customerEmail
+                    });
                 } else {
-                    console.error(`Failed to save purchase for session ${session.id}`);
+                    console.error(`Failed to save purchase for session ${session.id} - database write failed`);
+                    // Log the purchase data for debugging
+                    console.error('Purchase data that failed to save:', JSON.stringify(purchaseData, null, 2));
                 }
             } else {
                 console.warn(`No purchased items found for session ${session.id}`);
