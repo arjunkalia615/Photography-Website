@@ -8,6 +8,7 @@
   "scripts": {},
   "dependencies": {
     "@upstash/redis": "^1.35.6",
+    "archiver": "^7.0.1",
     "stripe": "^14.0.0"
   }
 }

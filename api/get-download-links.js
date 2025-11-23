@@ -69,13 +69,16 @@ async function handler(req, res) {
         // Use products array if available, fallback to purchased_items
         const items = purchase.products || purchase.purchased_items || [];
         
-        // Build download information for each purchased item (quantity-based)
+        // Build download information for each purchased item (strict quantity limit)
+        // When download is clicked, ALL remaining copies are marked as downloaded
         const downloads = await Promise.all(items.map(async (item) => {
             const productId = item.productId;
             const quantityPurchased = item.quantityPurchased || item.quantity || item.maxDownloads || item.max_downloads || 1;
             const quantityDownloaded = purchase.quantity_downloaded?.[productId] || purchase.download_count?.[productId] || 0;
             const remainingDownloads = Math.max(0, quantityPurchased - quantityDownloaded);
+            // Can download only if there are remaining copies (strict: one download marks all as downloaded)
             const canDownload = remainingDownloads > 0;
+            const allCopiesDownloaded = quantityDownloaded >= quantityPurchased;
 
             return {
                 productId: productId,
@@ -85,7 +88,8 @@ async function handler(req, res) {
                 quantityPurchased: quantityPurchased, // Explicit quantity purchased
                 quantityDownloaded: quantityDownloaded, // Explicit quantity downloaded
                 remainingDownloads: remainingDownloads, // Remaining downloads available
-                canDownload: canDownload,
+                canDownload: canDownload, // Can download if any copies remain
+                allCopiesDownloaded: allCopiesDownloaded, // All copies have been downloaded
                 // Backward compatibility
                 maxDownloads: quantityPurchased,
                 downloadCount: quantityDownloaded,

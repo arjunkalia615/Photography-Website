@@ -8,6 +8,7 @@
 const db = require('./db');
 const fs = require('fs');
 const path = require('path');
+const archiver = require('archiver');
 
 async function handler(req, res) {
     // Set CORS headers
@@ -75,37 +76,40 @@ async function handler(req, res) {
             });
         }
 
-        // Check download limit BEFORE incrementing (quantity-based)
-        // Enforce download limits: prevent user from downloading more than purchased quantity
+        // Check download limit BEFORE serving (strict quantity limit enforcement)
+        // When user clicks download, ALL remaining copies are marked as downloaded
         const quantityPurchased = purchasedItem.quantityPurchased || purchasedItem.quantity || purchasedItem.maxDownloads || purchasedItem.max_downloads || 1;
         const quantityDownloaded = purchase.quantity_downloaded?.[purchasedItem.productId] || purchase.download_count?.[purchasedItem.productId] || 0;
+        const remaining = quantityPurchased - quantityDownloaded;
 
-        if (quantityDownloaded >= quantityPurchased) {
-            console.warn(`⚠️ Download limit reached for session ${sessionId}, product ${productId}: ${quantityDownloaded}/${quantityPurchased}`);
+        // If all copies have been downloaded, prevent further downloads
+        if (quantityDownloaded >= quantityPurchased || remaining <= 0) {
+            console.warn(`⚠️ All copies already downloaded for session ${sessionId}, product ${productId}: ${quantityDownloaded}/${quantityPurchased}`);
             console.log(`🔑 Redis key: purchase:${sessionId}`);
             return res.status(403).json({
-                error: 'Download limit reached',
-                message: `Download limit reached for this item. You have downloaded this item ${quantityDownloaded} time(s) out of ${quantityPurchased} allowed.`,
+                error: 'All copies downloaded',
+                message: `All ${quantityPurchased} copy/copies have already been downloaded for this item.`,
                 quantityPurchased: quantityPurchased,
                 quantityDownloaded: quantityDownloaded,
                 remaining: 0
             });
         }
 
-        // Increment download count in Redis BEFORE serving file (atomic operation)
-        const incremented = await db.incrementDownloadCount(sessionId, productId);
-        if (!incremented) {
-            console.error(`❌ Failed to increment download count for session ${sessionId}, product ${productId}`);
+        // Mark ALL remaining copies as downloaded BEFORE serving file (strict enforcement)
+        // This ensures user can only download once, getting all remaining copies
+        const marked = await db.markAllCopiesDownloaded(sessionId, productId);
+        if (!marked) {
+            console.error(`❌ Failed to mark all copies as downloaded for session ${sessionId}, product ${productId}`);
             console.error(`🔑 Redis key: purchase:${sessionId}`);
             return res.status(500).json({
                 error: 'Database error',
-                message: 'Failed to update download count'
+                message: 'Failed to update download status'
             });
         }
 
-        console.log(`✅ Download count incremented in Redis: ${quantityDownloaded + 1}/${quantityPurchased} for ${productId}`);
+        console.log(`✅ All remaining copies marked as downloaded: ${quantityPurchased}/${quantityPurchased} for ${productId}`);
+        console.log(`📥 Download serving all ${remaining} remaining copy/copies for session: ${sessionId}, product: ${productId}`);
         console.log(`🔑 Redis key: purchase:${sessionId}`);
-        console.log(`📥 Download occurred for session: ${sessionId}, product: ${productId}`);
 
         // Get file path
         const imageSrc = purchasedItem.imageSrc;
@@ -149,34 +153,81 @@ async function handler(req, res) {
             });
         }
 
-        // Set headers for file download (no compression, high quality)
-        const fileName = purchasedItem.fileName || path.basename(filePath);
-        res.setHeader('Content-Type', 'image/jpeg');
-        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-        res.setHeader('Content-Length', stats.size);
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        res.setHeader('X-Content-Type-Options', 'nosniff');
+        const baseFileName = purchasedItem.fileName || path.basename(filePath);
+        const fileExtension = path.extname(baseFileName);
+        const fileNameWithoutExt = path.basename(baseFileName, fileExtension);
 
-        // Stream the file (no compression, full quality)
-        const fileStream = fs.createReadStream(filePath);
-        
-        fileStream.on('error', (error) => {
-            console.error('❌ Error streaming file:', error);
-            if (!res.headersSent) {
-                res.status(500).json({
-                    error: 'Download failed',
-                    message: 'Error reading file'
-                });
+        // Serve all remaining copies at once
+        // If remaining > 1, create ZIP with all remaining copies
+        // If remaining = 1, serve single file
+        if (remaining > 1) {
+            // Create ZIP file with all remaining copies
+            res.setHeader('Content-Type', 'application/zip');
+            res.setHeader('Content-Disposition', `attachment; filename="${fileNameWithoutExt}_${remaining}_copies.zip"`);
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+
+            // Create ZIP archive with no compression for maximum quality
+            const archive = archiver('zip', {
+                zlib: { level: 0 } // No compression - store files as-is
+            });
+
+            archive.on('error', (error) => {
+                console.error('❌ Error creating ZIP archive:', error);
+                if (!res.headersSent) {
+                    res.status(500).json({
+                        error: 'Download failed',
+                        message: 'Error creating archive'
+                    });
+                }
+            });
+
+            // Pipe archive to response
+            archive.pipe(res);
+
+            // Add the file for each remaining copy
+            for (let i = 1; i <= remaining; i++) {
+                const copyFileName = `${fileNameWithoutExt}_copy_${quantityDownloaded + i}${fileExtension}`;
+                archive.file(filePath, { name: copyFileName });
             }
-        });
 
-        fileStream.pipe(res);
+            // Finalize the archive
+            await archive.finalize();
+
+            console.log(`✅ ZIP archive created with ${remaining} remaining copies: ${baseFileName}`);
+            console.log(`📊 Session: ${sessionId}, Product: ${productId}, All ${remaining} remaining copies served in ZIP`);
+        } else {
+            // Single file download
+            res.setHeader('Content-Type', 'image/jpeg');
+            res.setHeader('Content-Disposition', `attachment; filename="${baseFileName}"`);
+            res.setHeader('Content-Length', stats.size);
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+
+            // Stream the file (no compression, full quality)
+            const fileStream = fs.createReadStream(filePath);
+            
+            fileStream.on('error', (error) => {
+                console.error('❌ Error streaming file:', error);
+                if (!res.headersSent) {
+                    res.status(500).json({
+                        error: 'Download failed',
+                        message: 'Error reading file'
+                    });
+                }
+            });
+
+            fileStream.pipe(res);
+
+            console.log(`✅ File downloaded successfully: ${baseFileName}`);
+        }
 
         // Log successful download
-        console.log(`✅ File downloaded successfully: ${fileName}`);
-        console.log(`📊 Session: ${sessionId}, Product: ${productId}, Quantity: ${quantityDownloaded + 1}/${quantityPurchased} (${quantityPurchased - quantityDownloaded - 1} remaining)`);
+        console.log(`📊 Session: ${sessionId}, Product: ${productId}, All ${quantityPurchased} copies marked as downloaded`);
         console.log(`🔑 Redis key: purchase:${sessionId}`);
 
     } catch (error) {

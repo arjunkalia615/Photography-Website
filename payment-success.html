@@ -267,19 +267,20 @@
             const loadingState = document.getElementById('loadingState');
             const errorState = document.getElementById('errorState');
             
-            // Build HTML for each download link (quantity-based display)
+            // Build HTML for each download link (strict quantity limit: one download marks all as downloaded)
             downloadLinks.innerHTML = data.items.map((item) => {
                 const quantityPurchased = item.quantityPurchased || item.maxDownloads || item.quantity || 1;
                 const quantityDownloaded = item.quantityDownloaded || item.downloadCount || 0;
                 const remainingDownloads = item.remainingDownloads || Math.max(0, quantityPurchased - quantityDownloaded);
                 const canDownload = item.canDownload !== false && remainingDownloads > 0;
+                const allCopiesDownloaded = item.allCopiesDownloaded || quantityDownloaded >= quantityPurchased;
                 
                 const downloadButtonText = canDownload 
-                    ? `⬇ Download High-Resolution Image (${remainingDownloads} remaining)`
-                    : `❌ All Downloads Used (${quantityDownloaded}/${quantityPurchased})`;
+                    ? `⬇ Download All ${quantityPurchased} Copy${quantityPurchased === 1 ? '' : 'ies'} (High-Resolution)`
+                    : `✅ All Copies Downloaded (${quantityPurchased}/${quantityPurchased})`;
                 const buttonStyle = canDownload
                     ? 'display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer;'
-                    : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.6;';
+                    : 'display: inline-block; padding: 12px 24px; background: #51cf66; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: default; opacity: 0.9;';
                 
                 return `
                     <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
@@ -288,7 +289,7 @@
                             <a href="${item.downloadUrl}" 
                                target="_blank"
                                style="${buttonStyle}"
-                               onclick="console.log('Download clicked: ${item.productId}')">
+                               onclick="console.log('Download clicked: ${item.productId} - downloading all ${quantityPurchased} copies'); handleDownloadClick('${item.productId}');">
                                 ${downloadButtonText}
                             </a>
                         ` : `
@@ -296,17 +297,29 @@
                                 ${downloadButtonText}
                             </div>
                         `}
-                        <p style="margin: 10px 0 0 0; color: #888888; font-size: 0.85rem;">
+                        <p style="margin: 10px 0 0 0; color: ${allCopiesDownloaded ? '#51cf66' : '#888888'}; font-size: 0.85rem;">
                             ${canDownload 
-                                ? `Click to download the full-resolution image (no compression). You have ${remainingDownloads} download${remainingDownloads === 1 ? '' : 's'} remaining out of ${quantityPurchased} purchased.`
-                                : `You have used all ${quantityPurchased} download${quantityPurchased === 1 ? '' : 's'} for this item. Contact support if you need additional downloads.`}
+                                ? `Click to download all ${quantityPurchased} high-resolution copy/copies (no compression). After download, all copies will be marked as downloaded.`
+                                : `✅ All ${quantityPurchased} copy/copies have been downloaded. Contact support if you need additional downloads.`}
                         </p>
                         <p style="margin: 5px 0 0 0; color: #666666; font-size: 0.8rem;">
-                            Quantity Purchased: ${quantityPurchased} | Downloads Used: ${quantityDownloaded} | Remaining: ${remainingDownloads}
+                            Quantity Purchased: ${quantityPurchased} | Status: ${allCopiesDownloaded ? 'All Downloaded' : 'Available for Download'}
                         </p>
                     </div>
                 `;
             }).join('');
+            
+            // Add download click handler to update UI after download
+            function handleDownloadClick(productId) {
+                // After a short delay, refresh the download links to show updated status
+                setTimeout(() => {
+                    console.log('Refreshing download links after download...');
+                    loadDownloadLinks(0); // Reload with no retries
+                }, 2000); // Wait 2 seconds for download to complete and Redis to update
+            }
+            
+            // Make handler available globally
+            window.handleDownloadClick = handleDownloadClick;
 
             // Show download section, hide loading and error states
             loadingState.style.display = 'none';
