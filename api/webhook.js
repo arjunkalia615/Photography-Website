@@ -2,7 +2,7 @@
  * Vercel Serverless Function
  * POST /api/webhook
  * Handles Stripe webhook events, particularly checkout.session.completed
- * Sends download links to customers after successful payment
+ * Saves purchase data to database for download tracking
  */
 
 const stripe = require('stripe');
@@ -49,14 +49,14 @@ async function handler(req, res) {
             });
         }
 
-        // Determine which Stripe key to use
+        // Determine which Stripe key to use (LIVE or TEST)
         const useTestMode = process.env.USE_TEST_STRIPE === 'true';
         const stripeSecretKey = useTestMode 
             ? process.env.STRIPE_SECRET_KEY_TEST 
             : process.env.STRIPE_SECRET_KEY;
 
         if (!stripeSecretKey) {
-            console.error('Stripe secret key not configured');
+            console.error(`Stripe secret key not configured (mode: ${useTestMode ? 'TEST' : 'LIVE'})`);
             return res.status(500).json({
                 error: 'Server configuration error',
                 message: 'Stripe secret key not configured'
@@ -65,28 +65,22 @@ async function handler(req, res) {
 
         const stripeInstance = stripe(stripeSecretKey);
 
-        // For Vercel, we need to get the raw body
-        // Note: Vercel automatically parses JSON, so we need to reconstruct the raw body
-        // In production, you may need to use req.body directly or configure Vercel to pass raw body
+        // For Vercel, get raw body from request
+        // Vercel may pass body as string or buffer
+        let rawBody;
+        if (typeof req.body === 'string') {
+            rawBody = req.body;
+        } else if (Buffer.isBuffer(req.body)) {
+            rawBody = req.body.toString('utf8');
+        } else {
+            // If body is already parsed JSON, stringify it back
+            rawBody = JSON.stringify(req.body);
+        }
+
+        // Verify webhook signature
         let event;
-        
         try {
-            // Try to construct event with the body as-is first
-            // If that fails, we'll try with stringified version
-            try {
-                event = stripeInstance.webhooks.constructEvent(
-                    JSON.stringify(req.body),
-                    signature,
-                    webhookSecret
-                );
-            } catch (e) {
-                // If that fails, try with the body directly (if it's already a string)
-                event = stripeInstance.webhooks.constructEvent(
-                    typeof req.body === 'string' ? req.body : JSON.stringify(req.body),
-                    signature,
-                    webhookSecret
-                );
-            }
+            event = stripeInstance.webhooks.constructEvent(rawBody, signature, webhookSecret);
         } catch (err) {
             console.error('Webhook signature verification failed:', err.message);
             return res.status(400).json({
@@ -95,28 +89,31 @@ async function handler(req, res) {
             });
         }
 
-        // Handle the event
+        // Handle checkout.session.completed event
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
 
-            // Extract customer email
+            console.log(`Processing checkout.session.completed for session: ${session.id}`);
+
+            // Extract customer email (REQUIRED)
             const customerEmail = session.customer_email || session.customer_details?.email;
             
             if (!customerEmail) {
-                console.error('No customer email found in session');
+                console.error('No customer email found in session', session.id);
                 return res.status(400).json({
                     error: 'Missing email',
                     message: 'Customer email not found in checkout session'
                 });
             }
 
-            // Fetch line items from Stripe (expanded)
+            // Fetch line items from Stripe (expanded to get full product details)
             let lineItems = [];
             try {
                 const expandedSession = await stripeInstance.checkout.sessions.retrieve(session.id, {
                     expand: ['line_items.data.price.product']
                 });
                 lineItems = expandedSession.line_items?.data || [];
+                console.log(`Retrieved ${lineItems.length} line items for session ${session.id}`);
             } catch (error) {
                 console.error('Error fetching line items:', error);
             }
@@ -126,6 +123,7 @@ async function handler(req, res) {
             if (session.metadata && session.metadata.cart_items) {
                 try {
                     cartItems = JSON.parse(session.metadata.cart_items);
+                    console.log(`Retrieved ${cartItems.length} cart items from metadata`);
                 } catch (parseError) {
                     console.error('Error parsing cart_items from metadata:', parseError);
                 }
@@ -137,15 +135,20 @@ async function handler(req, res) {
 
             // Process line items or fallback to metadata
             if (lineItems.length > 0) {
+                // Use line items from Stripe (more reliable)
                 for (const lineItem of lineItems) {
-                    // Try to get product info from line item
                     const productName = lineItem.price?.product?.name || lineItem.description || 'Photo';
                     const quantity = lineItem.quantity || 1;
                     
-                    // Find matching cart item to get imageSrc
-                    const cartItem = cartItems.find(ci => ci.name === productName || ci.title === productName);
+                    // Find matching cart item to get imageSrc and productId
+                    const cartItem = cartItems.find(ci => 
+                        ci.name === productName || 
+                        ci.title === productName ||
+                        (lineItem.price?.product?.metadata?.productId && ci.productId === lineItem.price.product.metadata.productId)
+                    );
+                    
                     const imageSrc = cartItem?.imageSrc || '';
-                    const productId = cartItem?.productId || cartItem?.id || lineItem.id || `item_${Date.now()}_${Math.random()}`;
+                    const productId = cartItem?.productId || cartItem?.id || lineItem.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                     const fileName = imageSrc.split('/').pop() || `${productName.replace(/[^a-z0-9]/gi, '_')}.jpg`;
 
                     purchasedItems.push({
@@ -162,7 +165,7 @@ async function handler(req, res) {
             } else if (cartItems.length > 0) {
                 // Fallback: use cart items from metadata
                 for (const cartItem of cartItems) {
-                    const productId = cartItem.productId || cartItem.id || `item_${Date.now()}_${Math.random()}`;
+                    const productId = cartItem.productId || cartItem.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                     const imageSrc = cartItem.imageSrc || '';
                     const fileName = imageSrc.split('/').pop() || `${(cartItem.title || cartItem.name).replace(/[^a-z0-9]/gi, '_')}.jpg`;
                     const quantity = cartItem.quantity || 1;
@@ -180,7 +183,7 @@ async function handler(req, res) {
                 }
             }
 
-            // Save purchase to database
+            // Save purchase to database (REQUIRED for download system)
             if (purchasedItems.length > 0) {
                 const purchaseData = {
                     session_id: session.id,
@@ -193,21 +196,26 @@ async function handler(req, res) {
 
                 const saved = db.savePurchase(session.id, purchaseData);
                 if (saved) {
-                    console.log(`Purchase saved for session ${session.id}`, {
+                    console.log(`✅ Purchase saved for session ${session.id}`, {
                         itemsCount: purchasedItems.length,
-                        customerEmail: customerEmail
+                        customerEmail: customerEmail,
+                        mode: useTestMode ? 'TEST' : 'LIVE'
                     });
                 } else {
-                    console.error(`Failed to save purchase for session ${session.id} - database write failed`);
-                    // Log the purchase data for debugging
-                    console.error('Purchase data that failed to save:', JSON.stringify(purchaseData, null, 2));
+                    console.error(`❌ Failed to save purchase for session ${session.id} - database write failed`);
+                    console.error('Purchase data:', JSON.stringify(purchaseData, null, 2));
+                    // Still return success to Stripe, but log the error
                 }
             } else {
-                console.warn(`No purchased items found for session ${session.id}`);
+                console.warn(`⚠️ No purchased items found for session ${session.id}`);
             }
+
+            // Return success to Stripe
+            return res.status(200).json({ received: true });
         }
 
-        // Return success response
+        // Handle other event types (log but don't error)
+        console.log(`Unhandled event type: ${event.type}`);
         return res.status(200).json({ received: true });
 
     } catch (error) {
@@ -219,86 +227,4 @@ async function handler(req, res) {
     }
 }
 
-/**
- * Send download email to customer
- */
-async function sendDownloadEmail(customerEmail, downloadLinks, sessionId) {
-    // Use Web3Forms or another email service to send download links
-    // For now, we'll use a simple approach - you can integrate with your preferred email service
-    
-    const emailServiceUrl = 'https://api.web3forms.com/submit';
-    const accessKey = process.env.WEB3FORMS_ACCESS_KEY || '4a8d406c-49ac-40b2-a6da-e0de60f7e727';
-    
-    // Build download links HTML
-    const downloadLinksHtml = downloadLinks.map((item, index) => {
-        return `
-            <div style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
-                <h3 style="margin: 0 0 10px 0; color: #333;">${item.title}</h3>
-                <a href="${item.downloadUrl}" 
-                   style="display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
-                    Download High-Resolution Image
-                </a>
-                <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">
-                    Right-click the link and select "Save As" to download the full-resolution image.
-                </p>
-            </div>
-        `;
-    }).join('');
-
-    const emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: #000; color: #fff; padding: 20px; text-align: center; }
-                .content { padding: 20px; background: #fff; }
-                .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1 style="margin: 0;">Your Digital Photography Downloads</h1>
-                </div>
-                <div class="content">
-                    <p>Thank you for your purchase! Your payment has been processed successfully.</p>
-                    <p><strong>Order ID:</strong> ${sessionId}</p>
-                    <h2 style="margin-top: 30px;">Download Your High-Resolution Images</h2>
-                    <p>Click the download links below to access your high-resolution digital photography prints. Files are provided in JPEG format at full quality with no compression.</p>
-                    ${downloadLinksHtml}
-                    <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
-                        <p style="margin: 0;"><strong>Important:</strong> These are high-resolution files suitable for printing. Files are provided without compression to ensure the best quality.</p>
-                    </div>
-                </div>
-                <div class="footer">
-                    <p>If you have any questions, please contact us at <a href="mailto:hello@ifeelworld.com">hello@ifeelworld.com</a></p>
-                    <p>&copy; 2025 ifeelworld - All rights reserved</p>
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
-
-    // Note: Web3Forms is for receiving form submissions, not sending emails to customers
-    // For production, you should use a proper email service like SendGrid, Mailgun, or Resend
-    // For now, we'll log the email content and the download links are available on the success page
-    
-    console.log('Download links for customer:', {
-        email: customerEmail,
-        sessionId: sessionId,
-        downloadLinks: downloadLinks
-    });
-
-    // TODO: Integrate with proper email service (SendGrid, Mailgun, Resend, etc.)
-    // For now, download links are available on the payment success page
-    // The success page will display download links immediately after payment
-    
-    // Return success (email sending can be added later with proper email service)
-    return { success: true, message: 'Download links available on success page' };
-}
-
 module.exports = handler;
-

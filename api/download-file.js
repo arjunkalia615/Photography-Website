@@ -52,6 +52,7 @@ async function handler(req, res) {
         const purchase = db.getPurchase(sessionId);
 
         if (!purchase) {
+            console.error(`Purchase not found for session: ${sessionId}`);
             return res.status(404).json({
                 error: 'Purchase not found',
                 message: 'No purchase found for this session ID'
@@ -62,27 +63,36 @@ async function handler(req, res) {
         const purchasedItem = purchase.purchased_items.find(item => item.productId === productId);
 
         if (!purchasedItem) {
+            console.error(`Product ${productId} not found in purchase ${sessionId}`);
             return res.status(403).json({
                 error: 'Product not found',
                 message: 'This product was not part of your purchase'
             });
         }
 
-        // Check download limit
-        const downloadCount = purchase.download_count[purchasedItem.productId] || 0;
+        // Check download limit BEFORE incrementing
+        const currentDownloadCount = purchase.download_count[purchasedItem.productId] || 0;
         const maxDownloads = purchasedItem.max_downloads;
 
-        if (downloadCount >= maxDownloads) {
+        if (currentDownloadCount >= maxDownloads) {
+            console.warn(`Download limit reached for session ${sessionId}, product ${productId}: ${currentDownloadCount}/${maxDownloads}`);
             return res.status(403).json({
                 error: 'Download limit reached',
-                message: `Download limit reached for this item. You have downloaded this item ${downloadCount} time(s) out of ${maxDownloads} allowed.`,
-                downloadCount: downloadCount,
+                message: `Download limit reached for this item. You have downloaded this item ${currentDownloadCount} time(s) out of ${maxDownloads} allowed.`,
+                downloadCount: currentDownloadCount,
                 maxDownloads: maxDownloads
             });
         }
 
-        // Increment download count BEFORE serving file
-        db.incrementDownloadCount(sessionId, productId);
+        // Increment download count BEFORE serving file (atomic operation)
+        const incremented = db.incrementDownloadCount(sessionId, productId);
+        if (!incremented) {
+            console.error(`Failed to increment download count for session ${sessionId}, product ${productId}`);
+            return res.status(500).json({
+                error: 'Database error',
+                message: 'Failed to update download count'
+            });
+        }
 
         // Get file path
         const imageSrc = purchasedItem.imageSrc;
@@ -98,10 +108,11 @@ async function handler(req, res) {
         const cleanPath = imageSrc.startsWith('/') ? imageSrc.substring(1) : imageSrc;
         const filePath = path.join(process.cwd(), cleanPath);
 
-        // Security: Prevent directory traversal
+        // Security: Prevent directory traversal attacks
         const resolvedPath = path.resolve(filePath);
         const projectRoot = path.resolve(process.cwd());
         if (!resolvedPath.startsWith(projectRoot)) {
+            console.error(`Directory traversal attempt detected: ${filePath}`);
             return res.status(403).json({
                 error: 'Access denied',
                 message: 'Invalid file path'
@@ -126,7 +137,7 @@ async function handler(req, res) {
             });
         }
 
-        // Set headers for file download
+        // Set headers for file download (no compression, high quality)
         const fileName = purchasedItem.fileName || path.basename(filePath);
         res.setHeader('Content-Type', 'image/jpeg');
         res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
@@ -134,13 +145,25 @@ async function handler(req, res) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
 
-        // Stream the file
+        // Stream the file (no compression, full quality)
         const fileStream = fs.createReadStream(filePath);
+        
+        fileStream.on('error', (error) => {
+            console.error('Error streaming file:', error);
+            if (!res.headersSent) {
+                res.status(500).json({
+                    error: 'Download failed',
+                    message: 'Error reading file'
+                });
+            }
+        });
+
         fileStream.pipe(res);
 
         // Log successful download
-        console.log(`File downloaded: ${fileName} for session ${sessionId}, product ${productId}`);
+        console.log(`✅ File downloaded: ${fileName} for session ${sessionId}, product ${productId} (${currentDownloadCount + 1}/${maxDownloads})`);
 
     } catch (error) {
         console.error('Error downloading file:', error);
@@ -156,6 +179,3 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-
-
-

@@ -326,6 +326,11 @@
             // Get customer email - REQUIRED field
             const customerEmail = document.getElementById('customerEmail').value.trim();
             
+            // Store email in localStorage for fallback lookup on success page
+            if (customerEmail) {
+                localStorage.setItem('checkout_email', customerEmail);
+            }
+            
             // Validate email is provided
             if (!customerEmail) {
                 showMessage('Email address is required to proceed with payment. Please enter your email.', false);

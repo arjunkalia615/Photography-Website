@@ -182,48 +182,8 @@
                 console.log('Download links data:', data);
                 
                 if (data.items && data.items.length > 0) {
-                    // Display download links
-                    const downloadSection = document.getElementById('downloadSection');
-                    const downloadLinks = document.getElementById('downloadLinks');
-                    const loadingState = document.getElementById('loadingState');
-                    
-                    // Build download links HTML with download count information
-                    downloadLinks.innerHTML = data.items.map((item, index) => {
-                        const downloadButtonText = item.canDownload 
-                            ? `⬇ Download High-Resolution Image (${item.remainingDownloads} remaining)`
-                            : `❌ Download Limit Reached (${item.downloadCount}/${item.maxDownloads} used)`;
-                        const buttonStyle = item.canDownload
-                            ? 'display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer;'
-                            : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.6;';
-                        
-                        return `
-                            <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                                <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1rem;">${item.title}</h4>
-                                ${item.canDownload ? `
-                                    <a href="${item.downloadUrl}" 
-                                       target="_blank"
-                                       style="${buttonStyle}">
-                                        ${downloadButtonText}
-                                    </a>
-                                ` : `
-                                    <div style="${buttonStyle}">
-                                        ${downloadButtonText}
-                                    </div>
-                                `}
-                                <p style="margin: 10px 0 0 0; color: #888888; font-size: 0.85rem;">
-                                    ${item.canDownload 
-                                        ? 'Click to download the full-resolution image (no compression). Each download counts toward your limit.'
-                                        : 'You have reached the download limit for this item. Contact support if you need additional downloads.'}
-                                </p>
-                                <p style="margin: 5px 0 0 0; color: #666666; font-size: 0.8rem;">
-                                    Downloads: ${item.downloadCount} / ${item.maxDownloads} (${item.remainingDownloads} remaining)
-                                </p>
-                            </div>
-                        `;
-                    }).join('');
-
-                    loadingState.style.display = 'none';
-                    downloadSection.style.display = 'block';
+                    // Use helper function to display download links
+                    displayDownloadLinks(data);
                 } else {
                     // No download links found
                     console.warn('No items found in download links response');
@@ -257,8 +217,74 @@
         if (sessionId) {
             loadDownloadLinks();
         } else {
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('errorState').style.display = 'block';
+            // Try to get email from localStorage or prompt user
+            const storedEmail = localStorage.getItem('checkout_email');
+            if (storedEmail) {
+                console.log('No session ID, trying to load by email:', storedEmail);
+                loadDownloadLinksByEmail(storedEmail);
+            } else {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'block';
+            }
+        }
+
+        // Fallback: Load by email if session_id not available
+        async function loadDownloadLinksByEmail(email) {
+            try {
+                const response = await fetch(`/api/get-download-links?email=${encodeURIComponent(email)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.items && data.items.length > 0) {
+                        displayDownloadLinks(data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading by email:', error);
+            }
+        }
+
+        // Helper function to display download links
+        function displayDownloadLinks(data) {
+            const downloadSection = document.getElementById('downloadSection');
+            const downloadLinks = document.getElementById('downloadLinks');
+            const loadingState = document.getElementById('loadingState');
+            
+            downloadLinks.innerHTML = data.items.map((item) => {
+                const downloadButtonText = item.canDownload 
+                    ? `⬇ Download High-Resolution Image (${item.remainingDownloads} remaining)`
+                    : `❌ Download Limit Reached (${item.downloadCount}/${item.maxDownloads} used)`;
+                const buttonStyle = item.canDownload
+                    ? 'display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer;'
+                    : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.6;';
+                
+                return `
+                    <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1rem;">${item.title}</h4>
+                        ${item.canDownload ? `
+                            <a href="${item.downloadUrl}" 
+                               target="_blank"
+                               style="${buttonStyle}">
+                                ${downloadButtonText}
+                            </a>
+                        ` : `
+                            <div style="${buttonStyle}">
+                                ${downloadButtonText}
+                            </div>
+                        `}
+                        <p style="margin: 10px 0 0 0; color: #888888; font-size: 0.85rem;">
+                            ${item.canDownload 
+                                ? 'Click to download the full-resolution image (no compression). Each download counts toward your limit.'
+                                : 'You have reached the download limit for this item. Contact support if you need additional downloads.'}
+                        </p>
+                        <p style="margin: 5px 0 0 0; color: #666666; font-size: 0.8rem;">
+                            Downloads: ${item.downloadCount} / ${item.maxDownloads} (${item.remainingDownloads} remaining)
+                        </p>
+                    </div>
+                `;
+            }).join('');
+
+            loadingState.style.display = 'none';
+            downloadSection.style.display = 'block';
         }
 
         // Mobile menu toggle
