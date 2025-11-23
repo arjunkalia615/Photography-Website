@@ -76,11 +76,13 @@ async function handler(req, res) {
         }
 
         // Check download limit BEFORE incrementing
+        // Enforce download limits: prevent user from downloading more than purchased quantity
         const currentDownloadCount = purchase.download_count?.[purchasedItem.productId] || 0;
         const maxDownloads = purchasedItem.maxDownloads || purchasedItem.max_downloads || purchasedItem.quantity || 1;
 
         if (currentDownloadCount >= maxDownloads) {
             console.warn(`⚠️ Download limit reached for session ${sessionId}, product ${productId}: ${currentDownloadCount}/${maxDownloads}`);
+            console.log(`🔑 Redis key: purchase:${sessionId}`);
             return res.status(403).json({
                 error: 'Download limit reached',
                 message: `Download limit reached for this item. You have downloaded this item ${currentDownloadCount} time(s) out of ${maxDownloads} allowed.`,

@@ -90,7 +90,7 @@ async function handler(req, res) {
         // Handle checkout.session.completed event
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
-            const sessionId = session.id;
+            const sessionId = session.id; // Exact session ID from Stripe
 
             console.log(`✅ Webhook received for session ID: ${sessionId}`);
             console.log(`📦 Event type: ${event.type}`);
@@ -189,9 +189,9 @@ async function handler(req, res) {
                 const totalAllowedDownloads = purchasedItems.reduce((sum, item) => sum + item.max_downloads, 0);
                 
                 const purchaseData = {
-                    session_id: sessionId,
-                    email: customerEmail, // Store as 'email' for consistency
-                    customer_email: customerEmail, // Also keep for backward compatibility
+                    session_id: sessionId, // Exact session ID
+                    email: customerEmail,
+                    customer_email: customerEmail, // Backward compatibility
                     products: purchasedItems.map(item => ({
                         productId: item.productId,
                         title: item.title,
@@ -200,18 +200,20 @@ async function handler(req, res) {
                         quantity: item.quantity,
                         maxDownloads: item.max_downloads
                     })),
-                    purchased_items: purchasedItems, // Keep for backward compatibility
+                    purchased_items: purchasedItems, // Backward compatibility
                     quantity: purchasedItems.reduce((sum, item) => sum + item.quantity, 0),
                     download_count: downloadCount,
                     downloadsUsed: 0, // Total downloads used across all products
-                    maxDownloads: totalAllowedDownloads, // Total allowed downloads
-                    allowedDownloads: totalAllowedDownloads, // Alias for consistency
+                    maxDownloads: totalAllowedDownloads,
+                    allowedDownloads: totalAllowedDownloads,
                     createdAt: new Date().toISOString(),
-                    timestamp: new Date().toISOString(), // Keep for backward compatibility
+                    timestamp: new Date().toISOString(),
                     payment_status: session.payment_status
                 };
 
+                // AWAIT the Redis write to guarantee it completes
                 const saved = await db.savePurchase(sessionId, purchaseData);
+                
                 if (saved) {
                     console.log(`✅ Saved purchase to Redis for: ${sessionId}`, {
                         itemsCount: purchasedItems.length,

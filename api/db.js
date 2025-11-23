@@ -59,14 +59,21 @@ async function getPurchase(sessionId) {
 async function savePurchase(sessionId, purchaseData) {
     try {
         const redisClient = getRedis();
-        const key = `purchase:${sessionId}`;
+        const key = `purchase:${sessionId}`; // Exact session ID as Redis key
         
-        // Store purchase data in Redis
+        // Store purchase data in Redis - AWAIT to guarantee it completes
         await redisClient.set(key, purchaseData);
         
+        // Verify the write succeeded by reading it back
+        const verify = await redisClient.get(key);
+        if (!verify) {
+            console.error(`❌ Purchase write verification failed for ${sessionId}`);
+            return false;
+        }
+        
         console.log(`✅ Purchase saved to Redis: ${key}`, {
-            itemsCount: purchaseData.purchased_items?.length || 0,
-            email: purchaseData.customer_email,
+            itemsCount: purchaseData.purchased_items?.length || purchaseData.products?.length || 0,
+            email: purchaseData.customer_email || purchaseData.email,
             sessionId: sessionId
         });
         console.log(`🔑 Redis key: ${key}`);
@@ -75,6 +82,7 @@ async function savePurchase(sessionId, purchaseData) {
     } catch (error) {
         console.error(`❌ Error saving purchase to Redis for ${sessionId}:`, error);
         console.error(`🔑 Redis key attempted: purchase:${sessionId}`);
+        console.error('Error details:', error.message);
         return false;
     }
 }

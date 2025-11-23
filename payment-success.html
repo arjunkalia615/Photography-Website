@@ -134,7 +134,7 @@
             Cart.updateBadge();
         }
 
-        // Get session ID from URL
+        // Get session ID from URL (exact session ID from Stripe checkout)
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session_id');
         
@@ -149,10 +149,24 @@
         // Fetch and display download links using secure download system
         // Retry mechanism: automatically recheck every 1s for up to 7s
         async function loadDownloadLinks(retryCount = 0) {
+            // Validate session ID format before retrying
             if (!sessionId) {
+                console.error('❌ No session ID in URL');
                 document.getElementById('loadingState').style.display = 'none';
                 document.getElementById('errorState').style.display = 'block';
                 return;
+            }
+
+            // Validate session ID format (must start with cs_)
+            if (!sessionId.startsWith('cs_')) {
+                console.error(`❌ Invalid session ID format: ${sessionId}`);
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'block';
+                const errorText = document.getElementById('errorState').querySelector('p');
+                if (errorText) {
+                    errorText.textContent = 'Invalid session ID. Please check your order confirmation email.';
+                }
+                return; // Don't retry with invalid session ID
             }
 
             const maxRetries = 7; // 7 seconds total
@@ -191,9 +205,16 @@
                 const data = await response.json();
                 console.log('✅ Download links data received:', data);
                 
-                if (data.items && data.items.length > 0) {
-                    // Use helper function to display download links
-                    displayDownloadLinks(data);
+                // Handle new response format: { purchase: {...}, downloads: [...], quantity: n }
+                const downloads = data.downloads || data.items || [];
+                
+                if (downloads.length > 0) {
+                    // Display download links immediately
+                    displayDownloadLinks({
+                        purchase: data.purchase || {},
+                        items: downloads,
+                        totalItems: downloads.length
+                    });
                 } else {
                     // No download links found
                     console.warn('⚠️ No items found in download links response');
@@ -226,36 +247,6 @@
                     // Continue retrying
                     setTimeout(() => loadDownloadLinks(retryCount + 1), retryDelay);
                 }
-            }
-        }
-
-        // Load download links on page load
-        if (sessionId) {
-            loadDownloadLinks();
-        } else {
-            // Try to get email from localStorage or prompt user
-            const storedEmail = localStorage.getItem('checkout_email');
-            if (storedEmail) {
-                console.log('No session ID, trying to load by email:', storedEmail);
-                loadDownloadLinksByEmail(storedEmail);
-            } else {
-                document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('errorState').style.display = 'block';
-            }
-        }
-
-        // Fallback: Load by email if session_id not available
-        async function loadDownloadLinksByEmail(email) {
-            try {
-                const response = await fetch(`/api/get-download-links?email=${encodeURIComponent(email)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.items && data.items.length > 0) {
-                        displayDownloadLinks(data);
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading by email:', error);
             }
         }
 
@@ -303,6 +294,20 @@
             downloadSection.style.display = 'block';
         }
 
+        // Load download links on page load (only if valid session ID)
+        if (sessionId && sessionId.startsWith('cs_')) {
+            loadDownloadLinks();
+        } else if (sessionId) {
+            // Invalid session ID format - show error immediately
+            console.error(`❌ Invalid session ID format: ${sessionId}`);
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+        } else {
+            // No session ID - show error
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+        }
+
         // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
@@ -330,4 +335,3 @@
     </script>
 </body>
 </html>
-
