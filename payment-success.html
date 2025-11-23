@@ -268,41 +268,47 @@
             const errorState = document.getElementById('errorState');
             
             // Build HTML for each download link (boolean downloaded flag)
+            // Single download button per item with quantity displayed next to it
             downloadLinks.innerHTML = data.items.map((item) => {
                 const quantityPurchased = item.quantityPurchased || item.maxDownloads || item.quantity || 1;
                 const downloaded = item.downloaded === true;
                 const canDownload = item.canDownload !== false && !downloaded;
                 
+                // Button text: "Download" when available, "Downloaded" when done
                 const downloadButtonText = canDownload 
-                    ? `⬇ Download ${quantityPurchased} Copy${quantityPurchased === 1 ? '' : 'ies'} (High-Resolution)`
-                    : `✅ Downloaded`;
+                    ? `⬇ Download`
+                    : `Downloaded`;
+                
+                // Button styling: white when available, grey when downloaded
                 const buttonStyle = canDownload
-                    ? 'display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer;'
-                    : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.6;';
+                    ? 'display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer; border: none;'
+                    : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.6; border: none;';
                 
                 return `
-                    <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1rem;">${item.title || 'Photo'}</h4>
-                        <p style="margin: 0 0 10px 0; color: #888888; font-size: 0.9rem;">
-                            Quantity Purchased: <strong style="color: #ffffff;">${quantityPurchased}</strong>
-                        </p>
-                        ${canDownload ? `
-                            <a href="${item.downloadUrl}" 
-                               target="_blank"
-                               style="${buttonStyle}"
-                               onclick="console.log('Download clicked: ${item.productId} - downloading ${quantityPurchased} copies'); handleDownloadClick('${item.productId}');">
-                                ${downloadButtonText}
-                            </a>
-                        ` : `
-                            <div style="${buttonStyle}">
-                                ${downloadButtonText}
-                            </div>
-                        `}
-                        <p style="margin: 10px 0 0 0; color: ${downloaded ? '#51cf66' : '#888888'}; font-size: 0.85rem;">
-                            ${canDownload 
-                                ? `Click to download ${quantityPurchased} high-resolution copy/copies${quantityPurchased > 1 ? ' in a ZIP file' : ''} (no compression). After download, this item will be marked as downloaded.`
-                                : `✅ This item has been downloaded. You received ${quantityPurchased} copy/copies. Contact support if you need additional downloads.`}
-                        </p>
+                    <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 15px 0; color: #ffffff; font-size: 1rem;">${item.title || 'Photo'}</h4>
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            ${canDownload ? `
+                                <a href="${item.downloadUrl}" 
+                                   target="_blank"
+                                   style="${buttonStyle}"
+                                   onclick="console.log('Download clicked: ${item.productId} - downloading ${quantityPurchased} copies'); handleDownloadClick('${item.productId}');">
+                                    ${downloadButtonText}
+                                </a>
+                            ` : `
+                                <div style="${buttonStyle}">
+                                    ${downloadButtonText}
+                                </div>
+                            `}
+                            <span style="color: #888888; font-size: 0.9rem;">
+                                Quantity Purchased: <strong style="color: #ffffff;">${quantityPurchased}</strong>
+                            </span>
+                        </div>
+                        ${downloaded ? `
+                            <p style="margin: 10px 0 0 0; color: #51cf66; font-size: 0.85rem;">
+                                ✅ This item has been downloaded. You received ${quantityPurchased} copy/copies${quantityPurchased > 1 ? ' in a ZIP file' : ''}.
+                            </p>
+                        ` : ''}
                     </div>
                 `;
             }).join('');
