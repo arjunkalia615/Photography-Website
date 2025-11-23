@@ -158,11 +158,14 @@ async function canDownload(sessionId, productId) {
         const purchase = await getPurchase(sessionId);
         if (!purchase) return false;
         
-        const item = purchase.purchased_items.find(item => item.productId === productId);
+        // Check both products and purchased_items arrays for backward compatibility
+        const items = purchase.products || purchase.purchased_items || [];
+        const item = items.find(item => item.productId === productId);
         if (!item) return false;
         
         const downloadCount = await getDownloadCount(sessionId, productId);
-        return downloadCount < item.max_downloads;
+        const maxDownloads = item.maxDownloads || item.max_downloads || item.quantity || 1;
+        return downloadCount < maxDownloads;
     } catch (error) {
         console.error(`❌ Error checking download permission for ${sessionId}/${productId}:`, error);
         return false;

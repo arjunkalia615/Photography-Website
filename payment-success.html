@@ -82,9 +82,10 @@
                     
                     <!-- Error State -->
                     <div id="errorState" style="margin: 30px auto; padding: 20px; background: rgba(255, 0, 0, 0.1); border-radius: 8px; text-align: center; display: none;">
-                        <p style="color: #ff6b6b; margin-bottom: 10px;">Unable to load download links.</p>
+                        <p style="color: #ff6b6b; margin-bottom: 10px; font-weight: 500;">Unable to load download links.</p>
                         <p style="color: #888888; font-size: 0.9rem; margin-bottom: 10px;">The purchase may still be processing. Please wait a moment and refresh the page.</p>
                         <p style="color: #888888; font-size: 0.85rem;">If the problem persists, check your browser console for details or contact support.</p>
+                        <button onclick="window.location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #ffffff; color: #000000; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">Refresh Page</button>
                     </div>
                     <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 30px;">
                         <a href="gallery.html" class="payment-pay-btn" style="text-decoration: none; display: inline-block; padding: 16px 32px;">
@@ -134,7 +135,7 @@
             Cart.updateBadge();
         }
 
-        // Get session ID from URL (exact session ID from Stripe checkout)
+        // Get session ID from URL query parameter (exact session ID from Stripe checkout)
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session_id');
         
@@ -146,10 +147,12 @@
             }
         }
 
-        // Fetch and display download links using secure download system
-        // Retry mechanism: automatically recheck every 1s for up to 7s
+        // Poll /api/get-download-links until purchase is found or up to 7 retries
         async function loadDownloadLinks(retryCount = 0) {
-            // Validate session ID format before retrying
+            const maxRetries = 7; // Up to 7 retries
+            const retryDelay = 1000; // 1 second between retries
+
+            // Validate session ID exists
             if (!sessionId) {
                 console.error('❌ No session ID in URL');
                 document.getElementById('loadingState').style.display = 'none';
@@ -169,17 +172,16 @@
                 return; // Don't retry with invalid session ID
             }
 
-            const maxRetries = 7; // 7 seconds total
-            const retryDelay = 1000; // 1 second between retries
-
             // Update loading message to show retry status
             const loadingState = document.getElementById('loadingState');
             if (retryCount > 0) {
-                loadingState.innerHTML = `<p style="color: #888888;">Retrying purchase verification... (${retryCount}/${maxRetries})</p>`;
+                loadingState.innerHTML = `<p style="color: #888888;">Verifying purchase... (${retryCount}/${maxRetries})</p>`;
             }
 
             try {
                 console.log(`🔍 Fetching download links for session: ${sessionId} (attempt ${retryCount + 1}/${maxRetries + 1})`);
+                
+                // Fetch purchase from Redis using session ID
                 const response = await fetch(`/api/get-download-links?session_id=${encodeURIComponent(sessionId)}`);
                 
                 console.log('📡 Response status:', response.status);
@@ -187,7 +189,7 @@
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     
-                    // If purchase not found and we haven't retried too many times, retry
+                    // If purchase not found (404) and we haven't retried too many times, retry
                     if (response.status === 404 && retryCount < maxRetries) {
                         console.log(`⏳ Purchase not found yet, retrying in ${retryDelay}ms... (${retryCount + 1}/${maxRetries})`);
                         setTimeout(() => loadDownloadLinks(retryCount + 1), retryDelay);
@@ -202,22 +204,30 @@
                     throw new Error(errorData.message || `Failed to fetch download links (${response.status})`);
                 }
 
+                // Parse response JSON with download links and purchase info
                 const data = await response.json();
                 console.log('✅ Download links data received:', data);
                 
-                // Handle new response format: { purchase: {...}, downloads: [...], quantity: n }
+                // Handle response format: { purchase: {...}, downloads: [...], quantity: n }
                 const downloads = data.downloads || data.items || [];
                 
                 if (downloads.length > 0) {
-                    // Display download links immediately
+                    // Display download links immediately once purchase is confirmed
                     displayDownloadLinks({
                         purchase: data.purchase || {},
                         items: downloads,
                         totalItems: downloads.length
                     });
                 } else {
-                    // No download links found
-                    console.warn('⚠️ No items found in download links response');
+                    // No download links found - retry if we haven't exhausted retries
+                    if (retryCount < maxRetries) {
+                        console.warn('⚠️ No items found in response, retrying...');
+                        setTimeout(() => loadDownloadLinks(retryCount + 1), retryDelay);
+                        return;
+                    }
+                    
+                    // Max retries reached
+                    console.warn('⚠️ No items found in download links response after all retries');
                     document.getElementById('loadingState').style.display = 'none';
                     const errorState = document.getElementById('errorState');
                     errorState.style.display = 'block';
@@ -255,7 +265,9 @@
             const downloadSection = document.getElementById('downloadSection');
             const downloadLinks = document.getElementById('downloadLinks');
             const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
             
+            // Build HTML for each download link
             downloadLinks.innerHTML = data.items.map((item) => {
                 const downloadButtonText = item.canDownload 
                     ? `⬇ Download High-Resolution Image (${item.remainingDownloads} remaining)`
@@ -266,11 +278,12 @@
                 
                 return `
                     <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1rem;">${item.title}</h4>
+                        <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1rem;">${item.title || 'Photo'}</h4>
                         ${item.canDownload ? `
                             <a href="${item.downloadUrl}" 
                                target="_blank"
-                               style="${buttonStyle}">
+                               style="${buttonStyle}"
+                               onclick="console.log('Download clicked: ${item.productId}')">
                                 ${downloadButtonText}
                             </a>
                         ` : `
@@ -290,11 +303,15 @@
                 `;
             }).join('');
 
+            // Show download section, hide loading and error states
             loadingState.style.display = 'none';
+            errorState.style.display = 'none';
             downloadSection.style.display = 'block';
+            
+            console.log('✅ Download links displayed successfully');
         }
 
-        // Load download links on page load (only if valid session ID)
+        // Start polling for download links on page load (only if valid session ID)
         if (sessionId && sessionId.startsWith('cs_')) {
             loadDownloadLinks();
         } else if (sessionId) {
