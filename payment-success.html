@@ -129,8 +129,8 @@
     <script src="blur-up.js"></script>
     <script>
         // Clear cart after successful payment
-        if (typeof Cart !== 'undefined' && typeof CartUtils !== 'undefined') {
-            CartUtils.clearCart();
+        if (typeof Cart !== 'undefined') {
+            Cart.clear();
             Cart.updateBadge();
         }
 
