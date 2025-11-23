@@ -69,30 +69,29 @@ async function handler(req, res) {
         // Use products array if available, fallback to purchased_items
         const items = purchase.products || purchase.purchased_items || [];
         
-        // Build download information for each purchased item (strict quantity limit)
-        // When download is clicked, ALL remaining copies are marked as downloaded
+        // Build download information for each purchased item (boolean downloaded flag)
         const downloads = await Promise.all(items.map(async (item) => {
             const productId = item.productId;
             const quantityPurchased = item.quantityPurchased || item.quantity || item.maxDownloads || item.max_downloads || 1;
-            const quantityDownloaded = purchase.quantity_downloaded?.[productId] || purchase.download_count?.[productId] || 0;
-            const remainingDownloads = Math.max(0, quantityPurchased - quantityDownloaded);
-            // Can download only if there are remaining copies (strict: one download marks all as downloaded)
-            const canDownload = remainingDownloads > 0;
-            const allCopiesDownloaded = quantityDownloaded >= quantityPurchased;
+            
+            // Check if item has been downloaded (boolean flag)
+            const downloaded = purchase.downloaded?.[productId] === true;
+            
+            // Can download only if not already downloaded
+            const canDownload = !downloaded;
 
             return {
                 productId: productId,
                 title: item.title,
                 fileName: item.fileName,
                 quantity: item.quantity || 1,
-                quantityPurchased: quantityPurchased, // Explicit quantity purchased
-                quantityDownloaded: quantityDownloaded, // Explicit quantity downloaded
-                remainingDownloads: remainingDownloads, // Remaining downloads available
-                canDownload: canDownload, // Can download if any copies remain
-                allCopiesDownloaded: allCopiesDownloaded, // All copies have been downloaded
+                quantityPurchased: quantityPurchased, // Quantity purchased
+                downloaded: downloaded, // Boolean: has item been downloaded?
+                canDownload: canDownload, // Can download if not downloaded
                 // Backward compatibility
                 maxDownloads: quantityPurchased,
-                downloadCount: quantityDownloaded,
+                downloadCount: downloaded ? quantityPurchased : 0,
+                remainingDownloads: downloaded ? 0 : quantityPurchased,
                 // Secure download URL (points to download-file endpoint)
                 downloadUrl: `/api/download-file?session_id=${encodeURIComponent(sessionId)}&productId=${encodeURIComponent(productId)}`
             };

@@ -76,30 +76,27 @@ async function handler(req, res) {
             });
         }
 
-        // Check download limit BEFORE serving (strict quantity limit enforcement)
-        // When user clicks download, ALL remaining copies are marked as downloaded
+        // Check if item has already been downloaded (boolean check)
+        const isDownloaded = await db.isItemDownloaded(sessionId, productId);
         const quantityPurchased = purchasedItem.quantityPurchased || purchasedItem.quantity || purchasedItem.maxDownloads || purchasedItem.max_downloads || 1;
-        const quantityDownloaded = purchase.quantity_downloaded?.[purchasedItem.productId] || purchase.download_count?.[purchasedItem.productId] || 0;
-        const remaining = quantityPurchased - quantityDownloaded;
 
-        // If all copies have been downloaded, prevent further downloads
-        if (quantityDownloaded >= quantityPurchased || remaining <= 0) {
-            console.warn(`⚠️ All copies already downloaded for session ${sessionId}, product ${productId}: ${quantityDownloaded}/${quantityPurchased}`);
+        // If item has already been downloaded, prevent further downloads
+        if (isDownloaded) {
+            console.warn(`⚠️ Item already downloaded for session ${sessionId}, product ${productId}`);
             console.log(`🔑 Redis key: purchase:${sessionId}`);
             return res.status(403).json({
-                error: 'All copies downloaded',
-                message: `All ${quantityPurchased} copy/copies have already been downloaded for this item.`,
+                error: 'Item already downloaded',
+                message: `This item has already been downloaded. You purchased ${quantityPurchased} copy/copies and they have been delivered.`,
                 quantityPurchased: quantityPurchased,
-                quantityDownloaded: quantityDownloaded,
-                remaining: 0
+                downloaded: true
             });
         }
 
-        // Mark ALL remaining copies as downloaded BEFORE serving file (strict enforcement)
-        // This ensures user can only download once, getting all remaining copies
-        const marked = await db.markAllCopiesDownloaded(sessionId, productId);
+        // Mark item as downloaded BEFORE serving file (atomic operation)
+        // This ensures user can only download once
+        const marked = await db.markItemAsDownloaded(sessionId, productId);
         if (!marked) {
-            console.error(`❌ Failed to mark all copies as downloaded for session ${sessionId}, product ${productId}`);
+            console.error(`❌ Failed to mark item as downloaded for session ${sessionId}, product ${productId}`);
             console.error(`🔑 Redis key: purchase:${sessionId}`);
             return res.status(500).json({
                 error: 'Database error',
@@ -107,8 +104,8 @@ async function handler(req, res) {
             });
         }
 
-        console.log(`✅ All remaining copies marked as downloaded: ${quantityPurchased}/${quantityPurchased} for ${productId}`);
-        console.log(`📥 Download serving all ${remaining} remaining copy/copies for session: ${sessionId}, product: ${productId}`);
+        console.log(`✅ Item marked as downloaded for ${productId}`);
+        console.log(`📥 Download serving ${quantityPurchased} copy/copies for session: ${sessionId}, product: ${productId}`);
         console.log(`🔑 Redis key: purchase:${sessionId}`);
 
         // Get file path
@@ -157,13 +154,13 @@ async function handler(req, res) {
         const fileExtension = path.extname(baseFileName);
         const fileNameWithoutExt = path.basename(baseFileName, fileExtension);
 
-        // Serve all remaining copies at once
-        // If remaining > 1, create ZIP with all remaining copies
-        // If remaining = 1, serve single file
-        if (remaining > 1) {
-            // Create ZIP file with all remaining copies
+        // Serve all purchased copies at once
+        // If quantityPurchased > 1, create ZIP with all copies
+        // If quantityPurchased = 1, serve single file
+        if (quantityPurchased > 1) {
+            // Create ZIP file with all purchased copies
             res.setHeader('Content-Type', 'application/zip');
-            res.setHeader('Content-Disposition', `attachment; filename="${fileNameWithoutExt}_${remaining}_copies.zip"`);
+            res.setHeader('Content-Disposition', `attachment; filename="${fileNameWithoutExt}_${quantityPurchased}_copies.zip"`);
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
             res.setHeader('Pragma', 'no-cache');
             res.setHeader('Expires', '0');
@@ -187,17 +184,17 @@ async function handler(req, res) {
             // Pipe archive to response
             archive.pipe(res);
 
-            // Add the file for each remaining copy
-            for (let i = 1; i <= remaining; i++) {
-                const copyFileName = `${fileNameWithoutExt}_copy_${quantityDownloaded + i}${fileExtension}`;
+            // Add the file for each purchased copy
+            for (let i = 1; i <= quantityPurchased; i++) {
+                const copyFileName = `${fileNameWithoutExt}_copy_${i}${fileExtension}`;
                 archive.file(filePath, { name: copyFileName });
             }
 
             // Finalize the archive
             await archive.finalize();
 
-            console.log(`✅ ZIP archive created with ${remaining} remaining copies: ${baseFileName}`);
-            console.log(`📊 Session: ${sessionId}, Product: ${productId}, All ${remaining} remaining copies served in ZIP`);
+            console.log(`✅ ZIP archive created with ${quantityPurchased} copies: ${baseFileName}`);
+            console.log(`📊 Session: ${sessionId}, Product: ${productId}, All ${quantityPurchased} copies served in ZIP`);
         } else {
             // Single file download
             res.setHeader('Content-Type', 'image/jpeg');
@@ -227,7 +224,7 @@ async function handler(req, res) {
         }
 
         // Log successful download
-        console.log(`📊 Session: ${sessionId}, Product: ${productId}, All ${quantityPurchased} copies marked as downloaded`);
+        console.log(`📊 Session: ${sessionId}, Product: ${productId}, Item marked as downloaded (${quantityPurchased} copy/copies served)`);
         console.log(`🔑 Redis key: purchase:${sessionId}`);
 
     } catch (error) {

@@ -215,7 +215,8 @@ async function handler(req, res) {
                 purchased_items: purchasedItems, // Backward compatibility
                 quantity: purchasedItems.reduce((sum, item) => sum + item.quantity, 0),
                 download_count: downloadCount, // Backward compatibility
-                quantity_downloaded: {}, // New: explicit quantity downloaded tracking per product
+                quantity_downloaded: {}, // Backward compatibility
+                downloaded: {}, // New: simple boolean tracking per product (productId -> true/false)
                 downloadsUsed: 0, // Total downloads used across all products
                 maxDownloads: totalAllowedDownloads,
                 allowedDownloads: totalAllowedDownloads,

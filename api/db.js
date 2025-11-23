@@ -122,9 +122,9 @@ async function updatePurchase(sessionId, updates) {
     }
 }
 
-// Mark all remaining copies as downloaded (strict quantity limit enforcement)
-// When user clicks download, ALL remaining copies are marked as downloaded
-async function markAllCopiesDownloaded(sessionId, productId) {
+// Mark item as downloaded (boolean flag - simple quantity-based tracking)
+// When user clicks download, item is marked as downloaded (downloaded = true)
+async function markItemAsDownloaded(sessionId, productId) {
     try {
         const redisClient = getRedis();
         const key = `purchase:${sessionId}`;
@@ -132,14 +132,11 @@ async function markAllCopiesDownloaded(sessionId, productId) {
         const purchase = await redisClient.get(key);
         if (purchase) {
             // Initialize download tracking if it doesn't exist
-            if (!purchase.download_count) {
-                purchase.download_count = {};
-            }
-            if (!purchase.quantity_downloaded) {
-                purchase.quantity_downloaded = {};
+            if (!purchase.downloaded) {
+                purchase.downloaded = {}; // Map of productId -> boolean
             }
             
-            // Get quantity purchased
+            // Check if item exists in purchase
             const items = purchase.products || purchase.purchased_items || [];
             const item = items.find(item => item.productId === productId);
             if (!item) {
@@ -147,42 +144,73 @@ async function markAllCopiesDownloaded(sessionId, productId) {
                 return false;
             }
             
-            const quantityPurchased = item.quantityPurchased || item.quantity || item.maxDownloads || item.max_downloads || 1;
-            const currentDownloaded = purchase.quantity_downloaded[productId] || purchase.download_count[productId] || 0;
-            const remaining = quantityPurchased - currentDownloaded;
+            // Mark item as downloaded
+            purchase.downloaded[productId] = true;
             
-            if (remaining <= 0) {
-                console.warn(`⚠️ No remaining copies to mark as downloaded for ${productId}`);
-                return false;
+            // Also update backward compatibility fields
+            if (!purchase.download_count) {
+                purchase.download_count = {};
             }
-            
-            // Mark ALL remaining copies as downloaded
+            if (!purchase.quantity_downloaded) {
+                purchase.quantity_downloaded = {};
+            }
+            const quantityPurchased = item.quantityPurchased || item.quantity || 1;
+            purchase.download_count[productId] = quantityPurchased;
             purchase.quantity_downloaded[productId] = quantityPurchased;
-            purchase.download_count[productId] = quantityPurchased; // Backward compatibility
             
             // Update downloadsUsed
             if (purchase.downloadsUsed !== undefined) {
-                purchase.downloadsUsed += remaining;
+                purchase.downloadsUsed = Object.values(purchase.downloaded).filter(Boolean).length;
             }
             
             await redisClient.set(key, purchase);
             
-            console.log(`✅ All remaining copies marked as downloaded for ${productId}: ${quantityPurchased}/${quantityPurchased} (marked ${remaining} copies)`);
+            console.log(`✅ Item marked as downloaded for ${productId}`);
             console.log(`🔑 Redis key: ${key}`);
             return true;
         }
         return false;
     } catch (error) {
-        console.error(`❌ Error marking all copies as downloaded for ${sessionId}/${productId}:`, error);
+        console.error(`❌ Error marking item as downloaded for ${sessionId}/${productId}:`, error);
         return false;
     }
 }
 
-// Increment download count for a product (quantity-based tracking) - DEPRECATED
-// Use markAllCopiesDownloaded instead for strict quantity limits
+// Check if item has been downloaded (boolean check)
+async function isItemDownloaded(sessionId, productId) {
+    try {
+        const purchase = await getPurchase(sessionId);
+        if (!purchase) return false;
+        
+        // Check downloaded flag (new simple tracking)
+        if (purchase.downloaded && purchase.downloaded[productId] === true) {
+            return true;
+        }
+        
+        // Backward compatibility: check if quantity_downloaded >= quantityPurchased
+        const items = purchase.products || purchase.purchased_items || [];
+        const item = items.find(item => item.productId === productId);
+        if (item) {
+            const quantityPurchased = item.quantityPurchased || item.quantity || 1;
+            const quantityDownloaded = purchase.quantity_downloaded?.[productId] || purchase.download_count?.[productId] || 0;
+            return quantityDownloaded >= quantityPurchased;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error(`❌ Error checking if item is downloaded for ${sessionId}/${productId}:`, error);
+        return false;
+    }
+}
+
+// Mark all remaining copies as downloaded (DEPRECATED - use markItemAsDownloaded)
+async function markAllCopiesDownloaded(sessionId, productId) {
+    return await markItemAsDownloaded(sessionId, productId);
+}
+
+// Increment download count (DEPRECATED - use markItemAsDownloaded)
 async function incrementDownloadCount(sessionId, productId) {
-    // For backward compatibility, this now marks all remaining as downloaded
-    return await markAllCopiesDownloaded(sessionId, productId);
+    return await markItemAsDownloaded(sessionId, productId);
 }
 
 // Get download count for a product (quantityDownloaded)
@@ -305,8 +333,10 @@ module.exports = {
     getPurchase,
     savePurchase,
     updatePurchase,
-    markAllCopiesDownloaded,
-    incrementDownloadCount, // Deprecated: now calls markAllCopiesDownloaded
+    markItemAsDownloaded,
+    isItemDownloaded,
+    markAllCopiesDownloaded, // Deprecated: use markItemAsDownloaded
+    incrementDownloadCount, // Deprecated: use markItemAsDownloaded
     getDownloadCount,
     getQuantityPurchased,
     canDownload,
