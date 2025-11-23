@@ -1,0 +1,78 @@
+/**
+ * Image ID to File Path Mapping
+ * Generated automatically - DO NOT EDIT MANUALLY
+ * 
+ * Usage in API:
+ * const imagePath = IMAGE_MAPPING[itemId];
+ * if (!imagePath) return res.status(404).json({ error: 'Image not found' });
+ */
+
+const IMAGE_MAPPING = {
+  "australia-banner-photo": "Images/Australia Photos/Australia banner photo.jpg",
+  "coastal-nature-1": "Images/Australia Photos/Sub-categories/Costal & Nature/20250402_160309.jpg",
+  "coastal-nature-2": "Images/Australia Photos/Sub-categories/Costal & Nature/20250402_160454.jpg",
+  "coastal-nature-3": "Images/Australia Photos/Sub-categories/Costal & Nature/20250402_160755.jpg",
+  "coastal-nature-4": "Images/Australia Photos/Sub-categories/Costal & Nature/20250402_161710.jpg",
+  "coastal-nature-5": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_151512.jpg",
+  "coastal-nature-6": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_151645.jpg",
+  "coastal-nature-7": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_151656.jpg",
+  "coastal-nature-8": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_152310.jpg",
+  "coastal-nature-9": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_152843.jpg",
+  "coastal-nature-10": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_153143.jpg",
+  "coastal-nature-11": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_153455.jpg",
+  "coastal-nature-12": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_184010.jpg",
+  "coastal-nature-13": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_184155.jpg",
+  "coastal-nature-14": "Images/Australia Photos/Sub-categories/Costal & Nature/20250403_184708.jpg",
+  "coastal-nature-15": "Images/Australia Photos/Sub-categories/Costal & Nature/20250822_171224.jpg",
+  "coastal-nature-16": "Images/Australia Photos/Sub-categories/Costal & Nature/20250829_161449.jpg",
+  "coastal-nature-17": "Images/Australia Photos/Sub-categories/Costal & Nature/Beach.jpg",
+  "coastal-nature-18": "Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain1.jpg",
+  "coastal-nature-19": "Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain2.jpg",
+  "coastal-nature-20": "Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain3.jpg",
+  "coastal-nature-21": "Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain4.jpg",
+  "coastal-nature-22": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0011.jpg",
+  "coastal-nature-23": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0027.jpg",
+  "coastal-nature-24": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0062.jpg",
+  "coastal-nature-25": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0219.jpg",
+  "coastal-nature-26": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0243.jpg",
+  "coastal-nature-27": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0246.jpg",
+  "coastal-nature-28": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0251.jpg",
+  "coastal-nature-29": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0254.jpg",
+  "coastal-nature-30": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0255.jpg",
+  "coastal-nature-31": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0273.jpg",
+  "coastal-nature-32": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0274.jpg",
+  "coastal-nature-33": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0285.jpg",
+  "coastal-nature-34": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0286.jpg",
+  "coastal-nature-35": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0297.jpg",
+  "coastal-nature-36": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0301.jpg",
+  "coastal-nature-37": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0304.jpg",
+  "coastal-nature-38": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0307.jpg",
+  "coastal-nature-39": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0308.jpg",
+  "coastal-nature-40": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0310.jpg",
+  "coastal-nature-41": "Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0316.jpg",
+  "coastal-nature-42": "Images/Australia Photos/Sub-categories/Costal & Nature/Waterfall1.jpg",
+  "urban-1": "Images/Australia Photos/Sub-categories/Urban/20250901_154619.jpg",
+  "urban-2": "Images/Australia Photos/Sub-categories/Urban/Sydney1.jpg",
+  "urban-3": "Images/Australia Photos/Sub-categories/Urban/Sydney11.jpg",
+  "urban-4": "Images/Australia Photos/Sub-categories/Urban/Sydney13.jpg",
+  "urban-5": "Images/Australia Photos/Sub-categories/Urban/Sydney15.jpg",
+  "urban-6": "Images/Australia Photos/Sub-categories/Urban/Sydney16.jpg",
+  "urban-7": "Images/Australia Photos/Sub-categories/Urban/Sydney17.jpg",
+  "urban-8": "Images/Australia Photos/Sub-categories/Urban/Sydney18.jpg",
+  "urban-9": "Images/Australia Photos/Sub-categories/Urban/Sydney19.jpg",
+  "urban-10": "Images/Australia Photos/Sub-categories/Urban/Sydney2.jpg",
+  "urban-11": "Images/Australia Photos/Sub-categories/Urban/Sydney20.jpg",
+  "urban-12": "Images/Australia Photos/Sub-categories/Urban/Sydney21.jpg",
+  "urban-13": "Images/Australia Photos/Sub-categories/Urban/Sydney3.jpg",
+  "urban-14": "Images/Australia Photos/Sub-categories/Urban/Sydney4.jpg",
+  "urban-15": "Images/Australia Photos/Sub-categories/Urban/Sydney5.jpg",
+  "urban-16": "Images/Australia Photos/Sub-categories/Urban/Sydney6.jpg",
+  "urban-17": "Images/Australia Photos/Sub-categories/Urban/Sydney9.jpg",
+  "cultural-heritage-1": "Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar1.jpg",
+  "cultural-heritage-2": "Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar2.jpg",
+  "cultural-heritage-3": "Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar5.jpg",
+  "cultural-heritage-4": "Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar8.jpg",
+  "banner-sydney10": "Images/Banner Photo/Sydney10.jpg"
+};
+
+module.exports = IMAGE_MAPPING;

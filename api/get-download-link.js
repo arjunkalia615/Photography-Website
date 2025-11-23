@@ -2,11 +2,12 @@
  * Vercel Serverless Function
  * GET /api/get-download-link
  * Serves files directly for testing purposes (bypasses Stripe checkout)
- * Accepts itemId as query parameter and serves the file from Images folder
+ * Accepts itemId or imageSrc as query parameter and serves the file from Images folder
  */
 
 const fs = require('fs');
 const path = require('path');
+const IMAGE_MAPPING = require('./image-mapping');
 
 async function handler(req, res) {
     // Set CORS headers
@@ -28,7 +29,7 @@ async function handler(req, res) {
     }
 
     try {
-        // Get itemId from query parameters
+        // Get itemId or imageSrc from query parameters
         const itemId = req.query.itemId;
         const imageSrc = req.query.imageSrc; // Optional: direct image path
 
@@ -39,21 +40,24 @@ async function handler(req, res) {
             });
         }
 
-        // If imageSrc is provided, use it directly
+        // Determine file path
         let filePath;
-        if (imageSrc) {
+        if (itemId) {
+            // Look up file path from mapping using itemId
+            const mappedPath = IMAGE_MAPPING[itemId];
+            if (!mappedPath) {
+                return res.status(404).json({
+                    error: 'Image not found',
+                    message: `No image found for itemId: ${itemId}`
+                });
+            }
+            filePath = path.join(process.cwd(), mappedPath);
+        } else if (imageSrc) {
             // Normalize path (remove ../ and ./)
             const cleanPath = imageSrc.startsWith('/') 
                 ? imageSrc.substring(1) 
                 : imageSrc.replace(/^\.\.\//, '').replace(/^\.\//, '');
             filePath = path.join(process.cwd(), cleanPath);
-        } else {
-            // For itemId, we'd need to look up the item from cart
-            // For now, return error - imageSrc is preferred
-            return res.status(400).json({
-                error: 'Invalid parameter',
-                message: 'imageSrc parameter is required for direct file access'
-            });
         }
 
         // Security: Prevent directory traversal attacks
