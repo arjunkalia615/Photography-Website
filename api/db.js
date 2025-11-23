@@ -122,18 +122,33 @@ async function updatePurchase(sessionId, updates) {
     }
 }
 
-// Increment download count for a product
+// Increment download count for a product (quantity-based tracking)
 async function incrementDownloadCount(sessionId, productId) {
     try {
         const redisClient = getRedis();
         const key = `purchase:${sessionId}`;
         
         const purchase = await redisClient.get(key);
-        if (purchase && purchase.download_count) {
+        if (purchase) {
+            // Initialize download tracking if it doesn't exist
+            if (!purchase.download_count) {
+                purchase.download_count = {};
+            }
+            if (!purchase.quantity_downloaded) {
+                purchase.quantity_downloaded = {};
+            }
+            
+            // Increment download_count (backward compatibility)
             if (!purchase.download_count[productId]) {
                 purchase.download_count[productId] = 0;
             }
             purchase.download_count[productId] += 1;
+            
+            // Increment quantity_downloaded (new explicit tracking)
+            if (!purchase.quantity_downloaded[productId]) {
+                purchase.quantity_downloaded[productId] = 0;
+            }
+            purchase.quantity_downloaded[productId] += 1;
             
             // Also update downloadsUsed if it exists
             if (purchase.downloadsUsed !== undefined) {
@@ -142,7 +157,7 @@ async function incrementDownloadCount(sessionId, productId) {
             
             await redisClient.set(key, purchase);
             
-            console.log(`✅ Download count incremented for ${productId}: ${purchase.download_count[productId]}`);
+            console.log(`✅ Download count incremented for ${productId}: ${purchase.quantity_downloaded[productId]}`);
             console.log(`🔑 Redis key: ${key}`);
             return true;
         }
@@ -153,12 +168,18 @@ async function incrementDownloadCount(sessionId, productId) {
     }
 }
 
-// Get download count for a product
+// Get download count for a product (quantityDownloaded)
 async function getDownloadCount(sessionId, productId) {
     try {
         const purchase = await getPurchase(sessionId);
-        if (purchase && purchase.download_count) {
-            return purchase.download_count[productId] || 0;
+        if (purchase) {
+            // Prefer quantity_downloaded, fallback to download_count for backward compatibility
+            if (purchase.quantity_downloaded && purchase.quantity_downloaded[productId] !== undefined) {
+                return purchase.quantity_downloaded[productId];
+            }
+            if (purchase.download_count && purchase.download_count[productId] !== undefined) {
+                return purchase.download_count[productId];
+            }
         }
         return 0;
     } catch (error) {
@@ -167,7 +188,25 @@ async function getDownloadCount(sessionId, productId) {
     }
 }
 
-// Check if download is allowed
+// Get quantity purchased for a product
+async function getQuantityPurchased(sessionId, productId) {
+    try {
+        const purchase = await getPurchase(sessionId);
+        if (!purchase) return 0;
+        
+        const items = purchase.products || purchase.purchased_items || [];
+        const item = items.find(item => item.productId === productId);
+        if (!item) return 0;
+        
+        // Return quantityPurchased (explicit) or quantity (fallback)
+        return item.quantityPurchased || item.quantity || item.maxDownloads || item.max_downloads || 1;
+    } catch (error) {
+        console.error(`❌ Error getting quantity purchased for ${sessionId}/${productId}:`, error);
+        return 0;
+    }
+}
+
+// Check if download is allowed (quantity-based)
 async function canDownload(sessionId, productId) {
     try {
         const purchase = await getPurchase(sessionId);
@@ -178,12 +217,58 @@ async function canDownload(sessionId, productId) {
         const item = items.find(item => item.productId === productId);
         if (!item) return false;
         
-        const downloadCount = await getDownloadCount(sessionId, productId);
-        const maxDownloads = item.maxDownloads || item.max_downloads || item.quantity || 1;
-        return downloadCount < maxDownloads;
+        const quantityDownloaded = await getDownloadCount(sessionId, productId);
+        const quantityPurchased = item.quantityPurchased || item.quantity || item.maxDownloads || item.max_downloads || 1;
+        
+        return quantityDownloaded < quantityPurchased;
     } catch (error) {
         console.error(`❌ Error checking download permission for ${sessionId}/${productId}:`, error);
         return false;
+    }
+}
+
+// Get download status for a product (quantityPurchased, quantityDownloaded, remaining)
+async function getDownloadStatus(sessionId, productId) {
+    try {
+        const purchase = await getPurchase(sessionId);
+        if (!purchase) {
+            return {
+                quantityPurchased: 0,
+                quantityDownloaded: 0,
+                remaining: 0,
+                canDownload: false
+            };
+        }
+        
+        const items = purchase.products || purchase.purchased_items || [];
+        const item = items.find(item => item.productId === productId);
+        if (!item) {
+            return {
+                quantityPurchased: 0,
+                quantityDownloaded: 0,
+                remaining: 0,
+                canDownload: false
+            };
+        }
+        
+        const quantityPurchased = item.quantityPurchased || item.quantity || item.maxDownloads || item.max_downloads || 1;
+        const quantityDownloaded = await getDownloadCount(sessionId, productId);
+        const remaining = Math.max(0, quantityPurchased - quantityDownloaded);
+        
+        return {
+            quantityPurchased: quantityPurchased,
+            quantityDownloaded: quantityDownloaded,
+            remaining: remaining,
+            canDownload: remaining > 0
+        };
+    } catch (error) {
+        console.error(`❌ Error getting download status for ${sessionId}/${productId}:`, error);
+        return {
+            quantityPurchased: 0,
+            quantityDownloaded: 0,
+            remaining: 0,
+            canDownload: false
+        };
     }
 }
 
@@ -205,6 +290,8 @@ module.exports = {
     updatePurchase,
     incrementDownloadCount,
     getDownloadCount,
+    getQuantityPurchased,
     canDownload,
+    getDownloadStatus,
     getAllPurchases
 };

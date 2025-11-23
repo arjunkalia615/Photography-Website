@@ -267,19 +267,24 @@
             const loadingState = document.getElementById('loadingState');
             const errorState = document.getElementById('errorState');
             
-            // Build HTML for each download link
+            // Build HTML for each download link (quantity-based display)
             downloadLinks.innerHTML = data.items.map((item) => {
-                const downloadButtonText = item.canDownload 
-                    ? `⬇ Download High-Resolution Image (${item.remainingDownloads} remaining)`
-                    : `❌ Download Limit Reached (${item.downloadCount}/${item.maxDownloads} used)`;
-                const buttonStyle = item.canDownload
+                const quantityPurchased = item.quantityPurchased || item.maxDownloads || item.quantity || 1;
+                const quantityDownloaded = item.quantityDownloaded || item.downloadCount || 0;
+                const remainingDownloads = item.remainingDownloads || Math.max(0, quantityPurchased - quantityDownloaded);
+                const canDownload = item.canDownload !== false && remainingDownloads > 0;
+                
+                const downloadButtonText = canDownload 
+                    ? `⬇ Download High-Resolution Image (${remainingDownloads} remaining)`
+                    : `❌ All Downloads Used (${quantityDownloaded}/${quantityPurchased})`;
+                const buttonStyle = canDownload
                     ? 'display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer;'
                     : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.6;';
                 
                 return `
                     <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
                         <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1rem;">${item.title || 'Photo'}</h4>
-                        ${item.canDownload ? `
+                        ${canDownload ? `
                             <a href="${item.downloadUrl}" 
                                target="_blank"
                                style="${buttonStyle}"
@@ -292,12 +297,12 @@
                             </div>
                         `}
                         <p style="margin: 10px 0 0 0; color: #888888; font-size: 0.85rem;">
-                            ${item.canDownload 
-                                ? 'Click to download the full-resolution image (no compression). Each download counts toward your limit.'
-                                : 'You have reached the download limit for this item. Contact support if you need additional downloads.'}
+                            ${canDownload 
+                                ? `Click to download the full-resolution image (no compression). You have ${remainingDownloads} download${remainingDownloads === 1 ? '' : 's'} remaining out of ${quantityPurchased} purchased.`
+                                : `You have used all ${quantityPurchased} download${quantityPurchased === 1 ? '' : 's'} for this item. Contact support if you need additional downloads.`}
                         </p>
                         <p style="margin: 5px 0 0 0; color: #666666; font-size: 0.8rem;">
-                            Downloads: ${item.downloadCount} / ${item.maxDownloads} (${item.remainingDownloads} remaining)
+                            Quantity Purchased: ${quantityPurchased} | Downloads Used: ${quantityDownloaded} | Remaining: ${remainingDownloads}
                         </p>
                     </div>
                 `;

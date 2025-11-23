@@ -75,19 +75,20 @@ async function handler(req, res) {
             });
         }
 
-        // Check download limit BEFORE incrementing
+        // Check download limit BEFORE incrementing (quantity-based)
         // Enforce download limits: prevent user from downloading more than purchased quantity
-        const currentDownloadCount = purchase.download_count?.[purchasedItem.productId] || 0;
-        const maxDownloads = purchasedItem.maxDownloads || purchasedItem.max_downloads || purchasedItem.quantity || 1;
+        const quantityPurchased = purchasedItem.quantityPurchased || purchasedItem.quantity || purchasedItem.maxDownloads || purchasedItem.max_downloads || 1;
+        const quantityDownloaded = purchase.quantity_downloaded?.[purchasedItem.productId] || purchase.download_count?.[purchasedItem.productId] || 0;
 
-        if (currentDownloadCount >= maxDownloads) {
-            console.warn(`⚠️ Download limit reached for session ${sessionId}, product ${productId}: ${currentDownloadCount}/${maxDownloads}`);
+        if (quantityDownloaded >= quantityPurchased) {
+            console.warn(`⚠️ Download limit reached for session ${sessionId}, product ${productId}: ${quantityDownloaded}/${quantityPurchased}`);
             console.log(`🔑 Redis key: purchase:${sessionId}`);
             return res.status(403).json({
                 error: 'Download limit reached',
-                message: `Download limit reached for this item. You have downloaded this item ${currentDownloadCount} time(s) out of ${maxDownloads} allowed.`,
-                downloadCount: currentDownloadCount,
-                maxDownloads: maxDownloads
+                message: `Download limit reached for this item. You have downloaded this item ${quantityDownloaded} time(s) out of ${quantityPurchased} allowed.`,
+                quantityPurchased: quantityPurchased,
+                quantityDownloaded: quantityDownloaded,
+                remaining: 0
             });
         }
 
@@ -102,7 +103,7 @@ async function handler(req, res) {
             });
         }
 
-        console.log(`✅ Download count incremented in Redis: ${currentDownloadCount + 1}/${maxDownloads} for ${productId}`);
+        console.log(`✅ Download count incremented in Redis: ${quantityDownloaded + 1}/${quantityPurchased} for ${productId}`);
         console.log(`🔑 Redis key: purchase:${sessionId}`);
         console.log(`📥 Download occurred for session: ${sessionId}, product: ${productId}`);
 
@@ -175,7 +176,7 @@ async function handler(req, res) {
 
         // Log successful download
         console.log(`✅ File downloaded successfully: ${fileName}`);
-        console.log(`📊 Session: ${sessionId}, Product: ${productId}, Count: ${currentDownloadCount + 1}/${maxDownloads}`);
+        console.log(`📊 Session: ${sessionId}, Product: ${productId}, Quantity: ${quantityDownloaded + 1}/${quantityPurchased} (${quantityPurchased - quantityDownloaded - 1} remaining)`);
         console.log(`🔑 Redis key: purchase:${sessionId}`);
 
     } catch (error) {

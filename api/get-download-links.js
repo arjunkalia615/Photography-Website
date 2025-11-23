@@ -69,12 +69,12 @@ async function handler(req, res) {
         // Use products array if available, fallback to purchased_items
         const items = purchase.products || purchase.purchased_items || [];
         
-        // Build download information for each purchased item
-        const downloads = items.map(item => {
+        // Build download information for each purchased item (quantity-based)
+        const downloads = await Promise.all(items.map(async (item) => {
             const productId = item.productId;
-            const maxDownloads = item.maxDownloads || item.max_downloads || item.quantity || 1;
-            const downloadCount = purchase.download_count?.[productId] || 0;
-            const remainingDownloads = Math.max(0, maxDownloads - downloadCount);
+            const quantityPurchased = item.quantityPurchased || item.quantity || item.maxDownloads || item.max_downloads || 1;
+            const quantityDownloaded = purchase.quantity_downloaded?.[productId] || purchase.download_count?.[productId] || 0;
+            const remainingDownloads = Math.max(0, quantityPurchased - quantityDownloaded);
             const canDownload = remainingDownloads > 0;
 
             return {
@@ -82,14 +82,17 @@ async function handler(req, res) {
                 title: item.title,
                 fileName: item.fileName,
                 quantity: item.quantity || 1,
-                maxDownloads: maxDownloads,
-                downloadCount: downloadCount,
-                remainingDownloads: remainingDownloads,
+                quantityPurchased: quantityPurchased, // Explicit quantity purchased
+                quantityDownloaded: quantityDownloaded, // Explicit quantity downloaded
+                remainingDownloads: remainingDownloads, // Remaining downloads available
                 canDownload: canDownload,
+                // Backward compatibility
+                maxDownloads: quantityPurchased,
+                downloadCount: quantityDownloaded,
                 // Secure download URL (points to download-file endpoint)
                 downloadUrl: `/api/download-file?session_id=${encodeURIComponent(sessionId)}&productId=${encodeURIComponent(productId)}`
             };
-        });
+        }));
 
         // Return JSON with purchase, downloads, and quantity
         const response = {

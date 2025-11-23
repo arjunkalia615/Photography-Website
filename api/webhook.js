@@ -164,7 +164,9 @@ async function handler(req, res) {
                         imageSrc: imageSrc,
                         title: productName,
                         quantity: quantity,
-                        max_downloads: quantity // Each quantity = 1 download
+                        quantityPurchased: quantity, // Explicit quantity purchased
+                        max_downloads: quantity, // Each quantity = 1 download
+                        maxDownloads: quantity // Backward compatibility
                     });
 
                     downloadCount[productId] = 0;
@@ -183,7 +185,9 @@ async function handler(req, res) {
                         imageSrc: imageSrc,
                         title: cartItem.title || cartItem.name,
                         quantity: quantity,
-                        max_downloads: quantity
+                        quantityPurchased: quantity, // Explicit quantity purchased
+                        max_downloads: quantity,
+                        maxDownloads: quantity // Backward compatibility
                     });
 
                     downloadCount[productId] = 0;
@@ -204,11 +208,14 @@ async function handler(req, res) {
                     fileName: item.fileName,
                     imageSrc: item.imageSrc,
                     quantity: item.quantity,
-                    maxDownloads: item.max_downloads
+                    quantityPurchased: item.quantity, // Explicit quantity purchased
+                    maxDownloads: item.max_downloads,
+                    max_downloads: item.max_downloads // Backward compatibility
                 })),
                 purchased_items: purchasedItems, // Backward compatibility
                 quantity: purchasedItems.reduce((sum, item) => sum + item.quantity, 0),
-                download_count: downloadCount,
+                download_count: downloadCount, // Backward compatibility
+                quantity_downloaded: {}, // New: explicit quantity downloaded tracking per product
                 downloadsUsed: 0, // Total downloads used across all products
                 maxDownloads: totalAllowedDownloads,
                 allowedDownloads: totalAllowedDownloads,
