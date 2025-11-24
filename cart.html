@@ -570,8 +570,9 @@
                 document.body.removeChild(a);
 
                 // Increment download count after successful download
+                // When quantity > 1, all files are downloaded in one ZIP, so mark all as used
                 if (window.DownloadLimit) {
-                    window.DownloadLimit.incrementDownload(itemId);
+                    window.DownloadLimit.incrementDownload(itemId, quantity);
                     
                     // Update button state after increment
                     updateDownloadButtonState(itemId, quantity);
