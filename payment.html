@@ -134,10 +134,11 @@
         let stripeInitializing = false;
         let stripeInitialized = false;
         
-        // Backend API endpoint (update this to your actual backend URL when deployed)
+        // Backend API endpoint (unified function)
         const API_BASE_URL = window.location.origin; // Use same origin, or set to your backend URL
-        const CHECKOUT_ENDPOINT = `${API_BASE_URL}/api/create-checkout-session`;
-        const STRIPE_KEY_ENDPOINT = `${API_BASE_URL}/api/get-stripe-key`;
+        const API_ENDPOINT = `${API_BASE_URL}/api/functions`;
+        const CHECKOUT_ENDPOINT = `${API_ENDPOINT}?action=createSession`;
+        const STRIPE_KEY_ENDPOINT = `${API_ENDPOINT}?action=getStripeKey`;
         
         // Fetch Stripe publishable key from environment variable via API
         async function initializeStripe() {
@@ -154,7 +155,9 @@
             
             try {
                 console.log('Initializing Stripe...');
-                const response = await fetch(STRIPE_KEY_ENDPOINT);
+                const response = await fetch(STRIPE_KEY_ENDPOINT, {
+                    method: 'GET'
+                });
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
@@ -313,12 +316,13 @@
                 }));
 
                 // Create checkout session
-                const res = await fetch(CHECKOUT_ENDPOINT, {
+                const res = await fetch(API_ENDPOINT, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        action: 'createSession',
                         items: items,
                         customer_email: customerEmail,
                         success_url: 'https://www.ifeelworld.com/payment-success.html?session_id={CHECKOUT_SESSION_ID}',

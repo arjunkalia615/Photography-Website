@@ -147,7 +147,7 @@
             }
         }
 
-        // Poll /api/get-download-links until purchase is found or up to 7 retries
+        // Poll unified API endpoint until purchase is found or up to 7 retries
         async function loadDownloadLinks(retryCount = 0) {
             const maxRetries = 7; // Up to 7 retries
             const retryDelay = 1000; // 1 second between retries

@@ -1,0 +1,42 @@
+# Exclude old API files from deployment (consolidated into api/functions.js)
+api/check-cart-download-status.js
+api/check-webhook.js
+api/create-checkout-session.js
+api/download-file.js
+api/generate-download.js
+api/get-download-link.js
+api/get-download-links.js
+api/get-session-details.js
+api/get-stripe-key.js
+api/webhook.js
+
+# Keep these files (required by api/functions.js)
+# api/db.js
+# api/functions.js
+# api/image-mapping.js
+
+# Documentation files (not needed in deployment)
+*.md
+!README.md
+
+# Development files
+node_modules/
+.env
+.env.local
+.env.*.local
+
+# Git files
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
