@@ -267,54 +267,96 @@
             const loadingState = document.getElementById('loadingState');
             const errorState = document.getElementById('errorState');
             
-            // Build HTML for each download link (boolean downloaded flag)
-            // Single download button per item with quantity displayed next to it
+            // Build HTML for each download link (read-only quantities, ZIP download)
+            // Display: item name, quantity purchased (read-only), price, download ZIP button
             downloadLinks.innerHTML = data.items.map((item) => {
                 const quantityPurchased = item.quantityPurchased || item.maxDownloads || item.quantity || 1;
                 const downloaded = item.downloaded === true;
                 const canDownload = item.canDownload !== false && !downloaded;
                 
-                // Button text: "Download" when available, "Downloaded" when done
-                const downloadButtonText = canDownload 
-                    ? `⬇ Download`
-                    : `Downloaded`;
+                // Sanitize title for filename
+                function sanitizeFilename(filename) {
+                    if (!filename) return 'Photo';
+                    return filename
+                        .replace(/[<>:"/\\|?*]/g, '')
+                        .replace(/\s+/g, '_')
+                        .replace(/_{2,}/g, '_')
+                        .replace(/^_+|_+$/g, '')
+                        .substring(0, 100);
+                }
                 
-                // Button styling: white when available, grey when downloaded
+                const sanitizedTitle = sanitizeFilename(item.title || 'Photo');
+                const zipFilename = quantityPurchased > 1 
+                    ? `${sanitizedTitle}_x${quantityPurchased}.zip`
+                    : `${sanitizedTitle}.zip`;
+                
+                // Button text: "Download ZIP" when available, "Downloaded" when done
+                const downloadButtonText = canDownload 
+                    ? `📦 Download ZIP (${quantityPurchased} ${quantityPurchased === 1 ? 'copy' : 'copies'})`
+                    : `Download (Limit Reached)`;
+                
+                // Button styling: blue when available, grey when downloaded
                 const buttonStyle = canDownload
-                    ? 'display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer; border: none;'
-                    : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.6; border: none;';
+                    ? 'display: inline-block; padding: 12px 24px; background: #4dabf7; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer; border: none; font-size: 0.9rem;'
+                    : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.5; border: none; font-size: 0.9rem; pointer-events: none;';
                 
                 return `
-                    <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
-                        <h4 style="margin: 0 0 15px 0; color: #ffffff; font-size: 1rem;">${item.title || 'Photo'}</h4>
-                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                            ${canDownload ? `
-                                <a href="${item.downloadUrl}" 
-                                   target="_blank"
-                                   style="${buttonStyle}"
-                                   onclick="console.log('Download clicked: ${item.productId} - downloading ${quantityPurchased} copies'); handleDownloadClick('${item.productId}');">
-                                    ${downloadButtonText}
-                                </a>
-                            ` : `
-                                <div style="${buttonStyle}">
-                                    ${downloadButtonText}
+                    <div style="padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <h4 style="margin: 0 0 10px 0; color: #ffffff; font-size: 1.1rem; font-weight: 600;">${item.title || 'Photo'}</h4>
+                                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="color: #888888; font-size: 0.9rem;">Quantity Purchased:</span>
+                                        <span style="color: #ffffff; font-size: 0.9rem; font-weight: 600; background: rgba(255, 255, 255, 0.1); padding: 4px 12px; border-radius: 4px;">${quantityPurchased}</span>
+                                        <span style="color: #666666; font-size: 0.8rem;">(Read-only)</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="color: #888888; font-size: 0.9rem;">Price:</span>
+                                        <span style="color: #ffffff; font-size: 0.9rem; font-weight: 600;">$0.00</span>
+                                    </div>
                                 </div>
-                            `}
-                            <span style="color: #888888; font-size: 0.9rem;">
-                                Quantity Purchased: <strong style="color: #ffffff;">${quantityPurchased}</strong>
-                            </span>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                ${canDownload ? `
+                                    <a href="${item.downloadUrl}" 
+                                       target="_blank"
+                                       style="${buttonStyle}"
+                                       onclick="console.log('Download clicked: ${item.productId} - downloading ${quantityPurchased} copies in ZIP'); handleDownloadClick('${item.productId}', '${sessionId}'); return true;">
+                                        ${downloadButtonText}
+                                    </a>
+                                ` : `
+                                    <div style="${buttonStyle}">
+                                        ${downloadButtonText}
+                                    </div>
+                                `}
+                            </div>
                         </div>
                         ${downloaded ? `
-                            <p style="margin: 10px 0 0 0; color: #51cf66; font-size: 0.85rem;">
-                                ✅ This item has been downloaded. You received ${quantityPurchased} copy/copies${quantityPurchased > 1 ? ' in a ZIP file' : ''}.
-                            </p>
+                            <div style="margin-top: 15px; padding: 12px; background: rgba(81, 207, 102, 0.1); border-left: 4px solid #51cf66; border-radius: 4px;">
+                                <p style="margin: 0; color: #51cf66; font-size: 0.85rem;">
+                                    ✅ This item has been downloaded. You received ${quantityPurchased} ${quantityPurchased === 1 ? 'copy' : 'copies'}${quantityPurchased > 1 ? ' in a ZIP file' : ''}.
+                                </p>
+                            </div>
                         ` : ''}
                     </div>
                 `;
             }).join('');
             
             // Add download click handler to update UI after download
-            function handleDownloadClick(productId) {
+            function handleDownloadClick(productId, sessionId) {
+                // Disable button immediately
+                const button = document.querySelector(`a[onclick*="${productId}"]`);
+                if (button) {
+                    button.style.background = '#666666';
+                    button.style.color = '#ffffff';
+                    button.style.opacity = '0.5';
+                    button.style.pointerEvents = 'none';
+                    button.style.cursor = 'not-allowed';
+                    button.textContent = 'Download (Limit Reached)';
+                    button.onclick = null; // Remove click handler
+                }
+                
                 // After a short delay, refresh the download links to show updated status
                 setTimeout(() => {
                     console.log('Refreshing download links after download...');

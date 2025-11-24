@@ -103,6 +103,7 @@ async function savePurchase(sessionId, purchaseData) {
 }
 
 // Update purchase (for download tracking)
+// Prevents quantity modifications for final purchases
 async function updatePurchase(sessionId, updates) {
     try {
         const redisClient = getRedis();
@@ -110,6 +111,22 @@ async function updatePurchase(sessionId, updates) {
         
         const purchase = await redisClient.get(key);
         if (purchase) {
+            // Check if purchase is final
+            if (purchase.isFinal === true) {
+                // Prevent quantity modifications for final purchases
+                const quantityFields = ['quantity', 'quantityPurchased', 'products', 'purchased_items'];
+                const hasQuantityUpdate = Object.keys(updates).some(key => 
+                    quantityFields.includes(key) || 
+                    (key === 'products' && Array.isArray(updates.products)) ||
+                    (key === 'purchased_items' && Array.isArray(updates.purchased_items))
+                );
+                
+                if (hasQuantityUpdate) {
+                    console.error(`❌ Attempted to modify quantity for final purchase: ${sessionId}`);
+                    throw new Error('Quantity cannot be modified after purchase');
+                }
+            }
+            
             const updated = { ...purchase, ...updates };
             await redisClient.set(key, updated);
             console.log(`✅ Purchase updated in Redis: ${key}`);
@@ -118,7 +135,7 @@ async function updatePurchase(sessionId, updates) {
         return false;
     } catch (error) {
         console.error(`❌ Error updating purchase in Redis for ${sessionId}:`, error);
-        return false;
+        throw error; // Re-throw to allow caller to handle
     }
 }
 
