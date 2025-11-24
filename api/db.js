@@ -330,6 +330,7 @@ async function getAllPurchases() {
 }
 
 module.exports = {
+    getRedis,
     getPurchase,
     savePurchase,
     updatePurchase,

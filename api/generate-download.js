@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
 const IMAGE_MAPPING = require('./image-mapping');
+const db = require('./db');
 
 async function handler(req, res) {
     // Set CORS headers
@@ -41,7 +42,7 @@ async function handler(req, res) {
             });
         }
 
-        const { itemId, quantity, imageSrc, title } = body;
+        const { itemId, quantity, imageSrc, title, userId } = body;
 
         // Validate required parameters
         if (!itemId) {
@@ -56,6 +57,25 @@ async function handler(req, res) {
                 error: 'Invalid quantity',
                 message: 'quantity must be at least 1'
             });
+        }
+
+        // Check if item has already been downloaded (if userId provided)
+        if (userId) {
+            try {
+                const redisClient = db.getRedis();
+                const redisKey = `cart_download:${userId}:${itemId}`;
+                const downloaded = await redisClient.get(redisKey);
+                
+                if (downloaded === true || downloaded === 'true') {
+                    return res.status(403).json({
+                        error: 'Already downloaded',
+                        message: 'This item has already been downloaded. You can only download it once.'
+                    });
+                }
+            } catch (redisError) {
+                console.error('❌ Redis error checking download status:', redisError);
+                // Continue with download if Redis check fails (fail open)
+            }
         }
 
         // Determine file path from itemId or imageSrc
@@ -197,6 +217,20 @@ async function handler(req, res) {
 
         // Finalize the archive
         await archive.finalize();
+
+        // Mark item as downloaded in Redis (if userId provided)
+        if (userId) {
+            try {
+                const redisClient = db.getRedis();
+                const redisKey = `cart_download:${userId}:${itemId}`;
+                // Set with no expiration (persists indefinitely)
+                await redisClient.set(redisKey, true);
+                console.log(`✅ Marked item as downloaded in Redis: ${redisKey}`);
+            } catch (redisError) {
+                console.error('❌ Error marking download in Redis:', redisError);
+                // Don't fail the download if Redis fails
+            }
+        }
 
         console.log(`✅ ZIP archive created with ${quantity} copies: ${baseFileName}`);
         console.log(`📊 ItemId: ${itemId}, Quantity: ${quantity}, File: ${filePath}`);
