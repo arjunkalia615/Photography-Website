@@ -182,7 +182,7 @@
                 console.log(`🔍 Fetching download links for session: ${sessionId} (attempt ${retryCount + 1}/${maxRetries + 1})`);
                 
                 // Fetch purchase from Redis using session ID
-                const response = await fetch(`/api/get-download-links?session_id=${encodeURIComponent(sessionId)}`);
+                const response = await fetch(`/api/functions?action=getDownloadLinks&session_id=${encodeURIComponent(sessionId)}`);
                 
                 console.log('📡 Response status:', response.status);
                 
