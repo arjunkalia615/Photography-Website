@@ -354,9 +354,25 @@ nav {
 /* Photo Grid */
 .photo-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 30px;
     margin-bottom: 60px;
+}
+
+/* Tablet: 2 images per row */
+@media (max-width: 1024px) and (min-width: 768px) {
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px;
+    }
+}
+
+/* Mobile: 1 image per row */
+@media (max-width: 767px) {
+    .photo-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
 }
 
 .photo-item {
@@ -383,6 +399,55 @@ nav {
     max-height: 400px;
     cursor: pointer;
     background: #0a0a0a;
+}
+
+/* Hover overlay for photo info */
+.photo-item-hover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.photo-item:hover .photo-item-hover-overlay {
+    opacity: 1;
+}
+
+.photo-item-hover-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.photo-item-hover-category {
+    font-size: 0.9rem;
+    color: #b8b8b8;
+    text-align: center;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.photo-item-hover-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #ffffff;
+    text-align: center;
 }
 
 /* Blur-up placeholder */
@@ -1713,6 +1778,18 @@ footer {
     .photo-grid {
         grid-template-columns: 1fr;
         gap: 20px;
+    }
+    
+    .photo-item-hover-overlay {
+        padding: 15px;
+    }
+    
+    .photo-item-hover-title {
+        font-size: 1.1rem;
+    }
+    
+    .photo-item-hover-price {
+        font-size: 1.3rem;
     }
 
     .photo-item-image-wrapper {
