@@ -244,14 +244,21 @@
                                     <input type="number" class="cart-qty-input" value="${item.quantity}" min="1" max="10" data-item-id="${item.id}" readonly>
                                     <button class="cart-qty-btn cart-qty-increase" data-item-id="${item.id}" aria-label="Increase quantity">+</button>
                                 </div>
-                                <!-- Test Download Link (for testing purposes) -->
-                                <div style="margin-top: 10px;">
+                                <!-- Test Download Links (for testing purposes) -->
+                                <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
                                     <a href="${downloadUrl}" 
                                        target="_blank" 
                                        class="test-download-link"
                                        style="display: inline-block; padding: 6px 12px; background: #51cf66; color: #000; text-decoration: none; border-radius: 4px; font-size: 0.85rem; font-weight: 500; transition: background 0.3s;">
                                         🧪 Test Download (High-Res)
                                     </a>
+                                    <button class="test-zip-download-btn" 
+                                            data-item-id="${item.id}" 
+                                            data-image-src="${item.imageSrc}" 
+                                            data-quantity="${item.quantity}"
+                                            style="padding: 6px 12px; background: #4dabf7; color: #000; border: none; border-radius: 4px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: background 0.3s;">
+                                        📦 Download Now (Testing) - ZIP x${item.quantity}
+                                    </button>
                                 </div>
                             </div>
                             <div class="cart-page-item-price-section">
@@ -424,6 +431,94 @@
                 const isClickInsideNav = navContainer?.contains(e.target);
                 if (!isClickInsideNav) {
                     navLinks.classList.remove('active');
+                }
+            }
+        });
+
+        // ZIP Download Handler
+        async function handleZipDownload(itemId, imageSrc, quantity) {
+            const button = document.querySelector(`.test-zip-download-btn[data-item-id="${itemId}"]`);
+            const originalText = button ? button.textContent : '';
+            
+            // Show loading state
+            if (button) {
+                button.disabled = true;
+                button.textContent = '⏳ Generating ZIP...';
+                button.style.background = '#868e96';
+            }
+
+            try {
+                // Call the generate-download API
+                const response = await fetch('/api/generate-download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        itemId: itemId,
+                        quantity: quantity,
+                        imageSrc: imageSrc // Pass imageSrc as fallback
+                    })
+                });
+
+                // Check if response is OK
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                    throw new Error(errorData.message || errorData.error || `Server error: ${response.status}`);
+                }
+
+                // Get the ZIP file as blob
+                const blob = await response.blob();
+
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${itemId}_x${quantity}.zip`;
+                document.body.appendChild(a);
+                a.click();
+
+                // Cleanup
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                // Show success message
+                if (button) {
+                    button.textContent = '✅ Downloaded!';
+                    button.style.background = '#51cf66';
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = originalText;
+                        button.style.background = '#4dabf7';
+                    }, 2000);
+                }
+
+                console.log(`✅ ZIP download successful: ${itemId}_x${quantity}.zip`);
+
+            } catch (error) {
+                console.error('❌ ZIP download error:', error);
+                
+                // Show error message
+                alert(`Download failed: ${error.message}`);
+                
+                // Reset button
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                    button.style.background = '#4dabf7';
+                }
+            }
+        }
+
+        // Handle ZIP download button clicks
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('test-zip-download-btn')) {
+                const itemId = e.target.getAttribute('data-item-id');
+                const imageSrc = e.target.getAttribute('data-image-src');
+                const quantity = parseInt(e.target.getAttribute('data-quantity')) || 1;
+                
+                if (itemId) {
+                    handleZipDownload(itemId, imageSrc, quantity);
                 }
             }
         });
