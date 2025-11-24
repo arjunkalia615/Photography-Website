@@ -7,17 +7,14 @@
  * - Or POST with { action: "<actionName>", ... } in body
  * 
  * Supported actions:
- * - createSession: Create Stripe checkout session
- * - getStripeKey: Get Stripe publishable key
+ * - createSession: Create Stripe checkout session (LIVE MODE ONLY)
+ * - getStripeKey: Get Stripe publishable key (LIVE MODE ONLY)
  * - getSessionDetails: Get Stripe session details
- * - getDownloadLinks: Get download links for purchased items
- * - downloadFile: Download file for purchased items
- * - generateDownload: Generate ZIP for cart items (testing)
- * - checkCartDownloadStatus: Check cart download status
+ * - getDownloadLinks: Get download links for purchased items (requires valid purchase)
+ * - downloadFile: Download file for purchased items (requires valid purchase)
  * - checkPurchaseFinal: Check if purchase is final
  * - checkWebhook: Debug endpoint to check webhook
- * - getDownloadLink: Test download link
- * - webhook: Stripe webhook handler
+ * - webhook: Stripe webhook handler (LIVE MODE ONLY)
  */
 
 const stripe = require('stripe');
@@ -55,31 +52,34 @@ function parseBody(req) {
     return req.body || {};
 }
 
-// Helper: Get Stripe instance
+// Helper: Get Stripe instance (LIVE MODE ONLY)
 function getStripeInstance() {
-    const useTestMode = process.env.USE_TEST_STRIPE === 'true';
-    const stripeSecretKey = useTestMode 
-        ? process.env.STRIPE_SECRET_KEY_TEST 
-        : process.env.STRIPE_SECRET_KEY;
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     
     if (!stripeSecretKey) {
-        throw new Error(`Stripe secret key not configured (mode: ${useTestMode ? 'TEST' : 'LIVE'})`);
+        throw new Error('Stripe secret key not configured. Please set STRIPE_SECRET_KEY environment variable.');
+    }
+    
+    // Validate it's a live key (starts with sk_live_)
+    if (!stripeSecretKey.startsWith('sk_live_')) {
+        throw new Error('Invalid Stripe secret key. Only live keys (sk_live_...) are allowed in production.');
     }
     
     return stripe(stripeSecretKey);
 }
 
-// Helper: Get Stripe publishable key
+// Helper: Get Stripe publishable key (LIVE MODE ONLY)
 function getStripePublishableKey() {
-    const useTestMode = process.env.USE_TEST_STRIPE === 'true';
-    const expectedKey = useTestMode 
-        ? 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST'
-        : 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY';
-    
+    const expectedKey = 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY';
     const publishableKey = process.env[expectedKey];
     
     if (!publishableKey) {
-        throw new Error(`Stripe publishable key not configured. Please set ${expectedKey}`);
+        throw new Error(`Stripe publishable key not configured. Please set ${expectedKey} environment variable.`);
+    }
+    
+    // Validate it's a live key (starts with pk_live_)
+    if (!publishableKey.startsWith('pk_live_')) {
+        throw new Error('Invalid Stripe publishable key. Only live keys (pk_live_...) are allowed in production.');
     }
     
     return publishableKey;
@@ -427,8 +427,9 @@ async function handleDownloadFile(req, res) {
     }
 }
 
-// Action: Generate download (cart items - testing)
-async function handleGenerateDownload(req, res) {
+// REMOVED: Test download action - only live purchases allowed
+// Action: Generate download (cart items - testing) - REMOVED
+async function handleGenerateDownload_REMOVED(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed', message: 'Only POST method is supported' });
     }
@@ -581,8 +582,9 @@ async function handleGenerateDownload(req, res) {
     }
 }
 
-// Action: Check cart download status
-async function handleCheckCartDownloadStatus(req, res) {
+// REMOVED: Test cart download status - only live purchases allowed
+// Action: Check cart download status - REMOVED
+async function handleCheckCartDownloadStatus_REMOVED(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed', message: 'Only GET method is supported' });
     }
@@ -1050,22 +1052,16 @@ async function handler(req, res) {
                 return await handleGetDownloadLinks(req, res);
             case 'downloadFile':
                 return await handleDownloadFile(req, res);
-            case 'generateDownload':
-                return await handleGenerateDownload(req, res);
-            case 'checkCartDownloadStatus':
-                return await handleCheckCartDownloadStatus(req, res);
             case 'checkPurchaseFinal':
                 return await handleCheckPurchaseFinal(req, res);
             case 'checkWebhook':
                 return await handleCheckWebhook(req, res);
-            case 'getDownloadLink':
-                return await handleGetDownloadLink(req, res);
             case 'webhook':
                 return await handleWebhook(req, res);
             default:
                 return res.status(400).json({
                     error: 'Invalid action',
-                    message: `Unknown action: ${action}. Supported actions: createSession, getStripeKey, getSessionDetails, getDownloadLinks, downloadFile, generateDownload, checkCartDownloadStatus, checkPurchaseFinal, checkWebhook, getDownloadLink, webhook`
+                    message: `Unknown action: ${action}. Supported actions: createSession, getStripeKey, getSessionDetails, getDownloadLinks, downloadFile, checkPurchaseFinal, checkWebhook, webhook`
                 });
         }
     } catch (error) {
