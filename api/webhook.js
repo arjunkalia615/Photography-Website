@@ -208,7 +208,7 @@ async function handler(req, res) {
                     fileName: item.fileName,
                     imageSrc: item.imageSrc,
                     quantity: item.quantity,
-                    quantityPurchased: item.quantity, // Explicit quantity purchased (read-only)
+                    quantityPurchased: item.quantity, // Explicit quantity purchased
                     maxDownloads: item.max_downloads,
                     max_downloads: item.max_downloads // Backward compatibility
                 })),
@@ -223,9 +223,6 @@ async function handler(req, res) {
                 createdAt: new Date().toISOString(),
                 timestamp: new Date().toISOString(),
                 payment_status: session.payment_status,
-                // Mark purchase as final - quantities cannot be modified
-                isFinal: true,
-                finalizedAt: new Date().toISOString(),
                 // Debug info
                 lineItemsCount: lineItems.length,
                 cartItemsCount: cartItems.length,

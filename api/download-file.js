@@ -154,58 +154,74 @@ async function handler(req, res) {
         const fileExtension = path.extname(baseFileName);
         const fileNameWithoutExt = path.basename(baseFileName, fileExtension);
 
-        // Always serve as ZIP file (even for quantity = 1) for consistency
-        // ZIP contains exact number of copies based on purchased quantity
-        const sanitizedTitle = purchasedItem.title 
-            ? purchasedItem.title
-                .replace(/[<>:"/\\|?*]/g, '')
-                .replace(/\s+/g, '_')
-                .replace(/_{2,}/g, '_')
-                .replace(/^_+|_+$/g, '')
-                .substring(0, 100)
-            : fileNameWithoutExt;
-        
-        const zipFilename = quantityPurchased > 1 
-            ? `${sanitizedTitle}_x${quantityPurchased}.zip`
-            : `${sanitizedTitle}.zip`;
-        
-        // Create ZIP file with all purchased copies
-        res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        res.setHeader('X-Content-Type-Options', 'nosniff');
+        // Serve all purchased copies at once
+        // If quantityPurchased > 1, create ZIP with all copies
+        // If quantityPurchased = 1, serve single file
+        if (quantityPurchased > 1) {
+            // Create ZIP file with all purchased copies
+            res.setHeader('Content-Type', 'application/zip');
+            res.setHeader('Content-Disposition', `attachment; filename="${fileNameWithoutExt}_${quantityPurchased}_copies.zip"`);
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            res.setHeader('X-Content-Type-Options', 'nosniff');
 
-        // Create ZIP archive with no compression for maximum quality
-        const archive = archiver('zip', {
-            zlib: { level: 0 } // No compression - store files as-is
-        });
+            // Create ZIP archive with no compression for maximum quality
+            const archive = archiver('zip', {
+                zlib: { level: 0 } // No compression - store files as-is
+            });
 
-        archive.on('error', (error) => {
-            console.error('❌ Error creating ZIP archive:', error);
-            if (!res.headersSent) {
-                res.status(500).json({
-                    error: 'Download failed',
-                    message: 'Error creating archive'
-                });
+            archive.on('error', (error) => {
+                console.error('❌ Error creating ZIP archive:', error);
+                if (!res.headersSent) {
+                    res.status(500).json({
+                        error: 'Download failed',
+                        message: 'Error creating archive'
+                    });
+                }
+            });
+
+            // Pipe archive to response
+            archive.pipe(res);
+
+            // Add the file for each purchased copy
+            for (let i = 1; i <= quantityPurchased; i++) {
+                const copyFileName = `${fileNameWithoutExt}_copy_${i}${fileExtension}`;
+                archive.file(filePath, { name: copyFileName });
             }
-        });
 
-        // Pipe archive to response
-        archive.pipe(res);
-
-        // Add the file for each purchased copy
-        for (let i = 1; i <= quantityPurchased; i++) {
-            const copyFileName = `${fileNameWithoutExt}_copy_${i}${fileExtension}`;
-            archive.file(filePath, { name: copyFileName });
-        }
-
-        // Finalize the archive
-        await archive.finalize();
+            // Finalize the archive
+            await archive.finalize();
 
             console.log(`✅ ZIP archive created with ${quantityPurchased} copies: ${baseFileName}`);
             console.log(`📊 Session: ${sessionId}, Product: ${productId}, All ${quantityPurchased} copies served in ZIP`);
+        } else {
+            // Single file download
+            res.setHeader('Content-Type', 'image/jpeg');
+            res.setHeader('Content-Disposition', `attachment; filename="${baseFileName}"`);
+            res.setHeader('Content-Length', stats.size);
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+
+            // Stream the file (no compression, full quality)
+            const fileStream = fs.createReadStream(filePath);
+            
+            fileStream.on('error', (error) => {
+                console.error('❌ Error streaming file:', error);
+                if (!res.headersSent) {
+                    res.status(500).json({
+                        error: 'Download failed',
+                        message: 'Error reading file'
+                    });
+                }
+            });
+
+            fileStream.pipe(res);
+
+            console.log(`✅ File downloaded successfully: ${baseFileName}`);
+        }
 
         // Log successful download
         console.log(`📊 Session: ${sessionId}, Product: ${productId}, Item marked as downloaded (${quantityPurchased} copy/copies served)`);
