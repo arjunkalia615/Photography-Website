@@ -41,7 +41,7 @@ async function handler(req, res) {
             });
         }
 
-        const { itemId, quantity, imageSrc } = body;
+        const { itemId, quantity, imageSrc, title } = body;
 
         // Validate required parameters
         if (!itemId) {
@@ -147,9 +147,25 @@ async function handler(req, res) {
         const baseFileName = path.basename(filePath, fileExtension);
         const fileNameWithoutExt = path.basename(filePath, fileExtension);
 
+        // Sanitize title for filename
+        function sanitizeFilename(filename) {
+            if (!filename) return 'Photo';
+            return filename
+                .replace(/[<>:"/\\|?*]/g, '') // Remove invalid characters
+                .replace(/\s+/g, '_') // Replace spaces with underscores
+                .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+                .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+                .substring(0, 100); // Limit length
+        }
+
+        const sanitizedTitle = sanitizeFilename(title || baseFileName);
+        const zipFilename = quantity > 1 
+            ? `${sanitizedTitle}_x${quantity}.zip`
+            : `${sanitizedTitle}.zip`;
+
         // Create ZIP file with duplicated images
         res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', `attachment; filename="${itemId}_x${quantity}.zip"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
