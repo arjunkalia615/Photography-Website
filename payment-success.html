@@ -147,11 +147,8 @@
             }
         }
 
-        // Poll unified API endpoint until purchase is found or up to 7 retries
-        async function loadDownloadLinks(retryCount = 0) {
-            const maxRetries = 7; // Up to 7 retries
-            const retryDelay = 1000; // 1 second between retries
-
+        // Load purchase details immediately from Stripe session (no polling/retry)
+        async function loadPurchaseDetails() {
             // Validate session ID exists
             if (!sessionId) {
                 console.error('❌ No session ID in URL');
@@ -169,173 +166,214 @@
                 if (errorText) {
                     errorText.textContent = 'Invalid session ID. Please check your order confirmation email.';
                 }
-                return; // Don't retry with invalid session ID
-            }
-
-            // Update loading message to show retry status
-            const loadingState = document.getElementById('loadingState');
-            if (retryCount > 0) {
-                loadingState.innerHTML = `<p style="color: #888888;">Verifying purchase... (${retryCount}/${maxRetries})</p>`;
+                return;
             }
 
             try {
-                console.log(`🔍 Fetching download links for session: ${sessionId} (attempt ${retryCount + 1}/${maxRetries + 1})`);
+                console.log(`🔍 Fetching purchase details for session: ${sessionId}`);
                 
-                // Fetch purchase from Redis using session ID
-                const response = await fetch(`/api/functions?action=getDownloadLinks&session_id=${encodeURIComponent(sessionId)}`);
-                
-                console.log('📡 Response status:', response.status);
+                // Fetch session details immediately from Stripe (no Redis required)
+                const response = await fetch(`/api/functions?action=getSessionDetails&session_id=${encodeURIComponent(sessionId)}`);
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    
-                    // If purchase not found (404) and we haven't retried too many times, retry
-                    if (response.status === 404 && retryCount < maxRetries) {
-                        console.log(`⏳ Purchase not found yet, retrying in ${retryDelay}ms... (${retryCount + 1}/${maxRetries})`);
-                        setTimeout(() => loadDownloadLinks(retryCount + 1), retryDelay);
-                        return;
-                    }
-                    
-                    // Max retries reached or other error
-                    if (retryCount >= maxRetries) {
-                        throw new Error('Purchase verification timed out. The purchase may still be processing. Please refresh the page in a few moments.');
-                    }
-                    
-                    throw new Error(errorData.message || `Failed to fetch download links (${response.status})`);
+                    throw new Error(errorData.message || `Failed to fetch purchase details (${response.status})`);
                 }
 
-                // Parse response JSON with download links and purchase info
+                // Parse response JSON with session details
                 const data = await response.json();
-                console.log('✅ Download links data received:', data);
+                console.log('✅ Purchase details received:', data);
                 
-                // Handle response format: { purchase: {...}, downloads: [...], quantity: n }
-                const downloads = data.downloads || data.items || [];
+                // Extract cart items from session metadata
+                const items = data.items || [];
                 
-                if (downloads.length > 0) {
-                    // Display download links immediately once purchase is confirmed
+                if (items.length > 0) {
+                    // Display download buttons immediately
                     displayDownloadLinks({
-                        purchase: data.purchase || {},
-                        items: downloads,
-                        totalItems: downloads.length
+                        items: items,
+                        sessionId: sessionId,
+                        customerEmail: data.customerEmail,
+                        paymentStatus: data.paymentStatus
                     });
                 } else {
-                    // No download links found - retry if we haven't exhausted retries
-                    if (retryCount < maxRetries) {
-                        console.warn('⚠️ No items found in response, retrying...');
-                        setTimeout(() => loadDownloadLinks(retryCount + 1), retryDelay);
-                        return;
-                    }
-                    
-                    // Max retries reached
-                    console.warn('⚠️ No items found in download links response after all retries');
+                    // No items found
+                    console.warn('⚠️ No items found in session');
                     document.getElementById('loadingState').style.display = 'none';
                     const errorState = document.getElementById('errorState');
                     errorState.style.display = 'block';
                     const errorText = errorState.querySelector('p');
                     if (errorText) {
-                        errorText.textContent = 'No download links found. The purchase may still be processing. Please wait a moment and refresh the page.';
+                        errorText.textContent = 'No items found in your purchase. Please contact support if you believe this is an error.';
                     }
                 }
             } catch (error) {
-                console.error('❌ Error loading download links:', error);
-                
-                // Only show error if we've exhausted retries
-                if (retryCount >= maxRetries) {
-                    document.getElementById('loadingState').style.display = 'none';
-                    const errorState = document.getElementById('errorState');
-                    errorState.style.display = 'block';
-                    const errorText = errorState.querySelector('p');
-                    if (errorText) {
-                        errorText.textContent = error.message || 'Unable to load download links. Please try refreshing the page.';
-                    }
-                    console.error('Full error details:', {
-                        message: error.message,
-                        stack: error.stack,
-                        sessionId: sessionId
-                    });
-                } else {
-                    // Continue retrying
-                    setTimeout(() => loadDownloadLinks(retryCount + 1), retryDelay);
+                console.error('❌ Error loading purchase details:', error);
+                document.getElementById('loadingState').style.display = 'none';
+                const errorState = document.getElementById('errorState');
+                errorState.style.display = 'block';
+                const errorText = errorState.querySelector('p');
+                if (errorText) {
+                    errorText.textContent = error.message || 'Unable to load purchase details. Please try refreshing the page.';
                 }
+                console.error('Full error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    sessionId: sessionId
+                });
             }
         }
 
-        // Helper function to display download links
+        // Helper function to display download links with immediate ZIP download
         function displayDownloadLinks(data) {
             const downloadSection = document.getElementById('downloadSection');
             const downloadLinks = document.getElementById('downloadLinks');
             const loadingState = document.getElementById('loadingState');
             const errorState = document.getElementById('errorState');
+            const sessionId = data.sessionId;
             
-            // Build HTML for each download link (boolean downloaded flag)
-            // Single download button per item with quantity displayed next to it
-            downloadLinks.innerHTML = data.items.map((item) => {
-                const quantityPurchased = item.quantityPurchased || item.maxDownloads || item.quantity || 1;
-                const downloaded = item.downloaded === true;
-                const canDownload = item.canDownload !== false && !downloaded;
+            // Build HTML for each item with immediate ZIP download button
+            downloadLinks.innerHTML = data.items.map((item, index) => {
+                const quantityPurchased = item.quantity || 1;
+                const productId = item.productId || item.id || `item_${sessionId}_${index}`;
+                const imageSrc = item.imageSrc || '';
+                const title = item.title || item.name || 'Photo';
+                const price = 0.50; // Fixed price per item
                 
-                // Button text: "Download" when available, "Downloaded" when done
-                const downloadButtonText = canDownload 
-                    ? `⬇ Download`
-                    : `Downloaded`;
-                
-                // Button styling: white when available, grey when downloaded
-                const buttonStyle = canDownload
-                    ? 'display: inline-block; padding: 12px 24px; background: #ffffff; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; margin-bottom: 8px; cursor: pointer; border: none;'
-                    : 'display: inline-block; padding: 12px 24px; background: #666666; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; margin-bottom: 8px; cursor: not-allowed; opacity: 0.6; border: none;';
+                // Generate unique button ID for tracking
+                const buttonId = `download-btn-${productId}`;
                 
                 return `
-                    <div style="padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
-                        <h4 style="margin: 0 0 15px 0; color: #ffffff; font-size: 1rem;">${item.title || 'Photo'}</h4>
-                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                            ${canDownload ? `
-                                <a href="${item.downloadUrl}" 
-                                   target="_blank"
-                                   style="${buttonStyle}"
-                                   onclick="console.log('Download clicked: ${item.productId} - downloading ${quantityPurchased} copies'); handleDownloadClick('${item.productId}');">
-                                    ${downloadButtonText}
-                                </a>
-                            ` : `
-                                <div style="${buttonStyle}">
-                                    ${downloadButtonText}
+                    <div style="padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 15px 0; color: #ffffff; font-size: 1.1rem; font-weight: 600;">${title}</h4>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                <button id="${buttonId}" 
+                                        class="zip-download-btn"
+                                        data-session-id="${sessionId}"
+                                        data-product-id="${productId}"
+                                        data-image-src="${imageSrc}"
+                                        data-title="${title}"
+                                        data-quantity="${quantityPurchased}"
+                                        style="display: inline-block; padding: 12px 24px; background: #4dabf7; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; cursor: pointer; border: none; font-size: 0.9rem;">
+                                    📦 Download ZIP (${quantityPurchased} ${quantityPurchased === 1 ? 'copy' : 'copies'})
+                                </button>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <span style="color: #888888; font-size: 0.9rem;">
+                                        Quantity Purchased: <strong style="color: #ffffff;">${quantityPurchased}</strong>
+                                    </span>
+                                    <span style="color: #888888; font-size: 0.9rem;">
+                                        Price: <strong style="color: #ffffff;">$${price.toFixed(2)}</strong>
+                                    </span>
                                 </div>
-                            `}
-                            <span style="color: #888888; font-size: 0.9rem;">
-                                Quantity Purchased: <strong style="color: #ffffff;">${quantityPurchased}</strong>
-                            </span>
+                            </div>
                         </div>
-                        ${downloaded ? `
-                            <p style="margin: 10px 0 0 0; color: #51cf66; font-size: 0.85rem;">
-                                ✅ This item has been downloaded. You received ${quantityPurchased} copy/copies${quantityPurchased > 1 ? ' in a ZIP file' : ''}.
-                            </p>
-                        ` : ''}
                     </div>
                 `;
             }).join('');
             
-            // Add download click handler to update UI after download
-            function handleDownloadClick(productId) {
-                // After a short delay, refresh the download links to show updated status
-                setTimeout(() => {
-                    console.log('Refreshing download links after download...');
-                    loadDownloadLinks(0); // Reload with no retries
-                }, 2000); // Wait 2 seconds for download to complete and Redis to update
-            }
-            
-            // Make handler available globally
-            window.handleDownloadClick = handleDownloadClick;
+            // Add click handlers for all download buttons
+            document.querySelectorAll('.zip-download-btn').forEach(button => {
+                button.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const btn = this;
+                    const sessionId = btn.getAttribute('data-session-id');
+                    const productId = btn.getAttribute('data-product-id');
+                    const imageSrc = btn.getAttribute('data-image-src');
+                    const title = btn.getAttribute('data-title');
+                    const quantity = parseInt(btn.getAttribute('data-quantity')) || 1;
+                    
+                    // Disable button immediately
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                    btn.style.background = '#666666';
+                    btn.style.color = '#ffffff';
+                    btn.textContent = 'Downloading...';
+                    
+                    try {
+                        // Call generatePurchaseDownload API
+                        const response = await fetch('/api/functions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                action: 'generatePurchaseDownload',
+                                sessionId: sessionId,
+                                productId: productId,
+                                imageSrc: imageSrc,
+                                title: title,
+                                quantity: quantity
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.message || errorData.error || `Server error: ${response.status}`);
+                        }
+                        
+                        // Get ZIP file as blob
+                        const blob = await response.blob();
+                        
+                        // Create download link
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        
+                        // Sanitize filename
+                        function sanitizeFilename(filename) {
+                            if (!filename) return 'Photo';
+                            return filename
+                                .replace(/[<>:"/\\|?*]/g, '')
+                                .replace(/\s+/g, '_')
+                                .replace(/_{2,}/g, '_')
+                                .replace(/^_+|_+$/g, '')
+                                .substring(0, 100);
+                        }
+                        
+                        const sanitizedTitle = sanitizeFilename(title);
+                        const zipFilename = quantity > 1 
+                            ? `${sanitizedTitle}_x${quantity}.zip`
+                            : `${sanitizedTitle}.zip`;
+                        a.download = zipFilename;
+                        document.body.appendChild(a);
+                        a.click();
+                        
+                        // Cleanup
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        // Update button to show downloaded state
+                        btn.textContent = `✅ Downloaded (${quantity} ${quantity === 1 ? 'copy' : 'copies'})`;
+                        btn.style.background = '#51cf66';
+                        
+                        console.log(`✅ ZIP download successful: ${zipFilename}`);
+                    } catch (error) {
+                        console.error('❌ ZIP download error:', error);
+                        alert(`Download failed: ${error.message}`);
+                        
+                        // Re-enable button on error
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                        btn.style.background = '#4dabf7';
+                        btn.style.color = '#000000';
+                        btn.textContent = `📦 Download ZIP (${quantity} ${quantity === 1 ? 'copy' : 'copies'})`;
+                    }
+                });
+            });
 
             // Show download section, hide loading and error states
             loadingState.style.display = 'none';
             errorState.style.display = 'none';
             downloadSection.style.display = 'block';
             
-            console.log('✅ Download links displayed successfully');
+            console.log('✅ Download buttons displayed successfully');
         }
 
-        // Start polling for download links on page load (only if valid session ID)
+        // Load purchase details immediately on page load (no polling/retry)
         if (sessionId && sessionId.startsWith('cs_')) {
-            loadDownloadLinks();
+            loadPurchaseDetails();
         } else if (sessionId) {
             // Invalid session ID format - show error immediately
             console.error(`❌ Invalid session ID format: ${sessionId}`);

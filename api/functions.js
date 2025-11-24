@@ -12,6 +12,7 @@
  * - getSessionDetails: Get Stripe session details
  * - getDownloadLinks: Get download links for purchased items (requires valid purchase)
  * - downloadFile: Download file for purchased items (requires valid purchase)
+ * - generatePurchaseDownload: Generate ZIP immediately for purchased items (no verification delay)
  * - checkPurchaseFinal: Check if purchase is final
  * - checkWebhook: Debug endpoint to check webhook
  * - webhook: Stripe webhook handler (LIVE MODE ONLY)
@@ -422,6 +423,137 @@ async function handleDownloadFile(req, res) {
             return res.status(500).json({
                 error: 'Download failed',
                 message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred while downloading the file.'
+            });
+        }
+    }
+}
+
+// Action: Generate purchase download (immediate ZIP for purchased items)
+async function handleGeneratePurchaseDownload(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed', message: 'Only POST method is supported' });
+    }
+
+    try {
+        const body = parseBody(req);
+        const { sessionId, productId, imageSrc, title, quantity } = body;
+
+        if (!sessionId || !productId || !imageSrc || !quantity) {
+            return res.status(400).json({ 
+                error: 'Missing parameters', 
+                message: 'sessionId, productId, imageSrc, and quantity are required' 
+            });
+        }
+
+        if (!sessionId.startsWith('cs_')) {
+            return res.status(400).json({ error: 'Invalid session ID', message: 'Invalid session ID format' });
+        }
+
+        // Check if already downloaded using sessionId+productId as key
+        const downloadKey = `purchase_download:${sessionId}:${productId}`;
+        try {
+            const redisClient = db.getRedis();
+            const downloaded = await redisClient.get(downloadKey);
+            
+            if (downloaded === true || downloaded === 'true') {
+                return res.status(403).json({
+                    error: 'Already downloaded',
+                    message: 'This item has already been downloaded. You can only download it once.'
+                });
+            }
+        } catch (redisError) {
+            console.error('❌ Redis error checking download status:', redisError);
+            // Continue with download even if Redis check fails
+        }
+
+        // Determine file path
+        let decodedPath = decodeURIComponent(imageSrc);
+        const cleanPath = decodedPath.startsWith('/') 
+            ? decodedPath.substring(1) 
+            : decodedPath.replace(/^\.\.\//, '').replace(/^\.\//, '');
+        const normalizedPath = cleanPath.replace(/\\/g, '/');
+        const filePath = path.join(process.cwd(), normalizedPath);
+
+        const resolvedPath = path.resolve(filePath);
+        const projectRoot = path.resolve(process.cwd());
+        if (!resolvedPath.startsWith(projectRoot)) {
+            return res.status(403).json({ error: 'Access denied', message: 'Invalid file path' });
+        }
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({
+                error: 'File not found',
+                message: `No image found for the purchased item`
+            });
+        }
+
+        const stats = fs.statSync(filePath);
+        if (!stats.isFile()) {
+            return res.status(404).json({ error: 'Not a file', message: 'The requested path is not a file' });
+        }
+
+        const fileExtension = path.extname(filePath);
+        const baseFileName = path.basename(filePath, fileExtension);
+        const fileNameWithoutExt = path.basename(filePath, fileExtension);
+
+        function sanitizeFilename(filename) {
+            if (!filename) return 'Photo';
+            return filename
+                .replace(/[<>:"/\\|?*]/g, '')
+                .replace(/\s+/g, '_')
+                .replace(/_{2,}/g, '_')
+                .replace(/^_+|_+$/g, '')
+                .substring(0, 100);
+        }
+
+        const sanitizedTitle = sanitizeFilename(title || baseFileName);
+        const zipFilename = quantity > 1 
+            ? `${sanitizedTitle}_x${quantity}.zip`
+            : `${sanitizedTitle}.zip`;
+
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+
+        const archive = archiver('zip', { zlib: { level: 0 } });
+
+        archive.on('error', (error) => {
+            console.error('❌ Error creating ZIP archive:', error);
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Download failed', message: 'Error creating archive' });
+            }
+        });
+
+        archive.pipe(res);
+
+        // Add the file for each purchased copy
+        for (let i = 1; i <= quantity; i++) {
+            const copyFileName = `${fileNameWithoutExt}_copy_${i}${fileExtension}`;
+            archive.file(filePath, { name: copyFileName });
+        }
+
+        await archive.finalize();
+
+        // Mark as downloaded in Redis using sessionId+productId
+        try {
+            const redisClient = db.getRedis();
+            await redisClient.set(downloadKey, true);
+            console.log(`✅ Marked purchase download in Redis: ${downloadKey}`);
+        } catch (redisError) {
+            console.error('❌ Error marking download in Redis:', redisError);
+            // Don't fail the download if Redis fails
+        }
+
+        console.log(`✅ ZIP archive created with ${quantity} copies: ${baseFileName}`);
+    } catch (error) {
+        console.error('❌ Error generating purchase download:', error);
+        if (!res.headersSent) {
+            return res.status(500).json({
+                error: 'Download failed',
+                message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred while generating the download.'
             });
         }
     }
@@ -1052,6 +1184,8 @@ async function handler(req, res) {
                 return await handleGetDownloadLinks(req, res);
             case 'downloadFile':
                 return await handleDownloadFile(req, res);
+            case 'generatePurchaseDownload':
+                return await handleGeneratePurchaseDownload(req, res);
             case 'checkPurchaseFinal':
                 return await handleCheckPurchaseFinal(req, res);
             case 'checkWebhook':
@@ -1061,7 +1195,7 @@ async function handler(req, res) {
             default:
                 return res.status(400).json({
                     error: 'Invalid action',
-                    message: `Unknown action: ${action}. Supported actions: createSession, getStripeKey, getSessionDetails, getDownloadLinks, downloadFile, checkPurchaseFinal, checkWebhook, webhook`
+                    message: `Unknown action: ${action}. Supported actions: createSession, getStripeKey, getSessionDetails, getDownloadLinks, downloadFile, generatePurchaseDownload, checkPurchaseFinal, checkWebhook, webhook`
                 });
         }
     } catch (error) {
