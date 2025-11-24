@@ -204,22 +204,20 @@
 
             // Initialize download limits for all cart items (if not already set)
             // This ensures all items have proper limits before rendering buttons
+            // IMPORTANT: Don't reset limits where used >= allowed - that's the correct state after downloading!
             if (window.DownloadLimit) {
                 cart.forEach(item => {
                     const limit = window.DownloadLimit.getLimit(item.id);
                     if (!limit) {
-                        // Initialize limit with current quantity and used = 0
+                        // No limit exists - initialize it with current quantity and used = 0
                         window.DownloadLimit.setLimit(item.id, item.quantity, true);
                     } else if (limit.allowed !== item.quantity) {
-                        // Update limit if quantity changed
+                        // Quantity changed - update limit and reset used only if quantity increased
                         const resetUsed = item.quantity > limit.allowed;
                         window.DownloadLimit.setLimit(item.id, item.quantity, resetUsed);
-                    } else if (limit.used >= limit.allowed && limit.allowed > 0) {
-                        // Safety check: if used >= allowed for a new item, reset it
-                        // This shouldn't happen, but fix it if it does
-                        console.warn(`Fixing corrupted download limit for ${item.id}: used=${limit.used}, allowed=${limit.allowed}`);
-                        window.DownloadLimit.setLimit(item.id, item.quantity, true);
                     }
+                    // If limit exists and allowed matches quantity, keep it as-is (even if used >= allowed)
+                    // This preserves the download state after page refresh
                 });
             }
 
@@ -261,19 +259,13 @@
                 if (!limit) {
                     // No limit set yet - initialize it with current quantity and used = 0
                     window.DownloadLimit.setLimit(itemId, quantity, true);
-                } else {
-                    // Limit exists - check if it's valid
-                    if (limit.used >= limit.allowed && limit.allowed > 0) {
-                        // Corrupted state: used >= allowed but item hasn't been downloaded
-                        // Reset it to ensure button is enabled
-                        console.warn(`Fixing corrupted download limit for ${itemId}: used=${limit.used}, allowed=${limit.allowed}`);
-                        window.DownloadLimit.setLimit(itemId, quantity, true);
-                    } else if (limit.allowed !== quantity) {
-                        // Quantity changed - update limit and reset used if quantity increased
-                        const resetUsed = quantity > limit.allowed;
-                        window.DownloadLimit.setLimit(itemId, quantity, resetUsed);
-                    }
+                } else if (limit.allowed !== quantity) {
+                    // Quantity changed - update limit and reset used only if quantity increased
+                    const resetUsed = quantity > limit.allowed;
+                    window.DownloadLimit.setLimit(itemId, quantity, resetUsed);
                 }
+                // If limit exists and allowed matches quantity, keep it as-is
+                // This preserves the download state (used >= allowed means already downloaded)
                 
                 // Re-fetch limit after potential update
                 const updatedLimit = window.DownloadLimit.getLimit(itemId);
