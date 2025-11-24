@@ -111,6 +111,7 @@
 
     <!-- Stripe.js library -->
     <script src="https://js.stripe.com/v3/"></script>
+    <script src="lib/downloadLimit.js"></script>
     <script src="cart.js"></script>
     <script src="watermark-protection.js"></script>
     <script src="blur-up.js"></script>
@@ -227,11 +228,38 @@
             const checkoutBtn = document.getElementById('checkoutBtn');
             if (checkoutBtn) checkoutBtn.disabled = false;
 
+            // Helper function to get download button state
+            function getDownloadButtonState(itemId, quantity) {
+                if (!window.DownloadLimit) {
+                    // If DownloadLimit not loaded, enable button
+                    return { disabled: false, text: `📦 Download Now (Testing) - ZIP x${quantity}` };
+                }
+                
+                const hasRemaining = window.DownloadLimit.hasRemainingDownloads(itemId);
+                const remaining = window.DownloadLimit.getRemainingDownloads(itemId);
+                
+                if (!hasRemaining) {
+                    return { 
+                        disabled: true, 
+                        text: 'Download (Limit Reached)',
+                        remaining: 0
+                    };
+                }
+                
+                return { 
+                    disabled: false, 
+                    text: `📦 Download Now (Testing) - ZIP x${quantity} (${remaining} left)`,
+                    remaining: remaining
+                };
+            }
+
             // Render items
             if (itemsList) {
                 itemsList.innerHTML = cart.map(item => {
                     const itemTotal = item.price * item.quantity;
                     const downloadUrl = `/api/get-download-link?imageSrc=${encodeURIComponent(item.imageSrc)}`;
+                    const buttonState = getDownloadButtonState(item.id, item.quantity);
+                    
                     return `
                         <div class="cart-page-item" data-item-id="${item.id}">
                             <div class="cart-page-item-thumbnail">
@@ -256,8 +284,9 @@
                                             data-item-id="${item.id}" 
                                             data-image-src="${item.imageSrc}" 
                                             data-quantity="${item.quantity}"
-                                            style="padding: 6px 12px; background: #4dabf7; color: #000; border: none; border-radius: 4px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: background 0.3s;">
-                                        📦 Download Now (Testing) - ZIP x${item.quantity}
+                                            ${buttonState.disabled ? 'disabled' : ''}
+                                            style="padding: 6px 12px; background: #4dabf7; color: #000; border: none; border-radius: 4px; font-size: 0.85rem; font-weight: 500; cursor: ${buttonState.disabled ? 'not-allowed' : 'pointer'}; transition: background 0.3s; opacity: ${buttonState.disabled ? '0.5' : '1'}; pointer-events: ${buttonState.disabled ? 'none' : 'auto'};">
+                                        ${buttonState.text}
                                     </button>
                                 </div>
                             </div>
@@ -435,10 +464,46 @@
             }
         });
 
+        // Helper function to update download button state
+        function updateDownloadButtonState(itemId, quantity) {
+            const button = document.querySelector(`.test-zip-download-btn[data-item-id="${itemId}"]`);
+            if (!button) return;
+            
+            if (!window.DownloadLimit) {
+                // If DownloadLimit not loaded, keep button enabled
+                return;
+            }
+            
+            const hasRemaining = window.DownloadLimit.hasRemainingDownloads(itemId);
+            const remaining = window.DownloadLimit.getRemainingDownloads(itemId);
+            
+            if (!hasRemaining) {
+                // Disable button and update text
+                button.disabled = true;
+                button.textContent = 'Download (Limit Reached)';
+                button.style.opacity = '0.5';
+                button.style.pointerEvents = 'none';
+                button.style.cursor = 'not-allowed';
+            } else {
+                // Enable button and update text with remaining count
+                button.disabled = false;
+                button.textContent = `📦 Download Now (Testing) - ZIP x${quantity} (${remaining} left)`;
+                button.style.opacity = '1';
+                button.style.pointerEvents = 'auto';
+                button.style.cursor = 'pointer';
+            }
+        }
+
         // ZIP Download Handler
         async function handleZipDownload(itemId, imageSrc, quantity) {
             const button = document.querySelector(`.test-zip-download-btn[data-item-id="${itemId}"]`);
             const originalText = button ? button.textContent : '';
+            
+            // Check download limit before proceeding
+            if (window.DownloadLimit && !window.DownloadLimit.hasRemainingDownloads(itemId)) {
+                alert("You have reached your download limit for this item.");
+                return;
+            }
             
             // Show loading state
             if (button) {
@@ -482,15 +547,25 @@
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
 
+                // Increment download count after successful download
+                if (window.DownloadLimit) {
+                    window.DownloadLimit.incrementDownload(itemId);
+                    
+                    // Update button state after increment
+                    updateDownloadButtonState(itemId, quantity);
+                }
+
                 // Show success message
-                if (button) {
+                if (button && (!window.DownloadLimit || window.DownloadLimit.hasRemainingDownloads(itemId))) {
                     button.textContent = '✅ Downloaded!';
                     button.style.background = '#51cf66';
                     setTimeout(() => {
-                        button.disabled = false;
-                        button.textContent = originalText;
+                        updateDownloadButtonState(itemId, quantity);
                         button.style.background = '#4dabf7';
                     }, 2000);
+                } else if (button) {
+                    // Limit reached after download
+                    updateDownloadButtonState(itemId, quantity);
                 }
 
                 console.log(`✅ ZIP download successful: ${itemId}_x${quantity}.zip`);
@@ -501,12 +576,8 @@
                 // Show error message
                 alert(`Download failed: ${error.message}`);
                 
-                // Reset button
-                if (button) {
-                    button.disabled = false;
-                    button.textContent = originalText;
-                    button.style.background = '#4dabf7';
-                }
+                // Reset button state
+                updateDownloadButtonState(itemId, quantity);
             }
         }
 

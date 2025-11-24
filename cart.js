@@ -2,6 +2,15 @@
 const CART_STORAGE_KEY = 'shoppingCart';
 const ITEM_PRICE = 0.00; // Price per photo (temporarily set to $0.00 for testing download links)
 
+// Load download limit utility if available
+let DownloadLimit = null;
+if (typeof window !== 'undefined') {
+    // Try to load from script tag or wait for it
+    if (window.DownloadLimit) {
+        DownloadLimit = window.DownloadLimit;
+    }
+}
+
 // Cart Utilities
 const CartUtils = {
     // Get cart from localStorage
@@ -65,6 +74,8 @@ const Cart = {
         const itemId = productId || CartUtils.generateUUID();
         
         const existingItem = cart.find(item => item.id === itemId);
+        const wasNewItem = !existingItem;
+        const oldQuantity = existingItem ? existingItem.quantity : 0;
         
         if (existingItem) {
             existingItem.quantity += 1;
@@ -76,6 +87,14 @@ const Cart = {
                 price: price,
                 quantity: 1
             });
+        }
+        
+        // Update download limit when item is added or quantity changes
+        if (typeof window !== 'undefined' && window.DownloadLimit) {
+            const newQuantity = existingItem ? existingItem.quantity : 1;
+            // Reset used count if new item or quantity increased
+            const resetUsed = wasNewItem || newQuantity > oldQuantity;
+            window.DownloadLimit.setLimit(itemId, newQuantity, resetUsed);
         }
         
         CartUtils.saveCart(cart);
@@ -101,7 +120,16 @@ const Cart = {
             if (quantity <= 0) {
                 return Cart.removeItem(itemId);
             }
+            const oldQuantity = item.quantity;
             item.quantity = Math.min(10, Math.max(1, quantity));
+            
+            // Update download limit when quantity changes
+            if (typeof window !== 'undefined' && window.DownloadLimit) {
+                // Reset used count if quantity increased, otherwise keep it
+                const resetUsed = quantity > oldQuantity;
+                window.DownloadLimit.setLimit(itemId, item.quantity, resetUsed);
+            }
+            
             CartUtils.saveCart(cart);
             Cart.updateBadge();
         }
