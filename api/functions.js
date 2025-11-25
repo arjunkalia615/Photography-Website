@@ -16,6 +16,7 @@
  * - checkPurchaseFinal: Check if purchase is final
  * - checkWebhook: Debug endpoint to check webhook
  * - webhook: Stripe webhook handler (LIVE MODE ONLY)
+ * - getPhotos: Get all photos from high_quality_photos folder (dynamic listing)
  */
 
 const stripe = require('stripe');
@@ -472,6 +473,23 @@ async function handleGeneratePurchaseDownload(req, res) {
             ? decodedPath.substring(1) 
             : decodedPath.replace(/^\.\.\//, '').replace(/^\.\//, '');
         const normalizedPath = cleanPath.replace(/\\/g, '/');
+        
+        // Security: Prevent downloading banner photos
+        if (normalizedPath.includes('banner_photos') || normalizedPath.includes('Banner Photo')) {
+            return res.status(403).json({ 
+                error: 'Access denied', 
+                message: 'Banner photos are not available for download' 
+            });
+        }
+        
+        // Security: Only allow downloads from high_quality_photos folder
+        if (!normalizedPath.includes('high_quality_photos') && !normalizedPath.includes('High-Qaulity Photos')) {
+            return res.status(403).json({ 
+                error: 'Access denied', 
+                message: 'Only photos from the high_quality_photos folder can be downloaded' 
+            });
+        }
+        
         const filePath = path.join(process.cwd(), normalizedPath);
 
         const resolvedPath = path.resolve(filePath);
@@ -1149,6 +1167,87 @@ async function handleWebhook(req, res) {
     }
 }
 
+// Action: Get all photos from high_quality_photos folder
+async function handleGetPhotos(req, res) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed', message: 'Only GET method is supported' });
+    }
+
+    try {
+        // Try new folder name first, then fallback to old name (with typo)
+        let photosFolder = path.join(process.cwd(), 'Images', 'high_quality_photos');
+        if (!fs.existsSync(photosFolder)) {
+            // Fallback to old folder name (with typo) for backward compatibility
+            photosFolder = path.join(process.cwd(), 'Images', 'High-Qaulity Photos');
+        }
+        
+        // Check if folder exists
+        if (!fs.existsSync(photosFolder)) {
+            console.warn(`⚠️ Photos folder not found. Tried: Images/high_quality_photos and Images/High-Qaulity Photos`);
+            return res.status(200).json({ photos: [] });
+        }
+
+        // Read all files from the folder
+        const files = fs.readdirSync(photosFolder);
+        
+        // Filter for image files only
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+        const photos = files
+            .filter(file => {
+                const ext = path.extname(file).toLowerCase();
+                return imageExtensions.includes(ext);
+            })
+            .map(file => {
+                const filePath = path.join(photosFolder, file);
+                const stats = fs.statSync(filePath);
+                
+                // Only include actual files (not directories)
+                if (!stats.isFile()) {
+                    return null;
+                }
+
+                // Use the actual folder name found (could be high_quality_photos or High-Qaulity Photos)
+                const folderName = path.basename(photosFolder);
+                const imageSrc = `Images/${folderName}/${file}`;
+                const baseName = path.basename(file, path.extname(file));
+                
+                // Generate a product ID from the filename
+                const productId = baseName.toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                
+                // Create a readable title from filename
+                const title = baseName
+                    .replace(/[-_]/g, ' ')
+                    .replace(/\b\w/g, l => l.toUpperCase());
+
+                return {
+                    productId: productId || `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    imageSrc: imageSrc,
+                    title: title,
+                    filename: file,
+                    category: 'Photography' // Default category, can be enhanced later
+                };
+            })
+            .filter(photo => photo !== null) // Remove null entries
+            .sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
+
+        console.log(`✅ Found ${photos.length} photos in high_quality_photos folder`);
+        
+        return res.status(200).json({
+            success: true,
+            photos: photos,
+            count: photos.length
+        });
+    } catch (error) {
+        console.error('❌ Error getting photos:', error);
+        return res.status(500).json({
+            error: 'Failed to get photos',
+            message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred while fetching photos.'
+        });
+    }
+}
+
 // Main handler - routes to appropriate action
 async function handler(req, res) {
     // Set CORS headers for all requests
@@ -1192,10 +1291,12 @@ async function handler(req, res) {
                 return await handleCheckWebhook(req, res);
             case 'webhook':
                 return await handleWebhook(req, res);
+            case 'getPhotos':
+                return await handleGetPhotos(req, res);
             default:
                 return res.status(400).json({
                     error: 'Invalid action',
-                    message: `Unknown action: ${action}. Supported actions: createSession, getStripeKey, getSessionDetails, getDownloadLinks, downloadFile, generatePurchaseDownload, checkPurchaseFinal, checkWebhook, webhook`
+                    message: `Unknown action: ${action}. Supported actions: createSession, getStripeKey, getSessionDetails, getDownloadLinks, downloadFile, generatePurchaseDownload, checkPurchaseFinal, checkWebhook, webhook, getPhotos`
                 });
         }
     } catch (error) {

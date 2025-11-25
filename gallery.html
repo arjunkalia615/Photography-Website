@@ -64,25 +64,12 @@
             <h1 class="page-title">Gallery</h1>
             <p style="text-align: center; color: #b8b8b8; margin-bottom: 40px; font-size: 1.1rem;">Explore our complete collection of high-resolution photography</p>
 
-            <div class="photo-grid">
-                <!-- Australia - Coastal & Nature -->
-                <div class="photo-item" data-category="Australia - Coastal & Nature">
-                    <div class="photo-item-image-wrapper">
-                        <img src="Images/Australia Photos/Sub-categories/Costal & Nature/Beach.jpg" alt="Beach" loading="lazy">
-                        <div class="photo-item-hover-overlay">
-                            <div class="photo-item-hover-title">Beach</div>
-                            <div class="photo-item-hover-category">Australia - Coastal & Nature</div>
-                            <div class="photo-item-hover-price">$0.50</div>
-                        </div>
-                    </div>
-                    <div class="photo-item-info">
-                        <div class="photo-item-price">$0.50</div>
-                        <button class="photo-item-add-to-cart-btn" data-product-id="a1b2c3d4-e5f6-4789-a012-3456789abcde" data-image-src="Images/Australia Photos/Sub-categories/Costal & Nature/Beach.jpg" data-title="Beach">Add to Cart</button>
-                    </div>
+            <div class="photo-grid" id="photoGrid">
+                <!-- Photos will be loaded dynamically from high_quality_photos folder -->
+                <div id="loadingPhotos" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #b8b8b8;">
+                    <p>Loading photos...</p>
                 </div>
-                <div class="photo-item" data-category="Australia - Coastal & Nature">
-                    <div class="photo-item-image-wrapper">
-                        <img src="Images/Australia Photos/Sub-categories/Costal & Nature/Blue Mountain1.jpg" alt="Blue Mountain" loading="lazy">
+                <!-- Photos will be loaded dynamically via JavaScript -->
                         <div class="photo-item-hover-overlay">
                             <div class="photo-item-hover-title">Blue Mountain</div>
                             <div class="photo-item-hover-category">Australia - Coastal & Nature</div>
@@ -949,9 +936,6 @@
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.50</div>
-                        <button class="photo-item-add-to-cart-btn" data-product-id="1c2d3e4f-5a6b-4123-c456-3456789abcde" data-image-src="Images/India Photos/Sub-categories/Cultural Heritage/Qutab Minar8.jpg" data-title="Qutab Minar Perspective">Add to Cart</button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -994,6 +978,198 @@
     <script src="watermark-protection.js"></script>
     <script src="blur-up.js"></script>
     <script>
+        // Remove all old hardcoded photo items
+        function removeOldPhotoItems() {
+            const photoGrid = document.getElementById('photoGrid');
+            if (!photoGrid) return;
+            
+            // Remove all photo-item divs that have old paths (not from high_quality_photos)
+            const oldItems = photoGrid.querySelectorAll('.photo-item');
+            oldItems.forEach(item => {
+                const img = item.querySelector('img');
+                if (img && img.src && !img.src.includes('high_quality_photos')) {
+                    item.remove();
+                }
+            });
+        }
+        
+        // Load photos dynamically from high_quality_photos folder
+        async function loadPhotos() {
+            const photoGrid = document.getElementById('photoGrid');
+            const loadingPhotos = document.getElementById('loadingPhotos');
+            
+            // Remove old items first
+            removeOldPhotoItems();
+            
+            try {
+                const response = await fetch('/api/functions?action=getPhotos');
+                if (!response.ok) {
+                    throw new Error(`Failed to load photos: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data.success || !data.photos || data.photos.length === 0) {
+                    loadingPhotos.innerHTML = '<p>No photos available at this time.</p>';
+                    return;
+                }
+                
+                // Remove loading message
+                loadingPhotos.remove();
+                
+                // Generate photo items
+                const photosHTML = data.photos.map((photo, index) => {
+                    return `
+                        <div class="photo-item" data-category="${photo.category || 'Photography'}">
+                            <div class="photo-item-image-wrapper">
+                                <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
+                                <div class="photo-item-hover-overlay">
+                                    <div class="photo-item-hover-title">${photo.title}</div>
+                                    <div class="photo-item-hover-category">${photo.category || 'Photography'}</div>
+                                    <div class="photo-item-hover-price">$0.50</div>
+                                </div>
+                            </div>
+                            <div class="photo-item-info">
+                                <div class="photo-item-price">$0.50</div>
+                                <button class="photo-item-add-to-cart-btn" 
+                                        data-product-id="${photo.productId}" 
+                                        data-image-src="${photo.imageSrc}" 
+                                        data-title="${photo.title}">Add to Cart</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                photoGrid.insertAdjacentHTML('beforeend', photosHTML);
+                
+                // Reinitialize lightbox with new images
+                initializeLightbox();
+                
+                // Reinitialize add-to-cart buttons
+                if (typeof initializeAddToCart === 'function') {
+                    initializeAddToCart();
+                }
+                
+                console.log(`✅ Loaded ${data.photos.length} photos dynamically`);
+            } catch (error) {
+                console.error('❌ Error loading photos:', error);
+                loadingPhotos.innerHTML = '<p style="color: #ff6b6b;">Error loading photos. Please refresh the page.</p>';
+            }
+        }
+        
+        // Initialize lightbox functionality
+        function initializeLightbox() {
+            const photoItems = document.querySelectorAll('.photo-item-image-wrapper img');
+            const images = Array.from(photoItems).map(img => ({
+                src: img.src,
+                alt: img.alt
+            }));
+            
+            let currentImageIndex = 0;
+            
+            // Update lightbox image
+            function updateLightboxImage() {
+                const lightboxImage = document.getElementById('lightboxImage');
+                const lightboxCounter = document.getElementById('lightboxCounter');
+                if (lightboxImage && images[currentImageIndex]) {
+                    lightboxImage.src = images[currentImageIndex].src;
+                    lightboxImage.alt = images[currentImageIndex].alt;
+                    if (lightboxCounter) {
+                        lightboxCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+                    }
+                }
+            }
+            
+            // Open lightbox
+            function openLightbox(index) {
+                currentImageIndex = index;
+                updateLightboxImage();
+                const lightbox = document.getElementById('lightbox');
+                if (lightbox) {
+                    lightbox.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+            
+            // Close lightbox
+            function closeLightbox() {
+                const lightbox = document.getElementById('lightbox');
+                if (lightbox) {
+                    lightbox.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            }
+            
+            // Navigate to previous image
+            function showPrevImage() {
+                currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+                updateLightboxImage();
+            }
+            
+            // Navigate to next image
+            function showNextImage() {
+                currentImageIndex = (currentImageIndex + 1) % images.length;
+                updateLightboxImage();
+            }
+            
+            // Add click event to all images
+            photoItems.forEach((img, index) => {
+                img.style.cursor = 'pointer';
+                img.onclick = (e) => {
+                    e.preventDefault();
+                    openLightbox(index);
+                };
+            });
+            
+            // Update global lightbox handlers
+            const lightboxClose = document.getElementById('lightboxClose');
+            const lightboxPrev = document.getElementById('lightboxPrev');
+            const lightboxNext = document.getElementById('lightboxNext');
+            const lightbox = document.getElementById('lightbox');
+            
+            if (lightboxClose) {
+                lightboxClose.onclick = closeLightbox;
+            }
+            if (lightboxPrev) {
+                lightboxPrev.onclick = (e) => {
+                    e.stopPropagation();
+                    showPrevImage();
+                };
+            }
+            if (lightboxNext) {
+                lightboxNext.onclick = (e) => {
+                    e.stopPropagation();
+                    showNextImage();
+                };
+            }
+            if (lightbox) {
+                lightbox.onclick = (e) => {
+                    if (e.target === lightbox) {
+                        closeLightbox();
+                    }
+                };
+            }
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (!lightbox || !lightbox.classList.contains('active')) return;
+                
+                if (e.key === 'Escape') {
+                    closeLightbox();
+                } else if (e.key === 'ArrowLeft') {
+                    showPrevImage();
+                } else if (e.key === 'ArrowRight') {
+                    showNextImage();
+                }
+            });
+        }
+        
+        // Load photos on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadPhotos);
+        } else {
+            loadPhotos();
+        }
+        
         // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');
