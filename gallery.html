@@ -1021,12 +1021,14 @@
                     return `
                         <div class="photo-item" data-category="${photo.category || 'Photography'}" style="animation-delay: ${index * 50}ms;">
                             <div class="photo-item-image-wrapper">
-                                <div class="photo-item-shadow"></div>
-                                <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy" onload="this.classList.add('image-loaded'); this.closest('.photo-item').classList.add('loaded'); calculateRowSpan(this);">
-                                <div class="photo-item-hover-overlay">
-                                    <div class="photo-item-hover-title">${photo.title}</div>
-                                    <div class="photo-item-hover-category">${photo.category || 'Photography'}</div>
-                                    <div class="photo-item-hover-price">$0.50</div>
+                                <div class="photo-container">
+                                    <div class="photo-item-shadow"></div>
+                                    <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy" onload="this.classList.add('image-loaded'); this.closest('.photo-item').classList.add('loaded'); calculateRowSpan(this);">
+                                    <div class="photo-item-hover-overlay">
+                                        <div class="photo-item-hover-title">${photo.title}</div>
+                                        <div class="photo-item-hover-category">${photo.category || 'Photography'}</div>
+                                        <div class="photo-item-hover-price">$0.50</div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="photo-item-info">

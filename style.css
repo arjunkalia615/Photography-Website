@@ -467,14 +467,14 @@ nav {
     background: var(--color-bg-secondary);
     border-radius: var(--radius-xl);
     overflow: hidden;
-    transition: transform var(--transition-base), box-shadow var(--transition-base), opacity var(--transition-fast);
+    transition: transform 0.4s ease, box-shadow 0.4s ease, opacity 0.4s ease;
     box-shadow: var(--shadow-md);
     position: relative;
     opacity: 1;
 }
 
 .country-card:hover {
-    transform: translateY(-8px) scale(1.01);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-xl);
     opacity: 1;
 }
@@ -508,11 +508,13 @@ nav {
     height: 300px;
     object-fit: cover;
     display: block;
-    transition: transform 0.6s ease, opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.4s ease, filter 0.4s ease, opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+    backface-visibility: hidden;
     opacity: 0;
     position: relative;
     z-index: 2;
-    will-change: opacity;
+    will-change: opacity, transform, filter;
 }
 
 .country-image.image-loaded {
@@ -520,8 +522,9 @@ nav {
 }
 
 .country-card:hover .country-image {
-    transform: scale(1.05);
-    transition: transform var(--transition-base);
+    transform: scale(1.03) translateZ(0);
+    filter: brightness(0.95);
+    transition: transform 0.4s ease, filter 0.4s ease;
 }
 
 .country-info {
@@ -639,12 +642,34 @@ nav {
 
 /* Premium hover effect - no layout shift */
 .photo-item:hover {
-    transform: scale(1.03);
     z-index: 10;
+}
+
+/* Container doesn't scale - only image scales for smooth effect */
+.photo-item:hover {
+    transform: none;
+}
+
+/* Ensure photo-container has proper overflow */
+.photo-item .photo-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
 }
 
 .photo-item:hover .photo-item-shadow {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Photo Container - Premium Wrapper */
+.photo-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+    width: 100%;
+    height: 100%;
 }
 
 .photo-item-image-wrapper {
@@ -653,7 +678,7 @@ nav {
     width: 100%;
     height: auto;
     cursor: pointer;
-    background: #111;
+    background: #000;
     border-radius: 12px;
 }
 
@@ -723,38 +748,19 @@ nav {
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-/* Blur-up placeholder */
-.photo-item-image-wrapper::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
+/* Remove blur-up placeholder - using fade-in instead for smoother performance */
+
+/* Premium Image Styles - Smooth, No Glitch */
+.photo-item img,
+.photo-container img {
     width: 100%;
     height: 100%;
-    background-image: var(--placeholder-url);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    filter: blur(20px);
-    transform: scale(1.1);
-    opacity: 1;
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1;
-    will-change: opacity;
-}
-
-.photo-item-image-wrapper.image-loaded::before {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.photo-item img {
-    width: 100%;
-    height: auto;
     object-fit: cover;
     object-position: center;
     display: block;
-    transition: transform 300ms ease-out;
+    transition: transform 0.4s ease, filter 0.4s ease, opacity 0.4s ease;
+    transform: translateZ(0);
+    backface-visibility: hidden;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -762,17 +768,20 @@ nav {
     opacity: 0;
     position: relative;
     z-index: 2;
-    will-change: opacity, transform;
+    will-change: transform, filter, opacity;
     border-radius: 12px;
 }
 
-.photo-item img.image-loaded {
+.photo-item img.image-loaded,
+.photo-container img.image-loaded {
     opacity: 1;
 }
 
-/* Smooth scale on hover - no layout shift */
-.photo-item:hover img {
-    transform: scale(1.05);
+/* Premium Hover Effect - Smooth Scale & Brightness */
+.photo-item:hover img,
+.photo-container:hover img {
+    transform: scale(1.03) translateZ(0);
+    filter: brightness(0.95);
 }
 
 
@@ -865,12 +874,15 @@ nav {
     object-fit: cover;
     object-position: center;
     display: block;
-    transition: opacity 0.4s ease, transform 0.4s ease;
+    transition: transform 0.4s ease, filter 0.4s ease, opacity 0.4s ease;
+    transform: translateZ(0);
+    backface-visibility: hidden;
     opacity: 1;
 }
 
 .product-image:hover {
-    transform: scale(1.02);
+    transform: scale(1.03) translateZ(0);
+    filter: brightness(0.95);
 }
 
 .product-image-placeholder {
