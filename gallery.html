@@ -641,7 +641,7 @@
                         <button class="photo-item-add-to-cart-btn" data-product-id="ff2a3b4c-5d6e-4890-ff23-0123456789ab" data-image-src="Images/Australia Photos/Sub-categories/Costal & Nature/DSCF0308.jpg" data-title="Coastal Beauty">Add to Cart</button>
                     </div>
                 </div>
-                
+
                 <!-- Australia - Urban Life -->
                 <div class="photo-item" data-category="Australia - Urban Life">
                     <div class="photo-item-image-wrapper">
@@ -865,8 +865,8 @@
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.50</div>
                         <button class="photo-item-add-to-cart-btn" data-product-id="6d7e8f9a-0b1c-4234-d567-456789abcdef" data-image-src="Images/Australia Photos/Sub-categories/Urban/Sydney4.jpg" data-title="Sydney Urban Scene">Add to Cart</button>
+                        </div>
                     </div>
-                </div>
                 <div class="photo-item" data-category="Australia - Urban Life">
                     <div class="photo-item-image-wrapper">
                         <img src="Images/Australia Photos/Sub-categories/Urban/Sydney5.jpg" alt="Sydney City View" loading="lazy">
@@ -874,14 +874,14 @@
                             <div class="photo-item-hover-title">Sydney City View</div>
                             <div class="photo-item-hover-category">Australia - Urban Life</div>
                             <div class="photo-item-hover-price">$0.50</div>
-                        </div>
+                </div>
                     </div>
                     <div class="photo-item-info">
                         <div class="photo-item-price">$0.50</div>
                         <button class="photo-item-add-to-cart-btn" data-product-id="7e8f9a0b-1c2d-4345-e678-56789abcdef0" data-image-src="Images/Australia Photos/Sub-categories/Urban/Sydney5.jpg" data-title="Sydney City View">Add to Cart</button>
                     </div>
                 </div>
-
+                
                 <!-- India - Cultural Heritage -->
                 <div class="photo-item" data-category="India - Cultural Heritage">
                     <div class="photo-item-image-wrapper">
@@ -1016,19 +1016,16 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Generate photo items with premium structure
+                // Generate photo items
                 const photosHTML = data.photos.map((photo, index) => {
                     return `
-                        <div class="photo-item" data-category="${photo.category || 'Photography'}" style="animation-delay: ${index * 50}ms;">
+                        <div class="photo-item" data-category="${photo.category || 'Photography'}">
                             <div class="photo-item-image-wrapper">
-                                <div class="photo-container">
-                                    <div class="photo-item-shadow"></div>
-                                    <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy" onload="this.classList.add('image-loaded'); this.closest('.photo-item').classList.add('loaded'); calculateRowSpan(this);">
-                                    <div class="photo-item-hover-overlay">
-                                        <div class="photo-item-hover-title">${photo.title}</div>
-                                        <div class="photo-item-hover-category">${photo.category || 'Photography'}</div>
-                                        <div class="photo-item-hover-price">$0.50</div>
-                                    </div>
+                                <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
+                                <div class="photo-item-hover-overlay">
+                                    <div class="photo-item-hover-title">${photo.title}</div>
+                                    <div class="photo-item-hover-category">${photo.category || 'Photography'}</div>
+                                    <div class="photo-item-hover-price">$0.50</div>
                                 </div>
                             </div>
                             <div class="photo-item-info">
@@ -1044,18 +1041,6 @@
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                // Calculate row spans for masonry layout after images load
-                const images = photoGrid.querySelectorAll('.photo-item img');
-                images.forEach(img => {
-                    if (img.complete) {
-                        calculateRowSpan(img);
-                    } else {
-                        img.addEventListener('load', function() {
-                            calculateRowSpan(this);
-                        });
-                    }
-                });
-                
                 // Reinitialize lightbox with new images
                 initializeLightbox();
                 
@@ -1068,28 +1053,6 @@
             } catch (error) {
                 console.error('❌ Error loading photos:', error);
                 loadingPhotos.innerHTML = '<p style="color: #ff6b6b;">Error loading photos. Please refresh the page.</p>';
-            }
-        }
-        
-        // Calculate row span for masonry layout
-        function calculateRowSpan(img) {
-            const photoItem = img.closest('.photo-item');
-            if (!photoItem) return;
-            
-            const grid = document.querySelector('.photo-grid');
-            if (!grid) return;
-            
-            // Get grid row height (8px as defined in CSS)
-            const rowHeight = 8;
-            const gap = 24; // Match CSS gap
-            
-            // Calculate image height including gap
-            const imgHeight = img.offsetHeight;
-            if (imgHeight > 0) {
-                const rowSpan = Math.ceil((imgHeight + gap) / rowHeight);
-                // Set CSS variable for row span
-                photoItem.style.setProperty('--row-span', rowSpan);
-                photoItem.style.gridRowEnd = `span ${rowSpan}`;
             }
         }
         
