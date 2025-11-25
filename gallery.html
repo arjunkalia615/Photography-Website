@@ -1044,10 +1044,45 @@
                 // Reinitialize lightbox with new images
                 initializeLightbox();
                 
-                // Reinitialize add-to-cart buttons
-                if (typeof initializeAddToCart === 'function') {
-                    initializeAddToCart();
-                }
+                // Reinitialize add-to-cart buttons - trigger the add-to-cart.js handler
+                setTimeout(() => {
+                    // Re-trigger DOMContentLoaded handlers for new buttons
+                    const addToCartButtons = document.querySelectorAll('.photo-item-add-to-cart-btn');
+                    addToCartButtons.forEach(button => {
+                        // Remove any existing listeners
+                        const newButton = button.cloneNode(true);
+                        button.parentNode.replaceChild(newButton, button);
+                        
+                        // Add click handler
+                        newButton.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            if (!window.Cart) {
+                                console.error('Cart is not available');
+                                return;
+                            }
+                            
+                            const imageSrc = newButton.getAttribute('data-image-src');
+                            const title = newButton.getAttribute('data-title') || 'Photo';
+                            const productId = newButton.getAttribute('data-product-id');
+                            
+                            if (imageSrc && title) {
+                                // Add item to cart with product ID (UUID)
+                                Cart.addItem(imageSrc, title, undefined, productId);
+                                
+                                // Show visual feedback
+                                newButton.textContent = 'Added!';
+                                newButton.style.backgroundColor = '#4CAF50';
+                                
+                                setTimeout(() => {
+                                    newButton.textContent = 'Add to Cart';
+                                    newButton.style.backgroundColor = '';
+                                }, 1000);
+                            }
+                        });
+                    });
+                }, 100);
                 
                 console.log(`✅ Loaded ${data.photos.length} photos dynamically`);
             } catch (error) {
