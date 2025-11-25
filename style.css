@@ -258,6 +258,10 @@ nav {
     text-align: center;
     z-index: 2;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .hero-content::before {
@@ -292,7 +296,7 @@ nav {
     max-width: 1200px;
     height: 600px;
     position: relative;
-    margin-bottom: var(--spacing-5xl);
+    margin: 0 auto var(--spacing-5xl) auto;
     border-radius: var(--radius-xl);
     overflow: hidden;
     user-select: none;
@@ -430,6 +434,15 @@ nav {
 .container {
     max-width: 1400px;
     margin: 0 auto;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 16px;
+    }
 }
 
 .page-title {
@@ -555,75 +568,126 @@ nav {
     transform: translateY(0) scale(1);
 }
 
-/* Photo Grid */
+/* Photo Grid - Premium Masonry Style */
 .photo-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 30px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-auto-rows: 8px;
+    gap: 24px;
     margin-bottom: 60px;
+    width: 100%;
 }
 
-/* Tablet: 2 images per row */
-@media (max-width: 1024px) and (min-width: 768px) {
+/* Large screens: 5-6 columns */
+@media (min-width: 1600px) {
     .photo-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 25px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 28px;
     }
 }
 
-/* Mobile: 1 image per row */
-@media (max-width: 767px) {
+/* Desktop: 4-5 columns */
+@media (min-width: 1200px) and (max-width: 1599px) {
     .photo-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+    }
+}
+
+/* Tablet: 3-4 columns */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         gap: 20px;
     }
 }
 
+/* Mobile: 2 columns */
+@media (max-width: 767px) {
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+}
+
+/* Small mobile: 1 column */
+@media (max-width: 480px) {
+    .photo-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+/* Premium Photo Card */
 .photo-item {
     position: relative;
     overflow: hidden;
-    border-radius: var(--radius-lg);
-    background: var(--color-bg-secondary);
-    transition: transform var(--transition-base), box-shadow var(--transition-base), opacity var(--transition-fast);
-    box-shadow: var(--shadow-md);
+    border-radius: 12px;
+    background: #111;
+    transition: transform 300ms ease-out, opacity 300ms ease-out;
     display: flex;
     flex-direction: column;
+    opacity: 0;
+    animation: fadeInUp 400ms ease-out forwards;
+    grid-row-end: span var(--row-span, 200);
+    cursor: pointer;
+}
+
+.photo-item.loaded {
     opacity: 1;
 }
 
+/* Premium hover effect - no layout shift */
 .photo-item:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: var(--shadow-xl);
-    opacity: 1;
+    transform: scale(1.03);
+    z-index: 10;
+}
+
+.photo-item:hover .photo-item-shadow {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .photo-item-image-wrapper {
     position: relative;
     overflow: hidden;
-    aspect-ratio: 1/1;
-    min-height: 280px;
-    max-height: 400px;
+    width: 100%;
+    height: auto;
     cursor: pointer;
-    background: var(--color-bg-primary);
+    background: #111;
+    border-radius: 12px;
 }
 
-/* Hover overlay for photo info */
+.photo-item-shadow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-shadow: none;
+    transition: box-shadow 300ms ease-out;
+    pointer-events: none;
+    border-radius: 12px;
+    z-index: 1;
+}
+
+/* Premium hover overlay */
 .photo-item-hover-overlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.75);
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: var(--spacing-2xl);
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 20px;
     opacity: 0;
-    transition: opacity var(--transition-fast);
+    transition: opacity 300ms ease-out;
     z-index: 3;
     pointer-events: none;
+    border-radius: 12px;
 }
 
 .photo-item:hover .photo-item-hover-overlay {
@@ -632,28 +696,31 @@ nav {
 
 .photo-item-hover-title {
     font-family: var(--font-heading);
-    font-size: var(--font-size-2xl);
+    font-size: 1.1rem;
     font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
-    text-align: center;
-    margin-bottom: var(--spacing-md);
+    color: #ffffff;
+    text-align: left;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .photo-item-hover-category {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-tertiary);
-    text-align: center;
-    margin-bottom: var(--spacing-lg);
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: left;
+    margin-bottom: 8px;
     text-transform: uppercase;
-    letter-spacing: var(--letter-spacing-normal);
+    letter-spacing: 1px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .photo-item-hover-price {
     font-family: var(--font-heading);
-    font-size: var(--font-size-3xl);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
-    text-align: center;
+    font-size: 1.3rem;
+    font-weight: var(--font-weight-semibold);
+    color: #ffffff;
+    text-align: left;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 /* Blur-up placeholder */
@@ -683,11 +750,11 @@ nav {
 
 .photo-item img {
     width: 100%;
-    height: 100%;
+    height: auto;
     object-fit: cover;
     object-position: center;
     display: block;
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 300ms ease-out;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -695,31 +762,48 @@ nav {
     opacity: 0;
     position: relative;
     z-index: 2;
-    will-change: opacity;
+    will-change: opacity, transform;
+    border-radius: 12px;
 }
 
 .photo-item img.image-loaded {
     opacity: 1;
 }
 
+/* Smooth scale on hover - no layout shift */
 .photo-item:hover img {
-    transform: scale(1.08);
-    transition: transform var(--transition-base);
+    transform: scale(1.05);
 }
 
 
 .photo-item-info {
-    padding: var(--spacing-2xl);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 20px;
     display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg);
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+    z-index: 4;
+    pointer-events: none;
+    border-radius: 0 0 12px 12px;
+}
+
+.photo-item:hover .photo-item-info {
+    opacity: 1;
 }
 
 .photo-item-price {
     font-family: var(--font-heading);
-    font-size: var(--font-size-3xl);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-semibold);
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .photo-item-buy-btn {
@@ -2695,23 +2779,25 @@ footer {
     background: #ffffff;
     color: #0a0a0a;
     border: none;
-    padding: 12px 24px;
-    font-size: 0.95rem;
-    font-weight: 500;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 300ms ease-out;
     text-decoration: none;
     text-align: center;
     display: inline-block;
     letter-spacing: 0.5px;
-    width: 100%;
+    pointer-events: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
 }
 
 .photo-item-add-to-cart-btn:hover {
     background: #e0e0e0;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 @media (max-width: 768px) {
