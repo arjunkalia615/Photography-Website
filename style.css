@@ -596,6 +596,8 @@ nav {
     display: flex;
     flex-direction: column;
     opacity: 1;
+    margin: 0;
+    padding: 0;
 }
 
 .photo-item:hover {
@@ -613,6 +615,8 @@ nav {
     background: var(--color-bg-primary);
     backface-visibility: hidden;
     transform: translateZ(0);
+    margin: 0;
+    padding: 0;
 }
 
 /* Hover overlay for photo info */
@@ -701,11 +705,18 @@ nav {
     -moz-user-select: none;
     -ms-user-select: none;
     opacity: 0;
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 2;
     backface-visibility: hidden;
-    transform: translateZ(0);
+    transform: translateZ(0) scale(1.01);
     will-change: transform, opacity;
+    margin: 0;
+    padding: 0;
+    border-radius: 12px;
 }
 
 .photo-item img.image-loaded {
@@ -713,7 +724,7 @@ nav {
 }
 
 .photo-item:hover img {
-    transform: scale(1.03) translateZ(0);
+    transform: translateZ(0) scale(1.04);
     filter: brightness(0.95);
 }
 
