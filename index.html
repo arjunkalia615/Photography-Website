@@ -48,7 +48,10 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
-            <img src="Images/Banner Photo/Sydney10.jpg" alt="Hero Banner" class="hero-banner" loading="lazy">
+            <div class="hero-banner-wrapper" id="heroBannerWrapper">
+                <img src="Images/Banner Photo/Sydney10.jpg" alt="Hero Banner" class="hero-banner" loading="lazy">
+                <div class="hero-banner-overlay"></div>
+            </div>
             <h1 class="hero-tagline">Capture the World Through Art</h1>
             <p class="hero-subtitle">Discover unique photography and artwork from around the globe, curated with passion and artistic vision. Explore stunning landscapes, vibrant cityscapes, and rich cultural heritage through our carefully selected collection.</p>
             <a href="gallery.html" class="view-gallery-btn">View Gallery</a>
@@ -80,6 +83,95 @@
     <script src="cart.js"></script>
     <script src="blur-up.js"></script>
     <script>
+        // Protect hero banner image from downloading/saving
+        (function() {
+            const heroBannerWrapper = document.getElementById('heroBannerWrapper');
+            const heroBanner = document.querySelector('.hero-banner');
+            
+            if (!heroBannerWrapper || !heroBanner) return;
+            
+            // Prevent right-click context menu on hero image
+            heroBannerWrapper.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            });
+            
+            heroBanner.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            });
+            
+            // Prevent drag and drop
+            heroBannerWrapper.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            });
+            
+            heroBanner.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            });
+            
+            // Prevent image selection
+            heroBannerWrapper.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // Prevent opening image in new tab/window
+            heroBanner.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            });
+            
+            // Disable image dragging
+            heroBanner.setAttribute('draggable', 'false');
+            
+            // Prevent copy image
+            heroBannerWrapper.addEventListener('copy', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // Prevent cut
+            heroBannerWrapper.addEventListener('cut', function(e) {
+                e.preventDefault();
+                return false;
+            });
+        })();
+        
+        // Global protection for keyboard shortcuts (only when focused on hero image area)
+        document.addEventListener('keydown', function(e) {
+            const heroBannerWrapper = document.getElementById('heroBannerWrapper');
+            if (!heroBannerWrapper) return;
+            
+            const isOverHero = heroBannerWrapper.contains(document.activeElement) || 
+                              heroBannerWrapper.matches(':hover');
+            
+            if (isOverHero) {
+                // Block Ctrl+S (Save)
+                if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Block Ctrl+P (Print)
+                if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Block Ctrl+C (Copy)
+                if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+        
         // Mobile menu toggle
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const navLinks = document.getElementById('navLinks');

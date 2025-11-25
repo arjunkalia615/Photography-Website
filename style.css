@@ -287,19 +287,51 @@ nav {
     pointer-events: none;
 }
 
-.hero-banner {
+.hero-banner-wrapper {
     width: 100%;
     max-width: 1200px;
     height: 600px;
+    position: relative;
+    margin-bottom: var(--spacing-5xl);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
+}
+
+.hero-banner {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     border-radius: var(--radius-xl);
-    margin-bottom: var(--spacing-5xl);
     box-shadow: var(--shadow-2xl);
     opacity: 0;
     position: relative;
-    z-index: 2;
+    z-index: 1;
     transition: opacity var(--transition-slow);
     will-change: opacity;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    -webkit-touch-callout: none;
+}
+
+.hero-banner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 2;
+    pointer-events: auto;
+    cursor: default;
 }
 
 .hero-banner.image-loaded {
