@@ -25,6 +25,7 @@ const path = require('path');
 const archiver = require('archiver');
 const db = require('./db');
 const IMAGE_MAPPING = require('./image-mapping');
+const { getPhotoTitle } = require('./photo-titles');
 
 // Helper: Get action from query or body
 function getAction(req) {
@@ -1219,15 +1220,13 @@ async function handleGetPhotos(req, res) {
                 const imageSrc = `Images/${folderName}/${file}`;
                 const baseName = path.basename(file, path.extname(file));
                 
-                // Generate a product ID from the filename
+                // Generate a product ID from the filename (unchanged - based on filename)
                 const productId = baseName.toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/^-+|-+$/g, '');
                 
-                // Create a readable title from filename
-                const title = baseName
-                    .replace(/[-_]/g, ' ')
-                    .replace(/\b\w/g, l => l.toUpperCase());
+                // Get descriptive title from mapping or generate from filename
+                const title = getPhotoTitle(file, baseName);
 
                 return {
                     productId: productId || `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
