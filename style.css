@@ -2717,30 +2717,178 @@ footer {
 }
 
 /* Add to Cart Button in Gallery */
+/* Add to Cart Button - Modern Premium Style */
 .photo-item-add-to-cart-btn {
-    background: #ffffff;
+    background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
     color: #0a0a0a;
     border: none;
-    padding: 12px 24px;
+    padding: 14px 24px;
     font-size: 0.95rem;
-    font-weight: 500;
-    border-radius: 8px;
+    font-weight: 600;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
     text-align: center;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     letter-spacing: 0.5px;
     width: 100%;
     position: relative;
     z-index: 10;
     pointer-events: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.photo-item-add-to-cart-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s ease;
+}
+
+.photo-item-add-to-cart-btn:hover::before {
+    left: 100%;
 }
 
 .photo-item-add-to-cart-btn:hover {
-    background: #e0e0e0;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(255, 255, 255, 0.25), 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.photo-item-add-to-cart-btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Quantity Control Component */
+.photo-item-quantity-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 8px 12px;
+    height: 48px;
+    width: 100%;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.photo-item-quantity-control.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.photo-item-quantity-control.hide {
+    opacity: 0;
+    transform: scale(0.9);
+}
+
+.photo-item-quantity-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--color-text-primary);
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.photo-item-quantity-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.photo-item-quantity-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.photo-item-quantity-btn.remove {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.photo-item-quantity-btn.remove:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.photo-item-quantity-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
+}
+
+.photo-item-quantity-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    min-width: 24px;
+    text-align: center;
+    user-select: none;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Animation for button state changes */
+.photo-item-cart-control-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 48px;
+}
+
+.photo-item-add-to-cart-btn,
+.photo-item-quantity-control {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.photo-item-add-to-cart-btn {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.photo-item-add-to-cart-btn.hide {
+    opacity: 0;
+    transform: scale(0.9);
+    pointer-events: none;
+}
+
+.photo-item-quantity-control {
+    opacity: 0;
+    transform: scale(0.9);
+    pointer-events: none;
+}
+
+.photo-item-quantity-control.show {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
 }
 
 @media (max-width: 768px) {

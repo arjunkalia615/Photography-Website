@@ -1,4 +1,5 @@
-// Add to Cart Button Handler - Simple Implementation
+// Add to Cart Button Handler - Delegated to gallery.html for quantity control
+// This file is kept for backward compatibility with other pages that might use it
 document.addEventListener('DOMContentLoaded', () => {
     // Wait for Cart to be available
     function initAddToCart() {
@@ -7,16 +8,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Remove any existing test download links container if it exists
-        const existingContainer = document.getElementById('test-download-links-container');
-        if (existingContainer) {
-            existingContainer.remove();
-        }
-
-        // Find all Add to Cart buttons
-        const addToCartButtons = document.querySelectorAll('.photo-item-add-to-cart-btn');
+        // Only handle buttons that are NOT inside photo-item-cart-control-wrapper
+        // (those are handled by gallery.html's initializeCartControls)
+        const addToCartButtons = document.querySelectorAll('.photo-item-add-to-cart-btn:not(.photo-item-cart-control-wrapper .photo-item-add-to-cart-btn)');
         
         addToCartButtons.forEach(button => {
+            // Check if this button is already handled by gallery.html
+            if (button.closest('.photo-item-cart-control-wrapper')) {
+                return; // Skip - handled by gallery.html
+            }
+            
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 

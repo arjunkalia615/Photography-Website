@@ -164,10 +164,29 @@
                             </div>
                             <div class="photo-item-info">
                                 <div class="photo-item-price">$0.50</div>
-                                <button class="photo-item-add-to-cart-btn" 
-                                        data-product-id="${photo.productId}" 
-                                        data-image-src="${photo.imageSrc}" 
-                                        data-title="${photo.title}">Add to Cart</button>
+                                <div class="photo-item-cart-control-wrapper" data-product-id="${photo.productId}">
+                                    <button class="photo-item-add-to-cart-btn" 
+                                            data-product-id="${photo.productId}" 
+                                            data-image-src="${photo.imageSrc}" 
+                                            data-title="${photo.title}">Add to Cart</button>
+                                    <div class="photo-item-quantity-control" data-product-id="${photo.productId}">
+                                        <button class="photo-item-quantity-btn decrease-btn" 
+                                                data-product-id="${photo.productId}" 
+                                                aria-label="Decrease quantity">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
+                                            </svg>
+                                        </button>
+                                        <span class="photo-item-quantity-value" data-product-id="${photo.productId}">1</span>
+                                        <button class="photo-item-quantity-btn increase-btn" 
+                                                data-product-id="${photo.productId}" 
+                                                aria-label="Increase quantity">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -178,39 +197,9 @@
                 // Reinitialize lightbox with new images
                 initializeLightbox();
                 
-                // Reinitialize add-to-cart buttons
+                // Initialize cart controls
                 setTimeout(() => {
-                    const addToCartButtons = document.querySelectorAll('.photo-item-add-to-cart-btn');
-                    addToCartButtons.forEach(button => {
-                        const newButton = button.cloneNode(true);
-                        button.parentNode.replaceChild(newButton, button);
-                        
-                        newButton.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            
-                            if (!window.Cart) {
-                                console.error('Cart is not available');
-                                return;
-                            }
-                            
-                            const imageSrc = newButton.getAttribute('data-image-src');
-                            const title = newButton.getAttribute('data-title') || 'Photo';
-                            const productId = newButton.getAttribute('data-product-id');
-                            
-                            if (imageSrc && title) {
-                                Cart.addItem(imageSrc, title, undefined, productId);
-                                
-                                newButton.textContent = 'Added!';
-                                newButton.style.backgroundColor = '#4CAF50';
-                                
-                                setTimeout(() => {
-                                    newButton.textContent = 'Add to Cart';
-                                    newButton.style.backgroundColor = '';
-                                }, 1000);
-                            }
-                        });
-                    });
+                    initializeCartControls();
                 }, 100);
                 
                 console.log(`✅ Loaded ${data.photos.length} photos dynamically`);
@@ -218,6 +207,166 @@
                 console.error('❌ Error loading photos:', error);
                 loadingPhotos.innerHTML = '<p>Error loading photos. Please refresh the page.</p>';
             }
+        }
+        
+        // Initialize cart controls for all photo items
+        function initializeCartControls() {
+            if (!window.Cart) {
+                console.error('Cart is not available');
+                return;
+            }
+
+            const cart = CartUtils.getCart();
+            
+            // Process all cart control wrappers
+            document.querySelectorAll('.photo-item-cart-control-wrapper').forEach(wrapper => {
+                const productId = wrapper.getAttribute('data-product-id');
+                const addToCartBtn = wrapper.querySelector('.photo-item-add-to-cart-btn');
+                const quantityControl = wrapper.querySelector('.photo-item-quantity-control');
+                const quantityValue = quantityControl.querySelector('.photo-item-quantity-value');
+                const decreaseBtn = quantityControl.querySelector('.decrease-btn');
+                const increaseBtn = quantityControl.querySelector('.increase-btn');
+                
+                // Check if item is in cart
+                const cartItem = cart.find(item => item.id === productId);
+                
+                if (cartItem && cartItem.quantity > 0) {
+                    // Item is in cart - show quantity control
+                    addToCartBtn.classList.add('hide');
+                    quantityControl.classList.add('show');
+                    quantityValue.textContent = cartItem.quantity;
+                    
+                    // Update icon based on quantity
+                    if (cartItem.quantity === 1) {
+                        decreaseBtn.classList.add('remove');
+                        decreaseBtn.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                            </svg>
+                        `;
+                    } else {
+                        decreaseBtn.classList.remove('remove');
+                        decreaseBtn.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
+                            </svg>
+                        `;
+                    }
+                } else {
+                    // Item not in cart - show add to cart button
+                    addToCartBtn.classList.remove('hide');
+                    quantityControl.classList.remove('show');
+                }
+                
+                // Add to cart button click handler
+                addToCartBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const imageSrc = addToCartBtn.getAttribute('data-image-src');
+                    const title = addToCartBtn.getAttribute('data-title') || 'Photo';
+                    
+                    if (imageSrc && title) {
+                        Cart.addItem(imageSrc, title, undefined, productId);
+                        
+                        // Animate transition to quantity control
+                        addToCartBtn.classList.add('hide');
+                        setTimeout(() => {
+                            quantityControl.classList.add('show');
+                            quantityValue.textContent = '1';
+                            decreaseBtn.classList.add('remove');
+                            decreaseBtn.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                </svg>
+                            `;
+                        }, 150);
+                    }
+                });
+                
+                // Decrease button click handler
+                decreaseBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const currentCart = CartUtils.getCart();
+                    const item = currentCart.find(item => item.id === productId);
+                    
+                    if (item) {
+                        if (item.quantity === 1) {
+                            // Remove item completely
+                            Cart.removeItem(productId);
+                            
+                            // Animate transition back to add to cart button
+                            quantityControl.classList.remove('show');
+                            setTimeout(() => {
+                                addToCartBtn.classList.remove('hide');
+                            }, 150);
+                        } else {
+                            // Decrease quantity
+                            Cart.updateQuantity(productId, item.quantity - 1);
+                            const updatedCart = CartUtils.getCart();
+                            const updatedItem = updatedCart.find(item => item.id === productId);
+                            
+                            if (updatedItem) {
+                                quantityValue.textContent = updatedItem.quantity;
+                                
+                                // Update icon if quantity becomes 1
+                                if (updatedItem.quantity === 1) {
+                                    decreaseBtn.classList.add('remove');
+                                    decreaseBtn.innerHTML = `
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                        </svg>
+                                    `;
+                                }
+                            }
+                        }
+                        
+                        // Micro-bounce animation
+                        decreaseBtn.style.transform = 'scale(0.9)';
+                        setTimeout(() => {
+                            decreaseBtn.style.transform = '';
+                        }, 150);
+                    }
+                });
+                
+                // Increase button click handler
+                increaseBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const currentCart = CartUtils.getCart();
+                    const item = currentCart.find(item => item.id === productId);
+                    
+                    if (item) {
+                        const newQuantity = Math.min(10, item.quantity + 1);
+                        Cart.updateQuantity(productId, newQuantity);
+                        const updatedCart = CartUtils.getCart();
+                        const updatedItem = updatedCart.find(item => item.id === productId);
+                        
+                        if (updatedItem) {
+                            quantityValue.textContent = updatedItem.quantity;
+                            
+                            // Update icon if quantity becomes > 1
+                            if (updatedItem.quantity > 1) {
+                                decreaseBtn.classList.remove('remove');
+                                decreaseBtn.innerHTML = `
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
+                                    </svg>
+                                `;
+                            }
+                        }
+                        
+                        // Micro-bounce animation
+                        increaseBtn.style.transform = 'scale(0.9)';
+                        setTimeout(() => {
+                            increaseBtn.style.transform = '';
+                        }, 150);
+                    }
+                });
+            });
         }
         
         // Initialize lightbox
