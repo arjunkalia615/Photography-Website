@@ -1174,17 +1174,25 @@ async function handleGetPhotos(req, res) {
     }
 
     try {
-        // Try new folder name first, then fallback to old name (with typo)
-        let photosFolder = path.join(process.cwd(), 'Images', 'high_quality_photos');
-        if (!fs.existsSync(photosFolder)) {
-            // Fallback to old folder name (with typo) for backward compatibility
-            photosFolder = path.join(process.cwd(), 'Images', 'High-Qaulity Photos');
+        // Try multiple folder name variations
+        const possibleFolders = [
+            path.join(process.cwd(), 'Images', 'High-Quality Photos'), // Correct spelling
+            path.join(process.cwd(), 'Images', 'high_quality_photos'), // Underscore version
+            path.join(process.cwd(), 'Images', 'High-Qaulity Photos') // Old typo version (backward compatibility)
+        ];
+        
+        let photosFolder = null;
+        for (const folder of possibleFolders) {
+            if (fs.existsSync(folder)) {
+                photosFolder = folder;
+                break;
+            }
         }
         
         // Check if folder exists
-        if (!fs.existsSync(photosFolder)) {
-            console.warn(`⚠️ Photos folder not found. Tried: Images/high_quality_photos and Images/High-Qaulity Photos`);
-            return res.status(200).json({ photos: [] });
+        if (!photosFolder) {
+            console.warn(`⚠️ Photos folder not found. Tried: Images/High-Quality Photos, Images/high_quality_photos, and Images/High-Qaulity Photos`);
+            return res.status(200).json({ success: false, photos: [], message: 'Photos folder not found' });
         }
 
         // Read all files from the folder
