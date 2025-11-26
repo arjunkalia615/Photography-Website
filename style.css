@@ -617,6 +617,7 @@ nav {
     transform: translateZ(0);
     margin: 0;
     padding: 0;
+    isolation: isolate;
 }
 
 /* Hover overlay for photo info */
@@ -712,11 +713,13 @@ nav {
     bottom: 0;
     z-index: 2;
     backface-visibility: hidden;
-    transform: translateZ(0) scale(1.01);
+    transform: translateZ(0) scale(1.05);
     will-change: transform, opacity;
     margin: 0;
     padding: 0;
     border-radius: 12px;
+    min-width: 100%;
+    min-height: 100%;
 }
 
 .photo-item img.image-loaded {
@@ -724,7 +727,7 @@ nav {
 }
 
 .photo-item:hover img {
-    transform: translateZ(0) scale(1.04);
+    transform: translateZ(0) scale(1.08);
     filter: brightness(0.95);
 }
 
