@@ -50,7 +50,7 @@ const renderPaymentItems = (cartInstance) => {
         itemsContainer.innerHTML = `
             <div class="payment-empty">
                 <p>Your cart is empty.</p>
-                <a href="gallery.html" class="payment-empty-link">Explore the gallery</a>
+                <a href="index.html" class="payment-empty-link">Explore the gallery</a>
             </div>
         `;
         totalElement.textContent = '$0.00';

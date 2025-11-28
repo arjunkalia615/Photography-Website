@@ -1,4 +1,4 @@
-// Add to Cart Button Handler - Delegated to gallery.html for quantity control
+// Add to Cart Button Handler - Delegated to index.html (gallery) for quantity control
 // This file is kept for backward compatibility with other pages that might use it
 document.addEventListener('DOMContentLoaded', () => {
     // Wait for Cart to be available
@@ -9,13 +9,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Only handle buttons that are NOT inside photo-item-cart-control-wrapper
-        // (those are handled by gallery.html's initializeCartControls)
+        // (those are handled by index.html's initializeCartControls)
         const addToCartButtons = document.querySelectorAll('.photo-item-add-to-cart-btn:not(.photo-item-cart-control-wrapper .photo-item-add-to-cart-btn)');
         
         addToCartButtons.forEach(button => {
-            // Check if this button is already handled by gallery.html
+            // Check if this button is already handled by index.html
             if (button.closest('.photo-item-cart-control-wrapper')) {
-                return; // Skip - handled by gallery.html
+                return; // Skip - handled by index.html
             }
             
             button.addEventListener('click', (e) => {

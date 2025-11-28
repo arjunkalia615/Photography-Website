@@ -17,8 +17,8 @@
         <div class="nav-container">
             <a href="index.html" class="logo">ifeelworld</a>
             <ul class="nav-links" id="navLinks">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="gallery.html">Gallery</a></li>
+                <li><a href="index.html">Gallery</a></li>
+                <li><a href="index.html">Gallery</a></li>
                 <li><a href="traditional-arts.html">Traditional Arts</a></li>
                 <li><a href="about.html">About</a></li>
                 <li><a href="contact.html">Contact</a></li>
@@ -259,7 +259,7 @@
             const checkoutTotal = document.getElementById('checkoutTotal');
             
             if (!cart || cart.length === 0) {
-                checkoutItems.innerHTML = '<p>Your cart is empty. <a href="gallery.html">Continue Shopping</a></p>';
+                checkoutItems.innerHTML = '<p>Your cart is empty. <a href="index.html">Continue Shopping</a></p>';
                 checkoutTotal.textContent = '$0.00';
                 document.getElementById('buyNowBtn').disabled = true;
                 return [];
