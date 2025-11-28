@@ -483,11 +483,11 @@ async function handleGeneratePurchaseDownload(req, res) {
             });
         }
         
-        // Security: Only allow downloads from high_quality_photos folder
-        if (!normalizedPath.includes('high_quality_photos') && !normalizedPath.includes('High-Qaulity Photos')) {
+        // Security: Only allow downloads from High-Quality Photos folder
+        if (!normalizedPath.includes('High-Quality Photos') && !normalizedPath.includes('high_quality_photos') && !normalizedPath.includes('High-Qaulity Photos')) {
             return res.status(403).json({ 
                 error: 'Access denied', 
-                message: 'Only photos from the high_quality_photos folder can be downloaded' 
+                message: 'Only photos from the High-Quality Photos folder can be downloaded' 
             });
         }
         
