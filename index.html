@@ -158,14 +158,16 @@
 
                     return `
                         <div class="photo-item" data-category="${photo.category || 'Photography'}">
-                            <div class="photo-item-image-wrapper">
-                                <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
-                                <div class="photo-item-hover-overlay">
-                                    <div class="photo-item-hover-title">${photo.title}</div>
-                                    <div class="photo-item-hover-category">${photo.category || 'Photography'}</div>
-                                    <div class="photo-item-hover-price">$0.50</div>
+                            <a href="product.html?id=${photo.productId}" class="photo-item-link">
+                                <div class="photo-item-image-wrapper">
+                                    <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
+                                    <div class="photo-item-hover-overlay">
+                                        <div class="photo-item-hover-title">${photo.title}</div>
+                                        <div class="photo-item-hover-category">${photo.category || 'Photography'}</div>
+                                        <div class="photo-item-hover-price">$0.50</div>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                             <div class="photo-item-info">
                                 <div class="photo-item-price">$0.50</div>
                                 <div class="photo-item-cart-control-wrapper" data-product-id="${photo.productId}" data-image-src="${photo.imageSrc}" data-title="${photo.title}">
