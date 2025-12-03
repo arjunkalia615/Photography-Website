@@ -9,12 +9,9 @@
 
     // Configuration
     const ITEM_PRICE = 0.50;
-    const DEFAULT_QUANTITY = 1;
-    const MAX_QUANTITY = 10;
 
     // State
     let currentProduct = null;
-    let currentQuantity = DEFAULT_QUANTITY;
 
     // DOM Elements
     const elements = {
@@ -23,12 +20,8 @@
         content: document.getElementById('productContent'),
         image: document.getElementById('productImage'),
         title: document.getElementById('productTitle'),
-        category: document.getElementById('productCategory'),
         breadcrumbTitle: document.getElementById('breadcrumbTitle'),
         resolution: document.getElementById('imageResolution'),
-        quantityInput: document.getElementById('quantityInput'),
-        decreaseBtn: document.getElementById('decreaseQty'),
-        increaseBtn: document.getElementById('increaseQty'),
         addToCartBtn: document.getElementById('addToCartBtn'),
         pinterestBtn: document.getElementById('pinterestShareBtn'),
         copyLinkBtn: document.getElementById('copyLinkBtn'),
@@ -139,9 +132,6 @@
             elements.title.textContent = product.title;
             elements.breadcrumbTitle.textContent = product.title;
 
-            // Set category
-            elements.category.textContent = product.category || 'Photography';
-
             // Load and display image dimensions
             try {
                 const dimensions = await loadImageDimensions(product.imageSrc);
@@ -172,18 +162,6 @@
     }
 
     /**
-     * Update quantity display
-     */
-    function updateQuantity(newQuantity) {
-        currentQuantity = Math.max(1, Math.min(MAX_QUANTITY, newQuantity));
-        elements.quantityInput.value = currentQuantity;
-
-        // Update button states
-        elements.decreaseBtn.disabled = currentQuantity <= 1;
-        elements.increaseBtn.disabled = currentQuantity >= MAX_QUANTITY;
-    }
-
-    /**
      * Handle add to cart
      */
     function handleAddToCart() {
@@ -195,15 +173,13 @@
         const button = elements.addToCartBtn;
         const originalHTML = button.innerHTML;
 
-        // Add items to cart (one at a time for the specified quantity)
-        for (let i = 0; i < currentQuantity; i++) {
-            Cart.addItem(
-                currentProduct.imageSrc,
-                currentProduct.title,
-                ITEM_PRICE,
-                currentProduct.productId
-            );
-        }
+        // Add item to cart using existing cart system
+        Cart.addItem(
+            currentProduct.imageSrc,
+            currentProduct.title,
+            ITEM_PRICE,
+            currentProduct.productId
+        );
 
         // Visual feedback
         button.innerHTML = `
@@ -220,7 +196,7 @@
             button.classList.remove('added');
         }, 2000);
 
-        console.log(`✅ Added ${currentQuantity} × ${currentProduct.title} to cart`);
+        console.log(`✅ Added ${currentProduct.title} to cart`);
     }
 
     /**
@@ -278,19 +254,6 @@
      * Initialize event listeners
      */
     function initializeEventListeners() {
-        // Quantity controls
-        elements.decreaseBtn?.addEventListener('click', () => {
-            updateQuantity(currentQuantity - 1);
-        });
-
-        elements.increaseBtn?.addEventListener('click', () => {
-            updateQuantity(currentQuantity + 1);
-        });
-
-        elements.quantityInput?.addEventListener('change', (e) => {
-            updateQuantity(parseInt(e.target.value) || 1);
-        });
-
         // Add to cart
         elements.addToCartBtn?.addEventListener('click', handleAddToCart);
 
@@ -326,9 +289,6 @@
             // Initialize event listeners
             initializeEventListeners();
 
-            // Set initial quantity
-            updateQuantity(DEFAULT_QUANTITY);
-
         } catch (error) {
             console.error('❌ Failed to initialize product page:', error);
             showError();
@@ -357,4 +317,3 @@
     waitForDependencies();
 
 })();
-

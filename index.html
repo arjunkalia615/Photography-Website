@@ -96,16 +96,7 @@
         </div>
     </footer>
 
-    <!-- Lightbox Modal -->
-    <div class="lightbox" id="lightbox">
-        <div class="lightbox-content">
-            <button class="lightbox-close" id="lightboxClose">&times;</button>
-            <button class="lightbox-nav lightbox-prev" id="lightboxPrev">&#8249;</button>
-            <button class="lightbox-nav lightbox-next" id="lightboxNext">&#8250;</button>
-            <img src="" alt="" class="lightbox-image" id="lightboxImage">
-            <div class="lightbox-counter" id="lightboxCounter"></div>
-        </div>
-    </div>
+    <!-- Lightbox removed - photos now link directly to product pages -->
 
     <script src="cart.js"></script>
     <script src="add-to-cart.js"></script>
@@ -205,9 +196,6 @@
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
-                
-                // Reinitialize lightbox with new images
-                initializeLightbox();
                 
                 // Initialize cart controls
                 setTimeout(() => {
@@ -380,91 +368,7 @@
             });
         }
         
-        // Initialize lightbox
-        function initializeLightbox() {
-            const lightbox = document.getElementById('lightbox');
-            const lightboxImage = document.getElementById('lightboxImage');
-            const lightboxClose = document.getElementById('lightboxClose');
-            const lightboxPrev = document.getElementById('lightboxPrev');
-            const lightboxNext = document.getElementById('lightboxNext');
-            const lightboxCounter = document.getElementById('lightboxCounter');
-            
-            if (!lightbox || !lightboxImage) return;
-            
-            let currentImageIndex = 0;
-            let images = [];
-            
-            const updateImages = () => {
-                images = Array.from(document.querySelectorAll('.photo-item img')).map(img => ({
-                    src: img.src,
-                    alt: img.alt
-                }));
-            };
-            
-            const showLightbox = (index) => {
-                updateImages();
-                if (images.length === 0) return;
-                
-                currentImageIndex = index;
-                lightboxImage.src = images[currentImageIndex].src;
-                lightboxImage.alt = images[currentImageIndex].alt;
-                lightbox.classList.add('active');
-                
-                if (lightboxCounter) {
-                    lightboxCounter.textContent = `${currentImageIndex + 1} / ${images.length}`;
-                }
-                
-                if (lightboxPrev) lightboxPrev.style.display = images.length > 1 ? 'block' : 'none';
-                if (lightboxNext) lightboxNext.style.display = images.length > 1 ? 'block' : 'none';
-            };
-            
-            const hideLightbox = () => {
-                lightbox.classList.remove('active');
-            };
-            
-            const showNext = () => {
-                if (images.length === 0) return;
-                currentImageIndex = (currentImageIndex + 1) % images.length;
-                showLightbox(currentImageIndex);
-            };
-            
-            const showPrev = () => {
-                if (images.length === 0) return;
-                currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
-                showLightbox(currentImageIndex);
-            };
-            
-            document.addEventListener('click', (e) => {
-                const img = e.target.closest('.photo-item img');
-                if (img) {
-                    updateImages();
-                    const index = images.findIndex(i => i.src === img.src);
-                    if (index !== -1) {
-                        showLightbox(index);
-                    }
-                }
-            });
-            
-            if (lightboxClose) lightboxClose.addEventListener('click', hideLightbox);
-            if (lightboxPrev) lightboxPrev.addEventListener('click', showPrev);
-            if (lightboxNext) lightboxNext.addEventListener('click', showNext);
-            
-            lightbox.addEventListener('click', (e) => {
-                if (e.target === lightbox) {
-                    hideLightbox();
-                }
-            });
-            
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && lightbox.classList.contains('active')) {
-                    hideLightbox();
-                } else if (e.key === 'ArrowLeft' && lightbox.classList.contains('active')) {
-                    showPrev();
-                } else if (e.key === 'ArrowRight' && lightbox.classList.contains('active')) {
-                    showNext();
-                }
-            });
-        }
+        // Lightbox removed - photos now link directly to product pages via href
         
         // Load photos when page is ready
         if (document.readyState === 'loading') {

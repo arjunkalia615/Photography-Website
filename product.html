@@ -99,33 +99,16 @@
                     <div class="product-image-section">
                         <div class="product-image-wrapper">
                             <img id="productImage" src="" alt="" class="product-image">
-                            <div class="product-image-badge">High Resolution</div>
                         </div>
                         
-                        <!-- Image Info -->
+                        <!-- Image Resolution Info -->
                         <div class="product-image-info">
-                            <div class="image-info-item">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                                <span id="imageResolution">Loading...</span>
-                            </div>
-                            <div class="image-info-item">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                <span>Digital Download</span>
-                            </div>
-                            <div class="image-info-item">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                                </svg>
-                                <span>Instant Access</span>
-                            </div>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <span id="imageResolution">Loading...</span>
                         </div>
                     </div>
 
@@ -133,55 +116,22 @@
                     <div class="product-details-section">
                         <h1 id="productTitle" class="product-title">Product Title</h1>
                         
-                        <div class="product-category">
-                            <span id="productCategory">Photography</span>
-                        </div>
-
                         <div class="product-price-section">
                             <div class="product-price">$0.50</div>
                             <div class="product-price-label">per copy</div>
                         </div>
 
-                        <div class="product-description">
-                            <p>High-resolution digital photography print perfect for personal use, home decor, or professional projects. Download immediately after purchase.</p>
-                        </div>
+                        <!-- Add to Cart Button -->
+                        <button id="addToCartBtn" class="product-add-to-cart-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                            </svg>
+                            <span>Add to Cart</span>
+                        </button>
 
-                        <!-- Add to Cart Section -->
-                        <div class="product-cart-section">
-                            <div class="product-quantity-selector">
-                                <label for="quantityInput">Quantity:</label>
-                                <div class="quantity-input-wrapper">
-                                    <button id="decreaseQty" class="qty-btn" aria-label="Decrease quantity">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                                        </svg>
-                                    </button>
-                                    <input type="number" id="quantityInput" class="quantity-input" value="1" min="1" max="10" readonly>
-                                    <button id="increaseQty" class="qty-btn" aria-label="Increase quantity">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <button id="addToCartBtn" class="product-add-to-cart-btn">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="9" cy="21" r="1"></circle>
-                                    <circle cx="20" cy="21" r="1"></circle>
-                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                                </svg>
-                                <span>Add to Cart</span>
-                            </button>
-
-                            <div class="product-cart-actions">
-                                <a href="cart.html" class="btn-secondary">View Cart</a>
-                                <a href="checkout.html" class="btn-secondary">Checkout</a>
-                            </div>
-                        </div>
-
-                        <!-- Share Section -->
+                        <!-- Share Buttons -->
                         <div class="product-share-section">
                             <h3>Share this photo</h3>
                             <div class="share-buttons">
@@ -222,12 +172,6 @@
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
                                     <span>Instant download after purchase</span>
-                                </li>
-                                <li>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                    <span>Multiple copies in ZIP format</span>
                                 </li>
                                 <li>
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -308,4 +252,3 @@
     </script>
 </body>
 </html>
-

@@ -4019,6 +4019,11 @@ footer {
 .product-image-wrapper {
     position: relative;
     width: 100%;
+    min-height: 400px;
+    max-height: 700px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: var(--radius-xl);
     overflow: hidden;
     background: var(--color-bg-secondary);
@@ -4027,9 +4032,10 @@ footer {
 
 .product-image {
     width: 100%;
-    height: auto;
+    height: 100%;
+    max-height: 700px;
     display: block;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 .product-image-badge {
@@ -4048,13 +4054,15 @@ footer {
 
 .product-image-info {
     display: flex;
-    flex-direction: column;
-    gap: var(--spacing-lg);
-    margin-top: var(--spacing-3xl);
-    padding: var(--spacing-3xl);
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-2xl);
+    padding: var(--spacing-lg);
     background: rgba(255, 255, 255, 0.03);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     border: 1px solid var(--color-border-light);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
 }
 
 .image-info-item {
@@ -4429,6 +4437,11 @@ footer {
         padding: 0 var(--spacing-2xl);
     }
 
+    .product-image-wrapper {
+        min-height: 300px;
+        max-height: 500px;
+    }
+
     .product-title {
         font-size: var(--font-size-5xl);
     }
@@ -4453,6 +4466,11 @@ footer {
 @media (max-width: 480px) {
     .product-breadcrumb {
         font-size: var(--font-size-xs);
+    }
+
+    .product-image-wrapper {
+        min-height: 250px;
+        max-height: 400px;
     }
 
     .product-title {
