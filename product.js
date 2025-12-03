@@ -21,7 +21,12 @@
         image: document.getElementById('productImage'),
         title: document.getElementById('productTitle'),
         breadcrumbTitle: document.getElementById('breadcrumbTitle'),
+        cartControlWrapper: document.getElementById('productCartControlWrapper'),
         addToCartBtn: document.getElementById('addToCartBtn'),
+        quantityControl: document.getElementById('quantityControl'),
+        quantityValue: document.getElementById('quantityValue'),
+        decreaseBtn: document.getElementById('decreaseBtn'),
+        increaseBtn: document.getElementById('increaseBtn'),
         pinterestBtn: document.getElementById('pinterestShareBtn'),
         copyLinkBtn: document.getElementById('copyLinkBtn'),
         copyFeedback: document.getElementById('copyLinkFeedback')
@@ -140,6 +145,47 @@
     }
 
     /**
+     * Update cart control UI based on cart state
+     */
+    function updateCartControlUI() {
+        if (!currentProduct || !window.Cart || !window.CartUtils) return;
+
+        const cart = CartUtils.getCart();
+        const cartItem = cart.find(item => item.id === currentProduct.productId);
+        const quantity = cartItem ? cartItem.quantity : 0;
+
+        if (quantity > 0) {
+            // Show quantity control
+            elements.addToCartBtn.classList.add('hide');
+            elements.quantityControl.classList.add('show');
+            elements.quantityValue.textContent = quantity;
+
+            // Update decrease button icon based on quantity
+            if (quantity === 1) {
+                elements.decreaseBtn.classList.add('remove');
+                elements.decreaseBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                    </svg>
+                `;
+                elements.decreaseBtn.setAttribute('aria-label', 'Remove item');
+            } else {
+                elements.decreaseBtn.classList.remove('remove');
+                elements.decreaseBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
+                    </svg>
+                `;
+                elements.decreaseBtn.setAttribute('aria-label', 'Decrease quantity');
+            }
+        } else {
+            // Show add to cart button
+            elements.addToCartBtn.classList.remove('hide');
+            elements.quantityControl.classList.remove('show');
+        }
+    }
+
+    /**
      * Handle add to cart
      */
     function handleAddToCart() {
@@ -147,9 +193,6 @@
             console.error('Product or Cart not available');
             return;
         }
-
-        const button = elements.addToCartBtn;
-        const originalHTML = button.innerHTML;
 
         // Add item to cart using existing cart system
         Cart.addItem(
@@ -159,22 +202,49 @@
             currentProduct.productId
         );
 
-        // Visual feedback
-        button.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span>Added to Cart!</span>
-        `;
-        button.classList.add('added');
-
-        // Reset after 2 seconds
+        // Update UI to show quantity control
         setTimeout(() => {
-            button.innerHTML = originalHTML;
-            button.classList.remove('added');
-        }, 2000);
+            updateCartControlUI();
+        }, 150);
 
         console.log(`✅ Added ${currentProduct.title} to cart`);
+    }
+
+    /**
+     * Handle decrease quantity
+     */
+    function handleDecrease() {
+        if (!currentProduct || !window.Cart) return;
+
+        const cart = CartUtils.getCart();
+        const cartItem = cart.find(item => item.id === currentProduct.productId);
+        
+        if (cartItem) {
+            if (cartItem.quantity === 1) {
+                // Remove item from cart
+                Cart.removeItem(currentProduct.productId);
+            } else {
+                // Decrease quantity
+                Cart.updateQuantity(currentProduct.productId, cartItem.quantity - 1);
+            }
+            
+            updateCartControlUI();
+        }
+    }
+
+    /**
+     * Handle increase quantity
+     */
+    function handleIncrease() {
+        if (!currentProduct || !window.Cart) return;
+
+        const cart = CartUtils.getCart();
+        const cartItem = cart.find(item => item.id === currentProduct.productId);
+        
+        if (cartItem && cartItem.quantity < 10) {
+            Cart.updateQuantity(currentProduct.productId, cartItem.quantity + 1);
+            updateCartControlUI();
+        }
     }
 
     /**
@@ -233,7 +303,24 @@
      */
     function initializeEventListeners() {
         // Add to cart
-        elements.addToCartBtn?.addEventListener('click', handleAddToCart);
+        elements.addToCartBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleAddToCart();
+        });
+
+        // Quantity controls
+        elements.decreaseBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleDecrease();
+        });
+
+        elements.increaseBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleIncrease();
+        });
 
         // Share buttons
         elements.pinterestBtn?.addEventListener('click', handlePinterestShare);
@@ -266,6 +353,9 @@
 
             // Initialize event listeners
             initializeEventListeners();
+
+            // Initialize cart control UI
+            updateCartControlUI();
 
         } catch (error) {
             console.error('❌ Failed to initialize product page:', error);

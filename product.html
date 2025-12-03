@@ -111,15 +111,31 @@
                             <div class="product-price-label">per copy</div>
                         </div>
 
-                        <!-- Add to Cart Button -->
-                        <button id="addToCartBtn" class="product-add-to-cart-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="9" cy="21" r="1"></circle>
-                                <circle cx="20" cy="21" r="1"></circle>
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                            </svg>
-                            <span>Add to Cart</span>
-                        </button>
+                        <!-- Add to Cart Controls (Same as Gallery) -->
+                        <div id="productCartControlWrapper" class="product-page-cart-control-wrapper">
+                            <button id="addToCartBtn" class="product-page-add-to-cart-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="9" cy="21" r="1"></circle>
+                                    <circle cx="20" cy="21" r="1"></circle>
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                </svg>
+                                <span>Add to Cart</span>
+                            </button>
+                            
+                            <div id="quantityControl" class="product-page-quantity-control">
+                                <button id="decreaseBtn" class="product-page-quantity-btn decrease-btn" aria-label="Decrease quantity">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
+                                    </svg>
+                                </button>
+                                <span id="quantityValue" class="product-page-quantity-value">1</span>
+                                <button id="increaseBtn" class="product-page-quantity-btn increase-btn" aria-label="Increase quantity">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
 
                         <!-- Share Buttons -->
                         <div class="product-share-section">
