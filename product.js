@@ -124,9 +124,15 @@
             // Update meta tags
             updateMetaTags(product);
 
-            // Set image
+            // Set image with protection
             elements.image.src = product.imageSrc;
             elements.image.alt = product.title;
+            
+            // Disable right-click and image saving
+            elements.image.addEventListener('contextmenu', (e) => e.preventDefault());
+            elements.image.addEventListener('dragstart', (e) => e.preventDefault());
+            elements.image.style.userSelect = 'none';
+            elements.image.style.pointerEvents = 'auto';
 
             // Set title
             elements.title.textContent = product.title;
