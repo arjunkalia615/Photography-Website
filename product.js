@@ -21,7 +21,6 @@
         image: document.getElementById('productImage'),
         title: document.getElementById('productTitle'),
         breadcrumbTitle: document.getElementById('breadcrumbTitle'),
-        resolution: document.getElementById('imageResolution'),
         addToCartBtn: document.getElementById('addToCartBtn'),
         pinterestBtn: document.getElementById('pinterestShareBtn'),
         copyLinkBtn: document.getElementById('copyLinkBtn'),
@@ -67,24 +66,6 @@
         }
     }
 
-    /**
-     * Load image and get its dimensions
-     */
-    function loadImageDimensions(imageSrc) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = function() {
-                resolve({
-                    width: this.naturalWidth,
-                    height: this.naturalHeight
-                });
-            };
-            img.onerror = function() {
-                reject(new Error('Failed to load image'));
-            };
-            img.src = imageSrc;
-        });
-    }
 
     /**
      * Update meta tags for SEO and social sharing
@@ -137,15 +118,6 @@
             // Set title
             elements.title.textContent = product.title;
             elements.breadcrumbTitle.textContent = product.title;
-
-            // Load and display image dimensions
-            try {
-                const dimensions = await loadImageDimensions(product.imageSrc);
-                elements.resolution.textContent = `${dimensions.width} × ${dimensions.height} pixels`;
-            } catch (error) {
-                console.warn('Could not load image dimensions:', error);
-                elements.resolution.textContent = 'High Resolution';
-            }
 
             // Hide loading, show content
             elements.loading.style.display = 'none';
