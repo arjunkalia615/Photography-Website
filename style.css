@@ -4086,10 +4086,10 @@ footer {
 
 .product-title {
     font-family: var(--font-heading);
-    font-size: var(--font-size-7xl);
+    font-size: var(--font-size-5xl);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
-    margin-bottom: var(--spacing-2xl);
+    margin-bottom: var(--spacing-lg);
     line-height: 1.2;
 }
 
@@ -4114,20 +4114,20 @@ footer {
     display: flex;
     align-items: baseline;
     gap: var(--spacing-base);
-    margin-bottom: var(--spacing-4xl);
-    padding-bottom: var(--spacing-4xl);
+    margin-bottom: var(--spacing-2xl);
+    padding-bottom: var(--spacing-2xl);
     border-bottom: 1px solid var(--color-border-light);
 }
 
 .product-price {
     font-family: var(--font-heading);
-    font-size: var(--font-size-8xl);
+    font-size: var(--font-size-5xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
 }
 
 .product-price-label {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     color: var(--color-text-muted);
 }
 
@@ -4287,15 +4287,15 @@ footer {
 
 /* Share Section */
 .product-share-section {
-    margin-bottom: var(--spacing-5xl);
+    margin-bottom: var(--spacing-3xl);
 }
 
 .product-share-section h3 {
     font-family: var(--font-heading);
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
-    margin-bottom: var(--spacing-2xl);
+    margin-bottom: var(--spacing-lg);
 }
 
 .share-buttons {
@@ -4345,15 +4345,15 @@ footer {
 
 /* Features Section */
 .product-features {
-    margin-bottom: var(--spacing-5xl);
+    margin-bottom: var(--spacing-3xl);
 }
 
 .product-features h3 {
     font-family: var(--font-heading);
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
-    margin-bottom: var(--spacing-2xl);
+    margin-bottom: var(--spacing-lg);
 }
 
 .features-list {
@@ -4362,15 +4362,15 @@ footer {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-sm);
 }
 
 .features-list li {
     display: flex;
     align-items: center;
-    gap: var(--spacing-base);
+    gap: var(--spacing-sm);
     color: var(--color-text-tertiary);
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
 }
 
 .features-list svg {
@@ -4380,7 +4380,7 @@ footer {
 
 /* Back Link */
 .product-back-link {
-    padding-top: var(--spacing-4xl);
+    padding-top: var(--spacing-2xl);
     border-top: 1px solid var(--color-border-light);
 }
 
