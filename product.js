@@ -41,6 +41,25 @@
     }
 
     /**
+     * Convert high-res image path to low-res watermarked version
+     * High-res: Images/High-Quality Photos/[filename].jpg
+     * Low-res: Low-Res Images/[filename].jpg
+     */
+    function getLoResImagePath(highResPath) {
+        if (!highResPath) return highResPath;
+        
+        // Extract filename from high-res path
+        const filename = highResPath.split('/').pop();
+        
+        // Construct low-res path
+        const lowResPath = `Low-Res Images/${filename}`;
+        
+        console.log(`🔄 Image path conversion: ${highResPath} → ${lowResPath}`);
+        
+        return lowResPath;
+    }
+
+    /**
      * Fetch product data from API
      */
     async function fetchProductData(productId) {
@@ -77,7 +96,11 @@
      */
     function updateMetaTags(product) {
         const productUrl = window.location.href;
-        const imageUrl = new URL(product.imageSrc, window.location.origin).href;
+        
+        // Use LOW-RES watermarked image for social sharing previews (Pinterest, Twitter, Facebook)
+        const lowResPath = getLoResImagePath(product.imageSrc);
+        const socialImageUrl = new URL(lowResPath, window.location.origin).href;
+        
         const title = `${product.title} - ifeelworld Photography`;
         const description = `High-resolution digital photography print: ${product.title}. Available for instant download at $${ITEM_PRICE.toFixed(2)}.`;
 
@@ -85,19 +108,22 @@
         document.getElementById('pageTitle').textContent = title;
         document.getElementById('pageDescription').setAttribute('content', description);
 
-        // Open Graph
+        // Open Graph (Facebook, Pinterest) - Use LOW-RES watermarked image
         document.getElementById('ogTitle').setAttribute('content', title);
         document.getElementById('ogDescription').setAttribute('content', description);
-        document.getElementById('ogImage').setAttribute('content', imageUrl);
+        document.getElementById('ogImage').setAttribute('content', socialImageUrl);
         document.getElementById('ogUrl').setAttribute('content', productUrl);
 
-        // Twitter Card
+        // Twitter Card - Use LOW-RES watermarked image
         document.getElementById('twitterTitle').setAttribute('content', title);
         document.getElementById('twitterDescription').setAttribute('content', description);
-        document.getElementById('twitterImage').setAttribute('content', imageUrl);
+        document.getElementById('twitterImage').setAttribute('content', socialImageUrl);
 
         // Update document title
         document.title = title;
+        
+        console.log('✅ Meta tags updated with LOW-RES images for social sharing');
+        console.log(`   Social preview image: ${socialImageUrl}`);
     }
 
     /**
@@ -254,14 +280,19 @@
         if (!currentProduct) return;
 
         const url = encodeURIComponent(window.location.href);
-        const imageUrl = encodeURIComponent(new URL(currentProduct.imageSrc, window.location.origin).href);
+        
+        // Use LOW-RES watermarked image for Pinterest preview
+        const lowResPath = getLoResImagePath(currentProduct.imageSrc);
+        const imageUrl = encodeURIComponent(new URL(lowResPath, window.location.origin).href);
+        
         const description = encodeURIComponent(`${currentProduct.title} - High-resolution digital photography print from ifeelworld`);
 
         const pinterestUrl = `https://www.pinterest.com/pin/create/button/?url=${url}&media=${imageUrl}&description=${description}`;
         
         window.open(pinterestUrl, 'pinterest-share', 'width=750,height=550');
         
-        console.log('📌 Pinterest share opened');
+        console.log('📌 Pinterest share opened with LOW-RES watermarked image');
+        console.log(`   Image: ${decodeURIComponent(imageUrl)}`);
     }
 
     /**
