@@ -4012,6 +4012,44 @@ footer {
     margin: 0;
     backface-visibility: hidden;
     transform: translateZ(0);
+    cursor: pointer;
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.product-image-wrapper:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* Click to enlarge indicator */
+.image-click-indicator {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-md);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    pointer-events: none;
+    z-index: 10;
+}
+
+.product-image-wrapper:hover .image-click-indicator {
+    opacity: 1;
+}
+
+.image-click-indicator svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
 }
 
 .product-image {
@@ -4596,159 +4634,6 @@ footer {
 }
 
 
-/* Product Image Zoom Hint */
-.product-image-zoom-hint {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.7);
-    color: #ffffff;
-    padding: 10px 16px;
-    border-radius: var(--radius-md);
-    font-size: 14px;
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-    pointer-events: none;
-    z-index: 2;
-}
-
-.product-image-wrapper:hover .product-image-zoom-hint {
-    opacity: 1;
-}
-
-.product-image-zoom-hint svg {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-}
-
-.product-image-wrapper {
-    cursor: zoom-in;
-}
-
-/* Product Image Lightbox Modal */
-.product-lightbox {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.95);
-    z-index: 10000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    backdrop-filter: blur(10px);
-}
-
-.product-lightbox.active {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 1;
-}
-
-.product-lightbox-content {
-    position: relative;
-    max-width: 95vw;
-    max-height: 95vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.product-lightbox-image {
-    max-width: 100%;
-    max-height: 95vh;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    border-radius: var(--radius-lg);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    pointer-events: none;
-}
-
-.product-lightbox-close {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--color-bg-primary);
-    border: none;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    z-index: 10001;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.product-lightbox-close:hover {
-    background: #ffffff;
-    transform: scale(1.1) rotate(90deg);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-}
-
-.product-lightbox-close:active {
-    transform: scale(0.95) rotate(90deg);
-}
-
-.product-lightbox-close svg {
-    width: 24px;
-    height: 24px;
-}
-
-/* Prevent body scroll when lightbox is open */
-body.lightbox-open {
-    overflow: hidden;
-}
-
-/* Mobile optimizations for lightbox */
-@media (max-width: 768px) {
-    .product-image-zoom-hint {
-        bottom: 10px;
-        right: 10px;
-        padding: 8px 12px;
-        font-size: 12px;
-    }
-    
-    .product-image-zoom-hint span {
-        display: none;
-    }
-    
-    .product-image-zoom-hint svg {
-        width: 18px;
-        height: 18px;
-    }
-    
-    .product-lightbox-close {
-        top: 10px;
-        right: 10px;
-        width: 44px;
-        height: 44px;
-    }
-    
-    .product-lightbox-content {
-        padding: 10px;
-    }
-    
-    .product-lightbox-image {
-        max-height: 90vh;
-    }
-}
-
 /* Product Page Cart Controls (Same as Gallery) */
 .product-page-cart-control-wrapper {
     position: relative;
@@ -4867,5 +4752,124 @@ body.lightbox-open {
     min-width: 50px;
     text-align: center;
     flex: 1;
+}
+
+
+/* Product Page Lightbox */
+.product-lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.product-lightbox.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
+.lightbox-content {
+    position: relative;
+    max-width: 95vw;
+    max-height: 95vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.lightbox-image {
+    max-width: 100%;
+    max-height: 95vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-drag: none;
+}
+
+.lightbox-close {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    z-index: 10001;
+}
+
+.lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1) rotate(90deg);
+}
+
+.lightbox-close:active {
+    transform: scale(0.95) rotate(90deg);
+}
+
+.lightbox-close svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Prevent body scroll when lightbox is open */
+body.lightbox-open {
+    overflow: hidden;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .lightbox-close {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .lightbox-close svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .lightbox-content {
+        padding: 10px;
+    }
+
+    .image-click-indicator {
+        bottom: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .image-click-indicator svg {
+        width: 16px;
+        height: 16px;
+    }
 }
 

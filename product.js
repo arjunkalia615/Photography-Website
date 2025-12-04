@@ -45,23 +45,6 @@
     }
 
     /**
-     * Get web-optimized preview path for display
-     * High-res: Images/High-Quality Photos/[filename].jpg
-     * Preview: Images/Web-Optimized-Previews/[filename].webp
-     */
-    function getPreviewImagePath(highResPath) {
-        if (!highResPath) return highResPath;
-        
-        const filename = highResPath.split('/').pop();
-        const basename = filename.replace(/\.(jpg|jpeg|png)$/i, '');
-        const previewPath = `Images/Web-Optimized-Previews/${basename}.webp`;
-        
-        console.log(`🔄 Preview conversion: ${highResPath} → ${previewPath}`);
-        
-        return previewPath;
-    }
-
-    /**
      * Convert high-res image path to low-res watermarked version
      * High-res: Images/High-Quality Photos/[filename].jpg
      * Low-res: Low-Res Images/[filename].jpg
@@ -75,7 +58,7 @@
         // Construct low-res path
         const lowResPath = `Low-Res Images/${filename}`;
         
-        console.log(`🔄 Social sharing conversion: ${highResPath} → ${lowResPath}`);
+        console.log(`🔄 Image path conversion: ${highResPath} → ${lowResPath}`);
         
         return lowResPath;
     }
@@ -157,21 +140,9 @@
             // Update meta tags
             updateMetaTags(product);
 
-            // Use web-optimized preview for display (lazy loaded)
-            const previewPath = getPreviewImagePath(product.imageSrc);
-            elements.image.setAttribute('data-src', previewPath);
+            // Set image with protection
+            elements.image.src = product.imageSrc;
             elements.image.alt = product.title;
-            
-            // Fallback to original if preview doesn't exist
-            const img = new Image();
-            img.onload = () => {
-                elements.image.src = previewPath;
-            };
-            img.onerror = () => {
-                console.log('⚠️ Preview not found, using original');
-                elements.image.src = product.imageSrc;
-            };
-            img.src = previewPath;
             
             // Disable right-click and image saving
             elements.image.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -326,34 +297,6 @@
         
         console.log('📌 Pinterest share opened with LOW-RES watermarked image');
         console.log(`   Image: ${decodeURIComponent(imageUrl)}`);
-    }
-
-    /**
-     * Open lightbox with full-size image
-     */
-    function openLightbox() {
-        if (!currentProduct) return;
-
-        // Use high-res original for lightbox
-        const lightboxImageSrc = currentProduct.imageSrc;
-        
-        elements.lightboxImage.src = lightboxImageSrc;
-        elements.lightboxImage.alt = currentProduct.title;
-        
-        elements.lightbox.classList.add('active');
-        document.body.classList.add('lightbox-open');
-        
-        console.log('🔍 Lightbox opened');
-    }
-
-    /**
-     * Close lightbox
-     */
-    function closeLightbox() {
-        elements.lightbox.classList.remove('active');
-        document.body.classList.remove('lightbox-open');
-        
-        console.log('✖️ Lightbox closed');
     }
 
     /**

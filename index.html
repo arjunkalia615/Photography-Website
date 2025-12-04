@@ -102,16 +102,6 @@
     <script src="add-to-cart.js"></script>
     <script src="watermark-protection.js"></script>
     <script src="blur-up.js"></script>
-    <script src="image-utils.js"></script>
-    <script>
-        // Helper function for preview paths (inline for gallery)
-        function getPreviewPath(originalPath) {
-            if (!originalPath) return originalPath;
-            const filename = originalPath.split('/').pop();
-            const basename = filename.replace(/\.(jpg|jpeg|png)$/i, '');
-            return `Images/Web-Optimized-Previews/${basename}.webp`;
-        }
-    </script>
     <script>
         // Remove all old hardcoded photo items
         function removeOldPhotoItems() {
@@ -157,17 +147,11 @@
                     const isInCart = cartItem && cartItem.quantity > 0;
                     const currentQuantity = isInCart ? cartItem.quantity : 0;
 
-                    // Get web-optimized preview path (falls back to original if preview doesn't exist)
-                    const previewPath = getPreviewPath(photo.imageSrc);
-                    
                     return `
                         <div class="photo-item" data-category="${photo.category || 'Photography'}">
                             <a href="product.html?id=${photo.productId}" class="photo-item-link">
                                 <div class="photo-item-image-wrapper">
-                                    <img src="${previewPath}" 
-                                         alt="${photo.title}" 
-                                         loading="lazy"
-                                         onerror="this.onerror=null; this.src='${photo.imageSrc}';">
+                                    <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
                                     <div class="photo-item-hover-overlay">
                                         <div class="photo-item-hover-title">${photo.title}</div>
                                         <div class="photo-item-hover-category">${photo.category || 'Photography'}</div>
