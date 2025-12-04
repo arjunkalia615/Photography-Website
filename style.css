@@ -4013,17 +4013,21 @@ footer {
     backface-visibility: hidden;
     transform: translateZ(0);
     cursor: pointer;
-    transition: transform var(--transition-base), box-shadow var(--transition-base);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                filter 0.4s ease;
     pointer-events: auto;
 }
 
 .product-image-wrapper:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.3);
+    filter: brightness(1.05);
 }
 
 .product-image-wrapper:active {
-    transform: translateY(-2px);
+    transform: translateY(-4px) scale(1.01);
+    transition: transform 0.1s ease;
 }
 
 /* Click to enlarge indicator - HIDDEN */
@@ -4898,18 +4902,20 @@ body.lightbox-open {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    pointer-events: none;
+    pointer-events: auto;
     -webkit-user-drag: none;
     user-drag: none;
+    transform: scale(1.02);
+    transform-origin: center center;
 }
 
 @keyframes zoomIn {
     from {
-        transform: scale(0.8);
+        transform: scale(0.85);
         opacity: 0;
     }
     to {
-        transform: scale(1);
+        transform: scale(1.02);
         opacity: 1;
     }
 }

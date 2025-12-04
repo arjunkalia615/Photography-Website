@@ -270,7 +270,7 @@
     <!-- Lightbox Modal (Click-to-Enlarge) -->
     <div id="imageModal" class="modal" onclick="closeModal()">
         <span class="close" onclick="closeModal()">&times;</span>
-        <img class="modal-content" id="modalImage" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
+        <img class="modal-content" id="modalImage" onclick="event.stopPropagation()" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
     </div>
 
     <!-- Lightbox Script -->
