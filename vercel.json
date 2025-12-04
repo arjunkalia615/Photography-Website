@@ -1,4 +1,6 @@
 {
+  "buildCommand": "echo 'No build required for static site'",
+  "framework": null,
   "headers": [
     {
       "source": "/Images/(.*)",
