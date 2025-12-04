@@ -19,6 +19,7 @@
         error: document.getElementById('productError'),
         content: document.getElementById('productContent'),
         image: document.getElementById('productImage'),
+        imageWrapper: document.getElementById('productImageWrapper'),
         title: document.getElementById('productTitle'),
         breadcrumbTitle: document.getElementById('breadcrumbTitle'),
         cartControlWrapper: document.getElementById('productCartControlWrapper'),
@@ -29,7 +30,10 @@
         increaseBtn: document.getElementById('increaseBtn'),
         pinterestBtn: document.getElementById('pinterestShareBtn'),
         copyLinkBtn: document.getElementById('copyLinkBtn'),
-        copyFeedback: document.getElementById('copyLinkFeedback')
+        copyFeedback: document.getElementById('copyLinkFeedback'),
+        lightbox: document.getElementById('productLightbox'),
+        lightboxImage: document.getElementById('lightboxImage'),
+        closeLightboxBtn: document.getElementById('closeLightbox')
     };
 
     /**
@@ -325,6 +329,34 @@
     }
 
     /**
+     * Open lightbox with full-size image
+     */
+    function openLightbox() {
+        if (!currentProduct) return;
+
+        // Use high-res original for lightbox
+        const lightboxImageSrc = currentProduct.imageSrc;
+        
+        elements.lightboxImage.src = lightboxImageSrc;
+        elements.lightboxImage.alt = currentProduct.title;
+        
+        elements.lightbox.classList.add('active');
+        document.body.classList.add('lightbox-open');
+        
+        console.log('🔍 Lightbox opened');
+    }
+
+    /**
+     * Close lightbox
+     */
+    function closeLightbox() {
+        elements.lightbox.classList.remove('active');
+        document.body.classList.remove('lightbox-open');
+        
+        console.log('✖️ Lightbox closed');
+    }
+
+    /**
      * Handle copy link
      */
     async function handleCopyLink() {
@@ -385,6 +417,31 @@
         // Share buttons
         elements.pinterestBtn?.addEventListener('click', handlePinterestShare);
         elements.copyLinkBtn?.addEventListener('click', handleCopyLink);
+
+        // Lightbox controls
+        elements.imageWrapper?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openLightbox();
+        });
+
+        elements.closeLightboxBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeLightbox();
+        });
+
+        // Close lightbox on background click
+        elements.lightbox?.addEventListener('click', (e) => {
+            if (e.target === elements.lightbox) {
+                closeLightbox();
+            }
+        });
+
+        // Close lightbox on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && elements.lightbox?.classList.contains('active')) {
+                closeLightbox();
+            }
+        });
     }
 
     /**
