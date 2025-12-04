@@ -5006,26 +5006,6 @@ body.lightbox-open {
     transition: transform 300ms cubic-bezier(.2,.8,.2,1);
     -webkit-user-drag: none;
     pointer-events: none;           /* click handled by the <a> wrapper */
-    /* Prevent layout shift - use aspect ratio */
-    aspect-ratio: 3 / 4;
-    object-fit: cover;
-}
-
-/* Blur-up lazy loading effect - ONLY blur + opacity, NO scaling */
-.gallery-img.lazy-blur {
-    opacity: 0;
-    filter: blur(10px);
-    transition: opacity 0.5s ease-out, filter 0.5s ease-out;
-}
-
-.gallery-img.lazy-blur.loaded {
-    opacity: 1;
-    filter: blur(0);
-}
-
-.gallery-img.lazy-blur.error {
-    opacity: 0.5;
-    filter: grayscale(100%);
 }
 
 /* Hover / focus zoom */

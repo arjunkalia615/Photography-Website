@@ -145,53 +145,22 @@
                 const photosHTML = data.photos.map((photo, index) => {
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                            <img src="${photo.imageSrc}" 
-                                 alt="${photo.title}" 
-                                 loading="lazy" 
-                                 class="gallery-img lazy-blur">
+                            <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
                         </a>
                     `;
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                // Initialize blur-up effect
-                initBlurUpEffect();
-                
-                console.log(`✅ Loaded ${data.photos.length} photos with blur-up effect`);
+                console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
             } catch (error) {
                 console.error('❌ Error loading photos:', error);
                 loadingPhotos.innerHTML = '<p>Error loading photos. Please refresh the page.</p>';
             }
         }
         
-        /**
-         * Initialize blur-up effect for gallery images
-         * Simple: Only toggles 'loaded' class when image loads
-         * CSS handles the blur-to-clear transition
-         */
-        function initBlurUpEffect() {
-            const images = document.querySelectorAll('.gallery-img.lazy-blur');
-            
-            images.forEach(img => {
-                if (img.complete && img.naturalHeight > 0) {
-                    // Image already loaded (from cache)
-                    img.classList.add('loaded');
-                } else {
-                    // Wait for image to load
-                    img.addEventListener('load', function() {
-                        this.classList.add('loaded');
-                    }, { once: true });
-                    
-                    // Handle errors
-                    img.addEventListener('error', function() {
-                        this.classList.add('error');
-                    }, { once: true });
-                }
-            });
-        }
-        
         // Cart controls removed from gallery - users add items from product pages
+        // No initialization needed - cart system works on product pages
         
         // Lightbox removed - photos now link directly to product pages via href
         
