@@ -267,17 +267,88 @@
         });
     </script>
 
-    <!-- Lightbox Modal -->
-    <div id="productLightbox" class="product-lightbox">
-        <button class="lightbox-close" id="closeLightbox" aria-label="Close lightbox">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        <div class="lightbox-content">
-            <img id="lightboxImage" src="" alt="" class="lightbox-image" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
-        </div>
+    <!-- Lightbox Modal (Click-to-Enlarge) -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
     </div>
+
+    <!-- Lightbox Script -->
+    <script>
+        // Open modal function
+        function openModal() {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const productImg = document.getElementById('productImage');
+            
+            if (modal && modalImg && productImg && productImg.src) {
+                console.log('🔍 Opening modal...');
+                modalImg.src = productImg.src;
+                modalImg.alt = productImg.alt;
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                
+                // Fade in
+                setTimeout(() => {
+                    modal.classList.add('active');
+                }, 10);
+                
+                console.log('✅ Modal opened');
+            } else {
+                console.error('❌ Modal elements not found');
+            }
+        }
+
+        // Close modal function
+        function closeModal(event) {
+            if (event) {
+                event.stopPropagation();
+            }
+            
+            const modal = document.getElementById('imageModal');
+            if (modal) {
+                console.log('✖️ Closing modal...');
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+                
+                // Wait for fade out, then hide
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+                
+                console.log('✅ Modal closed');
+            }
+        }
+
+        // Attach click listener to product image when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const productImg = document.getElementById('productImage');
+            const wrapper = document.getElementById('productImageWrapper');
+            
+            if (wrapper) {
+                wrapper.style.cursor = 'pointer';
+                wrapper.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🖱️ Product image clicked');
+                    openModal();
+                });
+                console.log('✅ Lightbox click listener attached to image wrapper');
+            } else {
+                console.error('❌ Image wrapper not found');
+            }
+            
+            // Close on ESC key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('imageModal');
+                    if (modal && modal.style.display === 'flex') {
+                        closeModal();
+                    }
+                }
+            });
+            console.log('✅ ESC key listener attached');
+        });
+    </script>
 </body>
 </html>
