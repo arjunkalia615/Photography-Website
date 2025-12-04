@@ -4573,8 +4573,8 @@ footer {
 .product-page-cart-control-wrapper {
     position: relative;
     width: 100%;
-    min-height: 56px;
-    margin-bottom: var(--spacing-3xl);
+    min-height: 60px;
+    margin-bottom: var(--spacing-4xl);
 }
 
 .product-page-add-to-cart-btn,
@@ -4589,20 +4589,21 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-base);
+    gap: var(--spacing-lg);
     width: 100%;
-    padding: var(--spacing-xl) var(--spacing-4xl);
+    padding: 20px 40px;
     background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
     color: var(--color-bg-primary);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: var(--radius-md);
-    font-size: var(--font-size-lg);
+    font-size: 18px;
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
     transition: all var(--transition-fast);
     box-shadow: var(--shadow-button);
     opacity: 1;
     transform: scale(1);
+    min-height: 60px;
 }
 
 .product-page-add-to-cart-btn:hover {
