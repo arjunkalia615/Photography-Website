@@ -3918,9 +3918,9 @@ footer {
 }
 
 .product-container {
-    max-width: 1600px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 0 var(--spacing-5xl);
+    padding: 0;
     position: relative;
     z-index: 1;
 }
@@ -3986,6 +3986,7 @@ footer {
     max-width: 1600px;
     margin: 0 auto;
     width: 100%;
+    padding: 0 var(--spacing-5xl);
 }
 
 /* Breadcrumb */
@@ -4020,8 +4021,8 @@ footer {
     grid-template-columns: 1.3fr 0.7fr;
     gap: 80px;
     align-items: start;
-    max-width: 100%;
-    margin: 0;
+    width: 100%;
+    margin: 0 auto;
     padding: 0;
 }
 
@@ -4477,7 +4478,7 @@ footer {
         padding: 100px 0 60px;
     }
 
-    .product-container {
+    .product-content {
         padding: 0 var(--spacing-3xl);
     }
 
@@ -4511,7 +4512,7 @@ footer {
 }
 
 @media (max-width: 480px) {
-    .product-container {
+    .product-content {
         padding: 0 var(--spacing-2xl);
     }
 
