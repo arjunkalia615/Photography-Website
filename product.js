@@ -337,18 +337,30 @@
      * Open lightbox with full-size image
      */
     function openLightbox() {
-        if (!currentProduct) return;
+        if (!currentProduct) {
+            console.error('❌ No product loaded');
+            return;
+        }
 
         console.log('🔍 Opening lightbox...');
 
-        // Use high-res original for lightbox
+        // Set image source
         elements.lightboxImage.src = currentProduct.imageSrc;
         elements.lightboxImage.alt = currentProduct.title;
         
-        elements.lightbox.classList.add('active');
-        document.body.classList.add('lightbox-open');
+        // Show lightbox with display first
+        elements.lightbox.style.display = 'flex';
         
-        console.log('✅ Lightbox opened');
+        // Force reflow to ensure display is applied before transition
+        void elements.lightbox.offsetWidth;
+        
+        // Add active class for fade-in animation
+        requestAnimationFrame(() => {
+            elements.lightbox.classList.add('active');
+            document.body.classList.add('lightbox-open');
+        });
+        
+        console.log('✅ Lightbox opened:', currentProduct.title);
     }
 
     /**
@@ -357,8 +369,15 @@
     function closeLightbox() {
         console.log('✖️ Closing lightbox...');
         
+        // Remove active class for fade-out animation
         elements.lightbox.classList.remove('active');
         document.body.classList.remove('lightbox-open');
+        
+        // Wait for animation to complete before hiding
+        setTimeout(() => {
+            elements.lightbox.style.display = 'none';
+            elements.lightboxImage.src = ''; // Clear image
+        }, 400); // Match CSS transition duration
         
         console.log('✅ Lightbox closed');
     }
