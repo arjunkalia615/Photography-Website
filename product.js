@@ -334,6 +334,36 @@
     }
 
     /**
+     * Open lightbox with full-size image
+     */
+    function openLightbox() {
+        if (!currentProduct) return;
+
+        console.log('🔍 Opening lightbox...');
+
+        // Use high-res original for lightbox
+        elements.lightboxImage.src = currentProduct.imageSrc;
+        elements.lightboxImage.alt = currentProduct.title;
+        
+        elements.lightbox.classList.add('active');
+        document.body.classList.add('lightbox-open');
+        
+        console.log('✅ Lightbox opened');
+    }
+
+    /**
+     * Close lightbox
+     */
+    function closeLightbox() {
+        console.log('✖️ Closing lightbox...');
+        
+        elements.lightbox.classList.remove('active');
+        document.body.classList.remove('lightbox-open');
+        
+        console.log('✅ Lightbox closed');
+    }
+
+    /**
      * Initialize event listeners
      */
     function initializeEventListeners() {

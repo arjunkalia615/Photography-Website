@@ -4021,35 +4021,9 @@ footer {
     box-shadow: var(--shadow-xl);
 }
 
-/* Click to enlarge indicator */
+/* Click to enlarge indicator - HIDDEN */
 .image-click-indicator {
-    position: absolute;
-    bottom: 16px;
-    right: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(10px);
-    border-radius: var(--radius-md);
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 500;
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-    pointer-events: none;
-    z-index: 10;
-}
-
-.product-image-wrapper:hover .image-click-indicator {
-    opacity: 1;
-}
-
-.image-click-indicator svg {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
+    display: none;
 }
 
 .product-image {
@@ -4858,18 +4832,6 @@ body.lightbox-open {
 
     .lightbox-content {
         padding: 10px;
-    }
-
-    .image-click-indicator {
-        bottom: 12px;
-        right: 12px;
-        padding: 6px 12px;
-        font-size: 12px;
-    }
-
-    .image-click-indicator svg {
-        width: 16px;
-        height: 16px;
     }
 }
 
