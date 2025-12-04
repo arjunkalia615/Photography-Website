@@ -5008,6 +5008,18 @@ body.lightbox-open {
     pointer-events: none;           /* click handled by the <a> wrapper */
 }
 
+/* Blur-up lazy loading effect */
+.blur-up {
+    filter: blur(20px);
+    opacity: 0.4;
+    transition: filter 0.4s ease-out, opacity 0.4s ease-out;
+}
+
+.blur-up.loaded {
+    filter: blur(0);
+    opacity: 1;
+}
+
 /* Hover / focus zoom */
 .gallery-item:hover img,
 .gallery-item:focus img {
