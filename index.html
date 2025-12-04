@@ -141,124 +141,26 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Generate gallery items with blur-up lazy loading
+                // Generate clean gallery items (no cart controls, just links)
                 const photosHTML = data.photos.map((photo, index) => {
-                    // Priority load first 6 images (above the fold)
-                    const isPriority = index < 6;
-                    
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                            <div class="gallery-image-wrapper">
-                                <img ${isPriority ? 'src' : 'data-src'}="${photo.imageSrc}" 
-                                     alt="${photo.title}" 
-                                     class="gallery-lazy-img ${isPriority ? 'loading' : ''}"
-                                     loading="${isPriority ? 'eager' : 'lazy'}">
-                            </div>
+                            <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
                         </a>
                     `;
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                // Initialize blur-up lazy loading
-                initGalleryLazyLoad();
-                
-                console.log(`✅ Loaded ${data.photos.length} photos with blur-up lazy loading`);
+                console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
             } catch (error) {
                 console.error('❌ Error loading photos:', error);
                 loadingPhotos.innerHTML = '<p>Error loading photos. Please refresh the page.</p>';
             }
         }
         
-        /**
-         * Initialize Gallery Lazy Loading with Blur-Up Effect
-         */
-        function initGalleryLazyLoad() {
-            // Setup Intersection Observer for lazy loading
-            const observerOptions = {
-                root: null,
-                rootMargin: '50px',  // Start loading 50px before entering viewport
-                threshold: 0.01
-            };
-            
-            const imageObserver = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        loadImageWithBlur(img);
-                        observer.unobserve(img);
-                    }
-                });
-            }, observerOptions);
-            
-            // Observe all lazy images
-            const lazyImages = document.querySelectorAll('.gallery-lazy-img[data-src]');
-            lazyImages.forEach(img => imageObserver.observe(img));
-            
-            // Handle priority images that already have src
-            const priorityImages = document.querySelectorAll('.gallery-lazy-img.loading[src]');
-            priorityImages.forEach(img => {
-                if (img.complete && img.naturalHeight > 0) {
-                    handleImageLoaded(img);
-                } else {
-                    img.addEventListener('load', () => handleImageLoaded(img), { once: true });
-                    img.addEventListener('error', () => handleImageError(img), { once: true });
-                }
-            });
-            
-            console.log(`🎨 Blur-up lazy loading initialized: ${lazyImages.length} lazy + ${priorityImages.length} priority`);
-        }
-        
-        /**
-         * Load image with blur-up effect
-         */
-        function loadImageWithBlur(img) {
-            const src = img.getAttribute('data-src');
-            if (!src) return;
-            
-            // Add loading state
-            img.classList.add('loading');
-            
-            // Preload image
-            const tempImg = new Image();
-            tempImg.onload = () => {
-                requestAnimationFrame(() => {
-                    img.src = src;
-                    img.removeAttribute('data-src');
-                    
-                    // Wait for actual display
-                    if (img.complete) {
-                        handleImageLoaded(img);
-                    } else {
-                        img.addEventListener('load', () => handleImageLoaded(img), { once: true });
-                    }
-                });
-            };
-            
-            tempImg.onerror = () => handleImageError(img);
-            tempImg.src = src;
-        }
-        
-        /**
-         * Handle image loaded successfully
-         */
-        function handleImageLoaded(img) {
-            requestAnimationFrame(() => {
-                img.classList.remove('loading');
-                img.classList.add('loaded');
-            });
-        }
-        
-        /**
-         * Handle image load error
-         */
-        function handleImageError(img) {
-            img.classList.remove('loading');
-            img.classList.add('error');
-            console.error('Failed to load:', img.alt);
-        }
-        
         // Cart controls removed from gallery - users add items from product pages
+        // No initialization needed - cart system works on product pages
         
         // Lightbox removed - photos now link directly to product pages via href
         

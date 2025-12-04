@@ -4969,13 +4969,13 @@ body.lightbox-open {
 }
 
 /* ========================================
-   MASONRY GALLERY LAYOUT WITH BLUR-UP LAZY LOADING
+   MASONRY GALLERY LAYOUT
    ======================================== */
 
 /* Gallery container: masonry via CSS columns */
 .gallery {
-    column-count: 3;
-    column-gap: 18px;
+    column-count: 3;                /* desktop default */
+    column-gap: 18px;               /* equal gap between columns */
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
@@ -4985,93 +4985,33 @@ body.lightbox-open {
 
 /* Each gallery item adapts to column flow */
 .gallery-item {
-    display: inline-block;
+    display: inline-block;          /* required for CSS columns */
     width: 100%;
-    margin: 0 0 18px;
+    margin: 0 0 18px;               /* vertical gap between items */
     text-decoration: none;
     color: inherit;
     overflow: hidden;
     border-radius: 8px;
     will-change: transform;
     transition: transform 220ms ease, box-shadow 220ms ease;
-    /* Optimize scroll performance */
-    contain: layout style paint;
 }
 
-/* Image wrapper for blur-up effect and skeleton */
-.gallery-image-wrapper {
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    border-radius: 8px;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.02) 0%,
-        rgba(255, 255, 255, 0.04) 50%,
-        rgba(255, 255, 255, 0.02) 100%
-    );
-    background-size: 200% 200%;
-    animation: skeletonShimmer 2s ease-in-out infinite;
-    min-height: 200px;
-}
-
-/* Stop shimmer when image is loaded */
-.gallery-image-wrapper:has(.gallery-lazy-img.loaded),
-.gallery-image-wrapper:has(.gallery-lazy-img.error) {
-    animation: none;
-    background: transparent;
-}
-
-@keyframes skeletonShimmer {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-/* Gallery lazy image base styles */
-.gallery-lazy-img {
+/* Image style keeps original aspect ratio and fits container width */
+.gallery-item img {
     width: 100%;
     height: auto;
     display: block;
     border-radius: 8px;
     transform-origin: center center;
-    -webkit-user-drag: none;
-    pointer-events: none;
-    position: relative;
-    /* GPU optimization for smooth animations */
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform: translateZ(0);
-}
-
-/* Loading state - heavy blur effect */
-.gallery-lazy-img.loading {
-    opacity: 0;
-    filter: blur(20px);
-    transform: scale(1.05) translateZ(0);
-}
-
-/* Loaded state - smooth fade-in from blur */
-.gallery-lazy-img.loaded {
-    opacity: 1;
-    filter: blur(0);
-    transform: scale(1) translateZ(0);
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-                filter 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-                transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Error state */
-.gallery-lazy-img.error {
-    opacity: 0.4;
-    filter: grayscale(100%);
-}
-
-/* Hover zoom - only when loaded */
-.gallery-item:hover .gallery-lazy-img.loaded,
-.gallery-item:focus .gallery-lazy-img.loaded {
-    transform: scale(1.06) translateZ(0);
     transition: transform 300ms cubic-bezier(.2,.8,.2,1);
+    -webkit-user-drag: none;
+    pointer-events: none;           /* click handled by the <a> wrapper */
+}
+
+/* Hover / focus zoom */
+.gallery-item:hover img,
+.gallery-item:focus img {
+    transform: scale(1.06);
 }
 
 /* Subtle elevation on hover */
@@ -5112,19 +5052,9 @@ body.lightbox-open {
 }
 
 /* Prevent images from breaking column flow */
-.gallery-lazy-img { 
+.gallery-item img { 
     break-inside: avoid; 
     -webkit-column-break-inside: avoid; 
     column-break-inside: avoid; 
-}
-
-/* Performance optimization for reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
-    .gallery-lazy-img.loaded {
-        transition: opacity 0.3s ease;
-    }
-    .gallery-item {
-        transition: none;
-    }
 }
 
