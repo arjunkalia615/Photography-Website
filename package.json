@@ -1,14 +1,21 @@
 {
-  "name": "ifeelworld-checkout",
-  "version": "1.0.0",
-  "description": "Stripe Checkout backend for ifeelworld digital photography store",
-  "engines": {
-    "node": "22.x"
+  "name": "ifeelworld-photography",
+  "version": "6.1.0",
+  "description": "Photography website with optimized image delivery",
+  "main": "index.html",
+  "scripts": {
+    "generate-previews": "node generate-webp-previews.js",
+    "test": "echo \"No tests specified\" && exit 0"
   },
-  "scripts": {},
   "dependencies": {
-    "@upstash/redis": "^1.35.6",
-    "archiver": "^7.0.1",
-    "stripe": "^14.0.0"
-  }
+    "sharp": "^0.33.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "photography",
+    "webp",
+    "image-optimization"
+  ],
+  "author": "ifeelworld",
+  "license": "ISC"
 }
