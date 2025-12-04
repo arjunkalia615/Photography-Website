@@ -4969,13 +4969,13 @@ body.lightbox-open {
 }
 
 /* ========================================
-   MASONRY GALLERY LAYOUT
+   MASONRY GALLERY LAYOUT WITH OPTIMIZATION
    ======================================== */
 
 /* Gallery container: masonry via CSS columns */
 .gallery {
-    column-count: 3;                /* desktop default */
-    column-gap: 18px;               /* equal gap between columns */
+    column-count: 3;
+    column-gap: 18px;
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
@@ -4985,33 +4985,106 @@ body.lightbox-open {
 
 /* Each gallery item adapts to column flow */
 .gallery-item {
-    display: inline-block;          /* required for CSS columns */
+    display: inline-block;
     width: 100%;
-    margin: 0 0 18px;               /* vertical gap between items */
+    margin: 0 0 18px;
     text-decoration: none;
     color: inherit;
     overflow: hidden;
     border-radius: 8px;
-    will-change: transform;
     transition: transform 220ms ease, box-shadow 220ms ease;
+    /* Optimize for smooth scrolling */
+    will-change: transform;
+    contain: layout style paint;
 }
 
-/* Image style keeps original aspect ratio and fits container width */
-.gallery-item img {
+/* Image wrapper for blur-up effect */
+.gallery-image-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    min-height: 200px;
+}
+
+/* Skeleton shimmer effect while loading */
+.gallery-image-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.02) 0%,
+        rgba(255, 255, 255, 0.05) 50%,
+        rgba(255, 255, 255, 0.02) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.gallery-image-wrapper:has(.gallery-image.loaded)::before,
+.gallery-image-wrapper:has(.gallery-image.error)::before {
+    opacity: 0;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Image style keeps original aspect ratio */
+.gallery-image {
     width: 100%;
     height: auto;
     display: block;
     border-radius: 8px;
     transform-origin: center center;
-    transition: transform 300ms cubic-bezier(.2,.8,.2,1);
     -webkit-user-drag: none;
-    pointer-events: none;           /* click handled by the <a> wrapper */
+    pointer-events: none;
+    position: relative;
+    z-index: 2;
+    /* GPU optimization */
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 
-/* Hover / focus zoom */
-.gallery-item:hover img,
-.gallery-item:focus img {
+/* Loading state - blur effect */
+.gallery-image.loading {
+    opacity: 0;
+    filter: blur(20px);
+    transform: scale(1.1);
+}
+
+/* Loaded state - smooth fade-in */
+.gallery-image.loaded {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                filter 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Error state */
+.gallery-image.error {
+    opacity: 0.3;
+    background: rgba(255, 100, 100, 0.1);
+}
+
+/* Hover zoom animation */
+.gallery-item:hover .gallery-image.loaded,
+.gallery-item:focus .gallery-image.loaded {
     transform: scale(1.06);
+    transition: transform 300ms cubic-bezier(.2,.8,.2,1);
 }
 
 /* Subtle elevation on hover */
@@ -5052,9 +5125,16 @@ body.lightbox-open {
 }
 
 /* Prevent images from breaking column flow */
-.gallery-item img { 
+.gallery-image { 
     break-inside: avoid; 
     -webkit-column-break-inside: avoid; 
     column-break-inside: avoid; 
+}
+
+/* Scroll optimization */
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
 }
 

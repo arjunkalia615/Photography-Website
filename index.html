@@ -141,26 +141,122 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Generate clean gallery items (no cart controls, just links)
+                // Generate clean gallery items with optimized lazy loading
                 const photosHTML = data.photos.map((photo, index) => {
+                    // Priority loading for first 6 images (above the fold)
+                    const isPriority = index < 6;
+                    
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                            <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
+                            <div class="gallery-image-wrapper">
+                                <img ${isPriority ? 'src' : 'data-src'}="${photo.imageSrc}" 
+                                     alt="${photo.title}" 
+                                     loading="${isPriority ? 'eager' : 'lazy'}"
+                                     class="gallery-image ${isPriority ? 'loading' : ''}">
+                            </div>
                         </a>
                     `;
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
+                // Initialize optimized lazy loading
+                initializeGalleryOptimization();
+                
+                console.log(`✅ Loaded ${data.photos.length} photos with optimized lazy loading`);
             } catch (error) {
                 console.error('❌ Error loading photos:', error);
                 loadingPhotos.innerHTML = '<p>Error loading photos. Please refresh the page.</p>';
             }
         }
         
-        // Cart controls removed from gallery - users add items from product pages
-        // No initialization needed - cart system works on product pages
+        /**
+         * Initialize Gallery Optimization
+         * - Blur-up loading for images
+         * - Intersection Observer for lazy loading
+         * - Smooth scroll performance
+         */
+        function initializeGalleryOptimization() {
+            console.log('🚀 Initializing gallery optimization...');
+            
+            // Setup Intersection Observer for lazy loading
+            const imageObserverOptions = {
+                root: null,
+                rootMargin: '100px',      // Load 100px before visible
+                threshold: 0.01
+            };
+            
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        const src = img.getAttribute('data-src');
+                        
+                        if (src && !img.src) {
+                            loadImageWithBlur(img, src);
+                            observer.unobserve(img);
+                        }
+                    }
+                });
+            }, imageObserverOptions);
+            
+            // Observe lazy images
+            const lazyImages = document.querySelectorAll('.gallery-image[data-src]');
+            lazyImages.forEach(img => imageObserver.observe(img));
+            
+            // Handle priority images (already have src)
+            const priorityImages = document.querySelectorAll('.gallery-image[src]:not([data-src])');
+            priorityImages.forEach(img => {
+                if (!img.complete) {
+                    img.addEventListener('load', () => handleImageLoad(img), { once: true });
+                } else {
+                    handleImageLoad(img);
+                }
+            });
+            
+            console.log(`✅ Observing ${lazyImages.length} lazy images, ${priorityImages.length} priority images`);
+        }
+        
+        /**
+         * Load image with blur-up effect
+         */
+        function loadImageWithBlur(img, src) {
+            const tempImage = new Image();
+            
+            tempImage.onload = () => {
+                // Use requestAnimationFrame for smooth rendering
+                requestAnimationFrame(() => {
+                    img.src = src;
+                    
+                    // Wait for actual img.onload to trigger fade-in
+                    img.addEventListener('load', () => {
+                        requestAnimationFrame(() => {
+                            handleImageLoad(img);
+                        });
+                    }, { once: true });
+                });
+            };
+            
+            tempImage.onerror = () => {
+                console.error(`❌ Failed to load: ${img.alt}`);
+                img.classList.add('error');
+            };
+            
+            tempImage.src = src;
+        }
+        
+        /**
+         * Handle image load completion
+         */
+        function handleImageLoad(img) {
+            img.classList.remove('loading');
+            img.classList.add('loaded');
+        }
+        
+        // Optimize scroll performance with passive listeners
+        document.addEventListener('scroll', () => {
+            // Passive scroll listener for better performance
+        }, { passive: true });
         
         // Lightbox removed - photos now link directly to product pages via href
         
