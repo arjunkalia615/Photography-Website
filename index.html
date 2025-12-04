@@ -141,26 +141,73 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Generate clean gallery items (no cart controls, just links)
+                // Generate clean gallery items with lazy loading
                 const photosHTML = data.photos.map((photo, index) => {
+                    // Use same image as placeholder for now (browser will handle caching)
+                    // In production, replace with actual low-res placeholder path
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                            <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
+                            <img class="lazy blur-up"
+                                 src="${photo.imageSrc}" 
+                                 data-src="${photo.imageSrc}"
+                                 alt="${photo.title}"
+                                 loading="lazy">
                         </a>
                     `;
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
+                // Initialize lazy loading
+                initLazyLoad();
+                
+                console.log(`✅ Loaded ${data.photos.length} photos with blur-up lazy loading`);
             } catch (error) {
                 console.error('❌ Error loading photos:', error);
                 loadingPhotos.innerHTML = '<p>Error loading photos. Please refresh the page.</p>';
             }
         }
         
+        /**
+         * Initialize lazy loading with blur-up effect
+         */
+        function initLazyLoad() {
+            const lazyImages = document.querySelectorAll('.lazy');
+            
+            // Intersection Observer for lazy loading
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    
+                    const img = entry.target;
+                    const realSrc = img.dataset.src;
+                    
+                    if (realSrc) {
+                        img.src = realSrc;
+                    }
+                    
+                    // Add loaded class when image loads
+                    img.onload = () => {
+                        img.classList.add('loaded');
+                    };
+                    
+                    // Handle images already loaded (from cache)
+                    if (img.complete && img.naturalHeight > 0) {
+                        img.classList.add('loaded');
+                    }
+                    
+                    obs.unobserve(img);
+                });
+            }, { 
+                rootMargin: '200px',
+                threshold: 0.01
+            });
+            
+            // Observe all lazy images
+            lazyImages.forEach(img => observer.observe(img));
+        }
+        
         // Cart controls removed from gallery - users add items from product pages
-        // No initialization needed - cart system works on product pages
         
         // Lightbox removed - photos now link directly to product pages via href
         
