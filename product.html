@@ -98,7 +98,7 @@
                     <!-- Left Column: Image -->
                     <div class="product-image-section">
                         <div class="product-image-wrapper" id="productImageWrapper">
-                            <img id="productImage" src="" alt="" class="product-image" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
+                            <img id="productImage" src="" alt="" class="product-image" loading="lazy" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
                             <!-- Click to enlarge indicator -->
                             <div class="image-click-indicator">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -270,7 +270,7 @@
     <!-- Lightbox Modal (Click-to-Enlarge) -->
     <div id="imageModal" class="modal" onclick="closeModal()">
         <span class="close" onclick="closeModal()">&times;</span>
-        <img class="modal-content" id="modalImage" onclick="event.stopPropagation()" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
+        <img class="modal-content" id="modalImage" loading="lazy" onclick="event.stopPropagation()" oncontextmenu="return false;" ondragstart="return false;" onselectstart="return false;">
     </div>
 
     <!-- Lightbox Script -->
