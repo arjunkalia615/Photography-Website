@@ -63,9 +63,9 @@
             <h1 class="page-title">Gallery</h1>
             <p style="text-align: center; color: #b8b8b8; margin-bottom: 40px; font-size: 1.1rem;">Explore our complete collection of high-resolution photography</p>
 
-            <div class="photo-grid" id="photoGrid">
+            <div class="gallery" id="photoGrid">
                 <!-- Photos will be loaded dynamically from High-Quality Photos folder -->
-                <div id="loadingPhotos" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #b8b8b8;">
+                <div id="loadingPhotos" style="text-align: center; padding: 40px; color: #b8b8b8; width: 100%;">
                     <p>Loading photos...</p>
                 </div>
                 <!-- Photos will be loaded dynamically via JavaScript -->
@@ -141,232 +141,26 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Generate photo items
+                // Generate clean gallery items (no cart controls, just links)
                 const photosHTML = data.photos.map((photo, index) => {
-                    const cartItem = CartUtils.getCart().find(item => item.id === photo.productId);
-                    const isInCart = cartItem && cartItem.quantity > 0;
-                    const currentQuantity = isInCart ? cartItem.quantity : 0;
-
                     return `
-                        <div class="photo-item" data-category="${photo.category || 'Photography'}">
-                            <a href="product.html?id=${photo.productId}" class="photo-item-link">
-                                <div class="photo-item-image-wrapper">
-                                    <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
-                                    <div class="photo-item-hover-overlay">
-                                        <div class="photo-item-hover-title">${photo.title}</div>
-                                        <div class="photo-item-hover-category">${photo.category || 'Photography'}</div>
-                                        <div class="photo-item-hover-price">$0.50</div>
-                                    </div>
-                                </div>
-                            </a>
-                            <div class="photo-item-info">
-                                <div class="photo-item-price">$0.50</div>
-                                <div class="photo-item-cart-control-wrapper" data-product-id="${photo.productId}" data-image-src="${photo.imageSrc}" data-title="${photo.title}">
-                                    <button class="photo-item-add-to-cart-btn ${isInCart ? 'hide' : ''}" 
-                                            data-product-id="${photo.productId}" 
-                                            data-image-src="${photo.imageSrc}" 
-                                            data-title="${photo.title}">Add to Cart</button>
-                                    <div class="photo-item-quantity-control ${isInCart ? 'show' : ''}">
-                                        <button class="photo-item-quantity-btn decrease-btn ${currentQuantity === 1 ? 'remove' : ''}" 
-                                                data-product-id="${photo.productId}" 
-                                                aria-label="${currentQuantity === 1 ? 'Remove item' : 'Decrease quantity'}">
-                                            ${currentQuantity === 1 ? `
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                                                </svg>
-                                            ` : `
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
-                                                </svg>
-                                            `}
-                                        </button>
-                                        <span class="photo-item-quantity-value" data-product-id="${photo.productId}">${currentQuantity}</span>
-                                        <button class="photo-item-quantity-btn increase-btn" 
-                                                data-product-id="${photo.productId}" 
-                                                aria-label="Increase quantity">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
+                            <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
+                        </a>
                     `;
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                // Initialize cart controls
-                setTimeout(() => {
-                    initializeCartControls();
-                }, 100);
-                
-                console.log(`✅ Loaded ${data.photos.length} photos dynamically`);
+                console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
             } catch (error) {
                 console.error('❌ Error loading photos:', error);
                 loadingPhotos.innerHTML = '<p>Error loading photos. Please refresh the page.</p>';
             }
         }
         
-        // Initialize cart controls for all photo items
-        function initializeCartControls() {
-            if (!window.Cart) {
-                console.error('Cart is not available');
-                return;
-            }
-
-            const cart = CartUtils.getCart();
-            
-            // Process all cart control wrappers
-            document.querySelectorAll('.photo-item-cart-control-wrapper').forEach(wrapper => {
-                const productId = wrapper.getAttribute('data-product-id');
-                const imageSrc = wrapper.getAttribute('data-image-src');
-                const title = wrapper.getAttribute('data-title');
-                const addToCartBtn = wrapper.querySelector('.photo-item-add-to-cart-btn');
-                const quantityControl = wrapper.querySelector('.photo-item-quantity-control');
-                const quantityValue = quantityControl.querySelector('.photo-item-quantity-value');
-                const decreaseBtn = quantityControl.querySelector('.decrease-btn');
-                const increaseBtn = quantityControl.querySelector('.increase-btn');
-                
-                // Check if item is in cart
-                const cartItem = cart.find(item => item.id === productId);
-                
-                if (cartItem && cartItem.quantity > 0) {
-                    // Item is in cart - show quantity control
-                    addToCartBtn.classList.add('hide');
-                    quantityControl.classList.add('show');
-                    quantityValue.textContent = cartItem.quantity;
-                    
-                    // Update icon based on quantity
-                    if (cartItem.quantity === 1) {
-                        decreaseBtn.classList.add('remove');
-                        decreaseBtn.innerHTML = `
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                            </svg>
-                        `;
-                    } else {
-                        decreaseBtn.classList.remove('remove');
-                        decreaseBtn.innerHTML = `
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
-                            </svg>
-                        `;
-                    }
-                } else {
-                    // Item not in cart - show add to cart button
-                    addToCartBtn.classList.remove('hide');
-                    quantityControl.classList.remove('show');
-                }
-                
-                // Add to cart button click handler
-                addToCartBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    if (imageSrc && title) {
-                        Cart.addItem(imageSrc, title, undefined, productId);
-                        
-                        // Animate transition to quantity control
-                        addToCartBtn.classList.add('hide');
-                        setTimeout(() => {
-                            quantityControl.classList.add('show');
-                            quantityValue.textContent = '1';
-                            decreaseBtn.classList.add('remove');
-                            decreaseBtn.innerHTML = `
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                                </svg>
-                            `;
-                        }, 150);
-                    }
-                });
-                
-                // Decrease button click handler
-                decreaseBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const currentCart = CartUtils.getCart();
-                    const item = currentCart.find(item => item.id === productId);
-                    
-                    if (item) {
-                        if (item.quantity === 1) {
-                            // Remove item completely
-                            Cart.removeItem(productId);
-                            
-                            // Animate transition back to add to cart button
-                            quantityControl.classList.remove('show');
-                            setTimeout(() => {
-                                addToCartBtn.classList.remove('hide');
-                            }, 150);
-                        } else {
-                            // Decrease quantity
-                            Cart.updateQuantity(productId, item.quantity - 1);
-                            const updatedCart = CartUtils.getCart();
-                            const updatedItem = updatedCart.find(item => item.id === productId);
-                            
-                            if (updatedItem) {
-                                quantityValue.textContent = updatedItem.quantity;
-                                
-                                // Update icon if quantity becomes 1
-                                if (updatedItem.quantity === 1) {
-                                    decreaseBtn.classList.add('remove');
-                                    decreaseBtn.innerHTML = `
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                                        </svg>
-                                    `;
-                                }
-                            }
-                        }
-                        
-                        // Micro-bounce animation
-                        decreaseBtn.style.transform = 'scale(0.9)';
-                        setTimeout(() => {
-                            decreaseBtn.style.transform = '';
-                        }, 150);
-                    }
-                });
-                
-                // Increase button click handler
-                increaseBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    const currentCart = CartUtils.getCart();
-                    const item = currentCart.find(item => item.id === productId);
-                    
-                    if (item) {
-                        const newQuantity = Math.min(10, item.quantity + 1);
-                        Cart.updateQuantity(productId, newQuantity);
-                        const updatedCart = CartUtils.getCart();
-                        const updatedItem = updatedCart.find(item => item.id === productId);
-                        
-                        if (updatedItem) {
-                            quantityValue.textContent = updatedItem.quantity;
-                            
-                            // Update icon if quantity becomes > 1
-                            if (updatedItem.quantity > 1) {
-                                decreaseBtn.classList.remove('remove');
-                                decreaseBtn.innerHTML = `
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
-                                    </svg>
-                                `;
-                            }
-                        }
-                        
-                        // Micro-bounce animation
-                        increaseBtn.style.transform = 'scale(0.9)';
-                        setTimeout(() => {
-                            increaseBtn.style.transform = '';
-                        }, 150);
-                    }
-                });
-            });
-        }
+        // Cart controls removed from gallery - users add items from product pages
+        // No initialization needed - cart system works on product pages
         
         // Lightbox removed - photos now link directly to product pages via href
         
