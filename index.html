@@ -141,18 +141,25 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Generate clean gallery items (no cart controls, just links)
+                // Generate clean gallery items with optimized lazy loading
                 const photosHTML = data.photos.map((photo, index) => {
+                    // Use data-src for Intersection Observer + loading="lazy" as fallback
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                            <img src="${photo.imageSrc}" alt="${photo.title}" loading="lazy">
+                            <img data-src="${photo.imageSrc}" 
+                                 alt="${photo.title}" 
+                                 loading="lazy"
+                                 class="gallery-lazy-image">
                         </a>
                     `;
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
+                // Initialize Intersection Observer for optimized lazy loading
+                initializeGalleryLazyLoading();
+                
+                console.log(`✅ Loaded ${data.photos.length} photos with optimized lazy loading`);
             } catch (error) {
                 console.error('❌ Error loading photos:', error);
                 loadingPhotos.innerHTML = '<p>Error loading photos. Please refresh the page.</p>';
@@ -160,7 +167,70 @@
         }
         
         // Cart controls removed from gallery - users add items from product pages
-        // No initialization needed - cart system works on product pages
+        
+        /**
+         * Initialize Intersection Observer for optimized image lazy loading
+         * Images load only when about to enter viewport with smooth fade-in
+         */
+        function initializeGalleryLazyLoading() {
+            console.log('🔍 Initializing Intersection Observer for gallery images...');
+            
+            // Configuration for Intersection Observer
+            const imageObserverOptions = {
+                root: null,                    // Use viewport as root
+                rootMargin: '50px',            // Start loading 50px before entering viewport
+                threshold: 0.01                // Trigger when 1% visible
+            };
+            
+            // Callback when image enters viewport
+            const imageObserverCallback = (entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        const src = img.getAttribute('data-src');
+                        
+                        if (src && !img.src) {
+                            // Create new image to preload
+                            const tempImage = new Image();
+                            
+                            tempImage.onload = () => {
+                                // Set the actual src
+                                img.src = src;
+                                
+                                // Add loaded class for fade-in animation
+                                requestAnimationFrame(() => {
+                                    img.classList.add('loaded');
+                                });
+                                
+                                console.log(`✅ Loaded: ${img.alt}`);
+                            };
+                            
+                            tempImage.onerror = () => {
+                                console.error(`❌ Failed to load: ${img.alt}`);
+                                img.classList.add('error');
+                            };
+                            
+                            // Start loading
+                            tempImage.src = src;
+                            
+                            // Stop observing this image
+                            observer.unobserve(img);
+                        }
+                    }
+                });
+            };
+            
+            // Create Intersection Observer
+            const imageObserver = new IntersectionObserver(imageObserverCallback, imageObserverOptions);
+            
+            // Observe all lazy images
+            const lazyImages = document.querySelectorAll('.gallery-lazy-image');
+            lazyImages.forEach(img => {
+                imageObserver.observe(img);
+            });
+            
+            console.log(`✅ Observing ${lazyImages.length} images for lazy loading`);
+        }
         
         // Lightbox removed - photos now link directly to product pages via href
         
