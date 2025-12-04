@@ -337,12 +337,25 @@
      * Open lightbox with full-size image
      */
     function openLightbox() {
+        console.log('🔍 openLightbox() called');
+        
         if (!currentProduct) {
             console.error('❌ No product loaded');
             return;
         }
 
-        console.log('🔍 Opening lightbox...');
+        if (!elements.lightbox) {
+            console.error('❌ Lightbox element not found!');
+            return;
+        }
+
+        if (!elements.lightboxImage) {
+            console.error('❌ Lightbox image element not found!');
+            return;
+        }
+
+        console.log('✅ Opening lightbox for:', currentProduct.title);
+        console.log('   Image source:', currentProduct.imageSrc);
 
         // Set image source
         elements.lightboxImage.src = currentProduct.imageSrc;
@@ -350,6 +363,7 @@
         
         // Show lightbox with display first
         elements.lightbox.style.display = 'flex';
+        console.log('   Display set to flex');
         
         // Force reflow to ensure display is applied before transition
         void elements.lightbox.offsetWidth;
@@ -358,9 +372,9 @@
         requestAnimationFrame(() => {
             elements.lightbox.classList.add('active');
             document.body.classList.add('lightbox-open');
+            console.log('   Active class added');
+            console.log('✅ Lightbox opened successfully');
         });
-        
-        console.log('✅ Lightbox opened:', currentProduct.title);
     }
 
     /**
@@ -411,29 +425,52 @@
         elements.copyLinkBtn?.addEventListener('click', handleCopyLink);
 
         // Lightbox controls
-        elements.imageWrapper?.addEventListener('click', (e) => {
-            e.preventDefault();
-            openLightbox();
-        });
+        console.log('📸 Registering lightbox event listeners...');
+        console.log('   Image wrapper:', elements.imageWrapper ? '✓ Found' : '✗ Not found');
+        console.log('   Lightbox:', elements.lightbox ? '✓ Found' : '✗ Not found');
+        console.log('   Close button:', elements.closeLightboxBtn ? '✓ Found' : '✗ Not found');
 
-        elements.closeLightboxBtn?.addEventListener('click', (e) => {
-            e.preventDefault();
-            closeLightbox();
-        });
+        if (elements.imageWrapper) {
+            elements.imageWrapper.addEventListener('click', (e) => {
+                console.log('🖱️ Image wrapper clicked!');
+                e.preventDefault();
+                e.stopPropagation();
+                openLightbox();
+            });
+            console.log('✅ Image wrapper click listener added');
+        } else {
+            console.error('❌ Image wrapper not found - lightbox won\'t work!');
+        }
+
+        if (elements.closeLightboxBtn) {
+            elements.closeLightboxBtn.addEventListener('click', (e) => {
+                console.log('🖱️ Close button clicked!');
+                e.preventDefault();
+                e.stopPropagation();
+                closeLightbox();
+            });
+            console.log('✅ Close button listener added');
+        }
 
         // Close lightbox on background click
-        elements.lightbox?.addEventListener('click', (e) => {
-            if (e.target === elements.lightbox) {
-                closeLightbox();
-            }
-        });
+        if (elements.lightbox) {
+            elements.lightbox.addEventListener('click', (e) => {
+                if (e.target === elements.lightbox) {
+                    console.log('🖱️ Background clicked!');
+                    closeLightbox();
+                }
+            });
+            console.log('✅ Background click listener added');
+        }
 
         // Close lightbox on ESC key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && elements.lightbox?.classList.contains('active')) {
+                console.log('⌨️ ESC key pressed!');
                 closeLightbox();
             }
         });
+        console.log('✅ ESC key listener added');
     }
 
     /**

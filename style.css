@@ -4014,11 +4014,16 @@ footer {
     transform: translateZ(0);
     cursor: pointer;
     transition: transform var(--transition-base), box-shadow var(--transition-base);
+    pointer-events: auto;
 }
 
 .product-image-wrapper:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-xl);
+}
+
+.product-image-wrapper:active {
+    transform: translateY(-2px);
 }
 
 /* Click to enlarge indicator - HIDDEN */
@@ -4048,7 +4053,8 @@ footer {
     padding: 0;
     border: none;
     backface-visibility: hidden;
-    transform: translateZ(0);
+    transform: translateZ(0) scale(1.02);
+    transform-origin: center center;
 }
 
 .product-image-badge {
