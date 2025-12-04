@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Loading Test - ifeelworld</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #ffffff;
+        }
+        h1 {
+            color: #ffffff;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success {
+            background: #1a4d1a;
+            border-left: 4px solid #2d7a2d;
+        }
+        .error {
+            background: #4d1a1a;
+            border-left: 4px solid #7a2d2d;
+        }
+        .warning {
+            background: #4d3d1a;
+            border-left: 4px solid #7a5d2d;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .image-test {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        .image-test img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .image-info {
+            font-size: 12px;
+            color: #999;
+            margin: 5px 0;
+        }
+        .path {
+            background: #333;
+            padding: 5px;
+            border-radius: 3px;
+            word-break: break-all;
+            font-size: 11px;
+        }
+        button {
+            background: #ffffff;
+            color: #0a0a0a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Preview Loading Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Path Conversion Tests</h2>
+        <button onclick="runPathTests()">Run Path Tests</button>
+        <div id="pathTests"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Image Loading Tests</h2>
+        <button onclick="runImageLoadTests()">Test Image Loading</button>
+        <div id="imageLoadTests"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Preview Files Check</h2>
+        <button onclick="checkPreviewFiles()">Check Preview Files</button>
+        <div id="previewCheck"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Visual Image Test</h2>
+        <p>These images should load from previews (if they exist) or fall back to originals:</p>
+        <div id="visualTest" class="image-grid"></div>
+    </div>
+
+    <script src="image-utils.js"></script>
+    <script>
+        // Test images
+        const testImages = [
+            'Images/High-Quality Photos/Ash Street.jpg',
+            'Images/High-Quality Photos/Maritime Museum.jpg',
+            'Images/High-Quality Photos/BAPS Shri Swaminarayan Mandir and Cultural Precinct.jpg',
+            'Images/High-Quality Photos/Sakura.jpg',
+            'Images/High-Quality Photos/Crown Sydney building.jpg'
+        ];
+
+        // Path conversion tests
+        function runPathTests() {
+            const output = document.getElementById('pathTests');
+            output.innerHTML = '<h3>Path Conversion Results:</h3>';
+            
+            testImages.forEach(originalPath => {
+                const previewPath = getPreviewPath(originalPath);
+                const lowResPath = getLowResPath(originalPath);
+                
+                output.innerHTML += `
+                    <div class="test-result success">
+                        <strong>Original:</strong><br>
+                        <div class="path">${originalPath}</div>
+                        <br>
+                        <strong>Preview (Display):</strong><br>
+                        <div class="path">${previewPath}</div>
+                        <br>
+                        <strong>Low-Res (Social):</strong><br>
+                        <div class="path">${lowResPath}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // Check if preview files exist
+        async function checkPreviewFiles() {
+            const output = document.getElementById('previewCheck');
+            output.innerHTML = '<h3>Checking Preview Files...</h3>';
+            
+            let foundCount = 0;
+            let notFoundCount = 0;
+            
+            for (const originalPath of testImages) {
+                const previewPath = getPreviewPath(originalPath);
+                const exists = await checkFileExists(previewPath);
+                
+                if (exists) {
+                    foundCount++;
+                    output.innerHTML += `
+                        <div class="test-result success">
+                            ✅ Found: ${previewPath.split('/').pop()}
+                        </div>
+                    `;
+                } else {
+                    notFoundCount++;
+                    output.innerHTML += `
+                        <div class="test-result warning">
+                            ⚠️ Not found (will use original): ${previewPath.split('/').pop()}
+                        </div>
+                    `;
+                }
+            }
+            
+            output.innerHTML += `
+                <div class="test-result ${foundCount > 0 ? 'success' : 'warning'}">
+                    <strong>Summary:</strong><br>
+                    Found: ${foundCount} previews<br>
+                    Missing: ${notFoundCount} previews<br>
+                    ${notFoundCount > 0 ? '<br>⚠️ Run <code>node generate-webp-previews.js</code> to generate missing previews' : ''}
+                </div>
+            `;
+        }
+
+        // Test image loading
+        async function runImageLoadTests() {
+            const output = document.getElementById('imageLoadTests');
+            output.innerHTML = '<h3>Testing Image Loading...</h3>';
+            
+            for (const originalPath of testImages) {
+                const previewPath = getPreviewPath(originalPath);
+                
+                // Test preview
+                const previewExists = await checkFileExists(previewPath);
+                const previewSize = previewExists ? await getFileSize(previewPath) : 0;
+                
+                // Test original
+                const originalExists = await checkFileExists(originalPath);
+                const originalSize = originalExists ? await getFileSize(originalPath) : 0;
+                
+                const filename = originalPath.split('/').pop();
+                
+                output.innerHTML += `
+                    <div class="test-result ${previewExists ? 'success' : 'warning'}">
+                        <strong>${filename}</strong><br>
+                        Preview: ${previewExists ? `✅ ${formatSize(previewSize)}` : '❌ Not found'}<br>
+                        Original: ${originalExists ? `✅ ${formatSize(originalSize)}` : '❌ Not found'}<br>
+                        ${previewExists && originalExists ? `Savings: ${((1 - previewSize/originalSize) * 100).toFixed(1)}%` : ''}
+                    </div>
+                `;
+            }
+        }
+
+        // Visual test
+        function loadVisualTest() {
+            const container = document.getElementById('visualTest');
+            
+            testImages.forEach(originalPath => {
+                const previewPath = getPreviewPath(originalPath);
+                const filename = originalPath.split('/').pop();
+                
+                container.innerHTML += `
+                    <div class="image-test">
+                        <img src="${previewPath}" 
+                             alt="${filename}"
+                             onerror="this.onerror=null; this.src='${originalPath}'; this.nextElementSibling.innerHTML='⚠️ Using original (preview not found)';"
+                             onload="this.nextElementSibling.innerHTML='✅ Loaded successfully';">
+                        <div class="image-info">Loading...</div>
+                        <div class="image-info"><strong>${filename}</strong></div>
+                        <div class="path">Preview: ${previewPath.split('/').pop()}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // Helper functions
+        async function checkFileExists(path) {
+            try {
+                const response = await fetch(path, { method: 'HEAD' });
+                return response.ok;
+            } catch {
+                return false;
+            }
+        }
+
+        async function getFileSize(path) {
+            try {
+                const response = await fetch(path, { method: 'HEAD' });
+                return parseInt(response.headers.get('content-length') || 0);
+            } catch {
+                return 0;
+            }
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Fallback function if image-utils.js not loaded
+        if (typeof getPreviewPath === 'undefined') {
+            function getPreviewPath(originalPath) {
+                const filename = originalPath.split('/').pop();
+                const basename = filename.replace(/\.(jpg|jpeg|png)$/i, '');
+                return `Images/Web-Optimized-Previews/${basename}.webp`;
+            }
+            
+            function getLowResPath(originalPath) {
+                const filename = originalPath.split('/').pop();
+                return `Low-Res Images/${filename}`;
+            }
+            
+            console.warn('image-utils.js not loaded, using fallback functions');
+        }
+
+        // Auto-load visual test on page load
+        window.addEventListener('load', loadVisualTest);
+    </script>
+</body>
+</html>
+
