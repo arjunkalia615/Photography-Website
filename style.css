@@ -5006,16 +5006,21 @@ body.lightbox-open {
     transition: transform 300ms cubic-bezier(.2,.8,.2,1);
     -webkit-user-drag: none;
     pointer-events: none;           /* click handled by the <a> wrapper */
+    /* Prevent layout shifts by setting aspect ratio */
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    background-color: rgba(255, 255, 255, 0.05); /* placeholder color */
 }
 
 /* Lazy Loading with Blur Fade-In Animation */
-.gallery-item img.lazy-blur {
-    filter: blur(10px);
-    opacity: 0.6;
-    transition: filter 0.6s ease-out, opacity 0.6s ease-out;
+.gallery-item img.gallery-lazy {
+    filter: blur(15px);
+    opacity: 0.3;
+    transition: filter 0.7s cubic-bezier(0.4, 0.0, 0.2, 1), 
+                opacity 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
-.gallery-item img.lazy-blur.loaded {
+.gallery-item img.gallery-lazy.loaded {
     filter: blur(0);
     opacity: 1;
 }

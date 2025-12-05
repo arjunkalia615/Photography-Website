@@ -146,15 +146,19 @@
                 const photosHTML = data.photos.map((photo, index) => {
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                            <img src="${photo.imageSrc}" alt="${photo.title}" class="lazy-blur" loading="lazy">
+                            <img src="${photo.imageSrc}" 
+                                 alt="${photo.title}" 
+                                 class="gallery-lazy" 
+                                 loading="lazy"
+                                 decoding="async">
                         </a>
                     `;
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                // Initialize blur fade-in animation
-                initLazyBlurAnimation();
+                // Initialize lazy loading with blur animation
+                initGalleryLazyLoad();
                 
                 console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
             } catch (error) {
@@ -163,24 +167,31 @@
             }
         }
         
-        // Lazy loading blur fade-in animation
-        function initLazyBlurAnimation() {
-            const lazyImages = document.querySelectorAll('.gallery-item img.lazy-blur');
+        // Lazy loading with smooth blur-to-sharp animation
+        function initGalleryLazyLoad() {
+            const lazyImages = document.querySelectorAll('.gallery-item img.gallery-lazy');
             
             lazyImages.forEach(img => {
-                // If image is already loaded (cached), add 'loaded' class immediately
+                // Check if image is already loaded (from browser cache)
                 if (img.complete && img.naturalHeight !== 0) {
+                    // Image is already loaded - remove blur immediately
                     img.classList.add('loaded');
                 } else {
-                    // Otherwise, wait for the load event
-                    img.addEventListener('load', function() {
-                        this.classList.add('loaded');
-                    }, { once: true });
+                    // Image is loading - wait for load event
+                    const handleLoad = () => {
+                        // Small delay to ensure smooth transition
+                        setTimeout(() => {
+                            img.classList.add('loaded');
+                        }, 50);
+                    };
                     
-                    // Handle error case
-                    img.addEventListener('error', function() {
-                        this.classList.add('loaded'); // Remove blur even on error
-                    }, { once: true });
+                    const handleError = () => {
+                        // Remove blur even on error to show broken image icon
+                        img.classList.add('loaded');
+                    };
+                    
+                    img.addEventListener('load', handleLoad, { once: true });
+                    img.addEventListener('error', handleError, { once: true });
                 }
             });
         }
