@@ -140,8 +140,8 @@
             // Update meta tags
             updateMetaTags(product);
 
-            // Set image with protection
-            elements.image.src = product.imageSrc;
+            // Set HIGH-QUALITY image for product page display
+            elements.image.src = product.imageHQ || product.imageSrc;
             elements.image.alt = product.title;
             
             // Disable right-click and image saving
@@ -224,9 +224,9 @@
             return;
         }
 
-        // Add item to cart using existing cart system
+        // Add item to cart using HIGH-QUALITY path for download
         Cart.addItem(
-            currentProduct.imageSrc,
+            currentProduct.imageHQ || currentProduct.imageSrc,
             currentProduct.title,
             ITEM_PRICE,
             currentProduct.productId
@@ -355,10 +355,10 @@
         }
 
         console.log('✅ Opening lightbox for:', currentProduct.title);
-        console.log('   Image source:', currentProduct.imageSrc);
+        console.log('   Image source:', currentProduct.imageHQ || currentProduct.imageSrc);
 
-        // Set image source
-        elements.lightboxImage.src = currentProduct.imageSrc;
+        // Set HIGH-QUALITY image for lightbox
+        elements.lightboxImage.src = currentProduct.imageHQ || currentProduct.imageSrc;
         elements.lightboxImage.alt = currentProduct.title;
         
         // Show lightbox with display first

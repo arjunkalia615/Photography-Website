@@ -142,11 +142,12 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Generate clean gallery items (no cart controls, just links)
+                // Generate clean gallery items with low-res images
                 const photosHTML = data.photos.map((photo, index) => {
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
                             <img src="${photo.imageSrc}" 
+                                 data-full="${photo.imageHQ || photo.imageSrc}"
                                  alt="${photo.title}" 
                                  class="gallery-lazy" 
                                  loading="lazy"

@@ -1217,7 +1217,8 @@ async function handleGetPhotos(req, res) {
 
                 // Use the actual folder name found (could be high_quality_photos or High-Qaulity Photos)
                 const folderName = path.basename(photosFolder);
-                const imageSrc = `Images/${folderName}/${file}`;
+                const highQualityPath = `Images/${folderName}/${file}`;
+                const lowResPath = `Images/LowResImages/${file}`;
                 const baseName = path.basename(file, path.extname(file));
                 
                 // Generate a product ID from the filename (unchanged - based on filename)
@@ -1230,7 +1231,9 @@ async function handleGetPhotos(req, res) {
 
                 return {
                     productId: productId || `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    imageSrc: imageSrc,
+                    imageSrc: lowResPath,              // Low-res for gallery thumbnails
+                    imageThumb: lowResPath,            // Low-res thumbnail
+                    imageHQ: highQualityPath,          // High-quality for product page
                     title: title,
                     filename: file,
                     category: 'Photography' // Default category, can be enhanced later
