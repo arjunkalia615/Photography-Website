@@ -5006,10 +5006,10 @@ body.lightbox-open {
     transition: transform 300ms cubic-bezier(.2,.8,.2,1);
     -webkit-user-drag: none;
     pointer-events: none;           /* click handled by the <a> wrapper */
-    /* Prevent layout shifts by setting aspect ratio */
-    aspect-ratio: 3 / 4;
-    object-fit: cover;
     background-color: rgba(255, 255, 255, 0.05); /* placeholder color */
+    /* Maintain original aspect ratio - no forced sizing */
+    object-fit: contain;
+    max-width: 100%;
 }
 
 /* Lazy Loading with Blur Fade-In Animation */
