@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Dimension Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .image-info {
+            margin: 10px 0;
+            padding: 10px;
+            background: #2a2a2a;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .orientation {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .horizontal {
+            background: #4CAF50;
+            color: #000;
+        }
+        .vertical {
+            background: #2196F3;
+            color: #fff;
+        }
+        .square {
+            background: #FF9800;
+            color: #000;
+        }
+        img {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gallery Image Dimensions</h1>
+    <div id="results">Loading images...</div>
+
+    <script>
+        async function checkImages() {
+            try {
+                const response = await fetch('/api/functions?action=getPhotos');
+                const data = await response.json();
+                
+                if (!data.success || !data.photos) {
+                    document.getElementById('results').innerHTML = '<p style="color: red;">Failed to load photos</p>';
+                    return;
+                }
+
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '<h2>Total Images: ' + data.photos.length + '</h2>';
+
+                let horizontalCount = 0;
+                let verticalCount = 0;
+                let squareCount = 0;
+
+                for (const photo of data.photos) {
+                    const img = new Image();
+                    
+                    await new Promise((resolve) => {
+                        img.onload = () => {
+                            const width = img.naturalWidth;
+                            const height = img.naturalHeight;
+                            const ratio = (width / height).toFixed(2);
+                            
+                            let orientation = 'square';
+                            let orientationClass = 'square';
+                            
+                            if (width > height * 1.1) {
+                                orientation = 'horizontal';
+                                orientationClass = 'horizontal';
+                                horizontalCount++;
+                            } else if (height > width * 1.1) {
+                                orientation = 'vertical';
+                                orientationClass = 'vertical';
+                                verticalCount++;
+                            } else {
+                                squareCount++;
+                            }
+                            
+                            const div = document.createElement('div');
+                            div.className = 'image-info';
+                            div.innerHTML = `
+                                <img src="${photo.imageSrc}" alt="${photo.title}">
+                                <div>
+                                    <strong>${photo.title}</strong><br>
+                                    ${width} × ${height} px<br>
+                                    Ratio: ${ratio}
+                                </div>
+                                <span class="orientation ${orientationClass}">${orientation.toUpperCase()}</span>
+                            `;
+                            resultsDiv.appendChild(div);
+                            resolve();
+                        };
+                        
+                        img.onerror = () => {
+                            console.error('Failed to load:', photo.imageSrc);
+                            resolve();
+                        };
+                        
+                        img.src = photo.imageSrc;
+                    });
+                }
+
+                // Add summary
+                const summary = document.createElement('div');
+                summary.style.cssText = 'margin-top: 20px; padding: 15px; background: #333; border-radius: 8px;';
+                summary.innerHTML = `
+                    <h2>Summary</h2>
+                    <p><span class="orientation horizontal">HORIZONTAL: ${horizontalCount}</span></p>
+                    <p><span class="orientation vertical">VERTICAL: ${verticalCount}</span></p>
+                    <p><span class="orientation square">SQUARE: ${squareCount}</span></p>
+                `;
+                resultsDiv.insertBefore(summary, resultsDiv.firstChild.nextSibling);
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('results').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+
+        checkImages();
+    </script>
+</body>
+</html>
+

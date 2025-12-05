@@ -4996,7 +4996,7 @@ body.lightbox-open {
     transition: transform 220ms ease, box-shadow 220ms ease;
 }
 
-/* Image style - natural aspect ratio preserved */
+/* Image style - natural aspect ratio preserved (v2.0) */
 .gallery-item img {
     width: 100%;
     height: auto;
@@ -5007,6 +5007,7 @@ body.lightbox-open {
     -webkit-user-drag: none;
     pointer-events: none;           /* click handled by the <a> wrapper */
     background-color: rgba(255, 255, 255, 0.05); /* placeholder color */
+    /* NO aspect-ratio, NO object-fit - pure natural sizing */
 }
 
 /* Lazy Loading with Blur Fade-In Animation - DO NOT MODIFY */
