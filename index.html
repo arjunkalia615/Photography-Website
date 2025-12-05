@@ -146,18 +146,43 @@
                 const photosHTML = data.photos.map((photo, index) => {
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                            <img src="${photo.imageSrc}" alt="${photo.title}">
+                            <img src="${photo.imageSrc}" alt="${photo.title}" class="lazy-blur" loading="lazy">
                         </a>
                     `;
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
+                // Initialize blur fade-in animation
+                initLazyBlurAnimation();
+                
                 console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
             } catch (error) {
                 console.error('❌ Error loading photos:', error);
                 loadingPhotos.innerHTML = '<p>Error loading photos. Please refresh the page.</p>';
             }
+        }
+        
+        // Lazy loading blur fade-in animation
+        function initLazyBlurAnimation() {
+            const lazyImages = document.querySelectorAll('.gallery-item img.lazy-blur');
+            
+            lazyImages.forEach(img => {
+                // If image is already loaded (cached), add 'loaded' class immediately
+                if (img.complete && img.naturalHeight !== 0) {
+                    img.classList.add('loaded');
+                } else {
+                    // Otherwise, wait for the load event
+                    img.addEventListener('load', function() {
+                        this.classList.add('loaded');
+                    }, { once: true });
+                    
+                    // Handle error case
+                    img.addEventListener('error', function() {
+                        this.classList.add('loaded'); // Remove blur even on error
+                    }, { once: true });
+                }
+            });
         }
         
         // Cart controls removed from gallery - users add items from product pages
