@@ -1218,8 +1218,14 @@ async function handleGetPhotos(req, res) {
                 // Use the actual folder name found (could be high_quality_photos or High-Qaulity Photos)
                 const folderName = path.basename(photosFolder);
                 const highQualityPath = `Images/${folderName}/${file}`;
-                const lowResPath = `Images/LowResImages/${file}`;
-                const baseName = path.basename(file, path.extname(file));
+                
+                // Normalize extension to lowercase for low-res path (handles .JPG vs .jpg)
+                const ext = path.extname(file);
+                const baseFileName = path.basename(file, ext);
+                const normalizedFileName = baseFileName + ext.toLowerCase();
+                const lowResPath = `Images/LowResImages/${normalizedFileName}`;
+                
+                const baseName = path.basename(file, ext);
                 
                 // Generate a product ID from the filename (unchanged - based on filename)
                 const productId = baseName.toLowerCase()
