@@ -4996,7 +4996,7 @@ body.lightbox-open {
     transition: transform 220ms ease, box-shadow 220ms ease;
 }
 
-/* Image style keeps original aspect ratio and fits container width */
+/* Image style - natural aspect ratio preserved */
 .gallery-item img {
     width: 100%;
     height: auto;
@@ -5007,12 +5007,9 @@ body.lightbox-open {
     -webkit-user-drag: none;
     pointer-events: none;           /* click handled by the <a> wrapper */
     background-color: rgba(255, 255, 255, 0.05); /* placeholder color */
-    /* Maintain original aspect ratio - no forced sizing */
-    object-fit: contain;
-    max-width: 100%;
 }
 
-/* Lazy Loading with Blur Fade-In Animation */
+/* Lazy Loading with Blur Fade-In Animation - DO NOT MODIFY */
 .gallery-item img.gallery-lazy {
     filter: blur(15px);
     opacity: 0.3;
