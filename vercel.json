@@ -3,32 +3,32 @@
   "outputDirectory": ".",
   "headers": [
     {
-      "source": "/Images/(.*)",
+      "source": "/Images/**",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=2592000, immutable" },
         { "key": "X-Content-Type-Options", "value": "nosniff" }
       ]
     },
     {
-      "source": "/LowResImages/(.*)",
+      "source": "/Low-Res Images/**",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=2592000, immutable" }
       ]
     },
     {
-      "source": "/(.*\\.(jpg|jpeg|png|gif|webp|svg|ico))",
+      "source": "/**/*.{jpg,jpeg,png,gif,webp,svg,ico}",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=2592000, immutable" }
       ]
     },
     {
-      "source": "/(.*\\.(js|css))",
+      "source": "/**/*.{js,css}",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }
       ]
     },
     {
-      "source": "/(.*\\.html)",
+      "source": "/**/*.html",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
       ]
