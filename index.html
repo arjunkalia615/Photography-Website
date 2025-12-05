@@ -142,24 +142,26 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Generate clean gallery items with low-res images
+                // Generate gallery items with blur-up placeholders
                 const photosHTML = data.photos.map((photo, index) => {
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                            <img src="${photo.imageSrc}" 
-                                 data-full="${photo.imageHQ || photo.imageSrc}"
-                                 alt="${photo.title}" 
-                                 class="gallery-lazy" 
-                                 loading="lazy"
-                                 decoding="async">
+                            <div class="image-wrapper blur-load" style="background-image: url('${photo.imageSrc}');">
+                                <img src="${photo.imageSrc}" 
+                                     data-full="${photo.imageHQ || photo.imageSrc}"
+                                     alt="${photo.title}" 
+                                     class="gallery-image" 
+                                     loading="lazy"
+                                     decoding="async">
+                            </div>
                         </a>
                     `;
                 }).join('');
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                // Initialize lazy loading with blur animation
-                initGalleryLazyLoad();
+                // Initialize blur-up loading
+                initBlurUpLoading();
                 
                 console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
             } catch (error) {
@@ -168,31 +170,34 @@
             }
         }
         
-        // Lazy loading with smooth blur-to-sharp animation
-        function initGalleryLazyLoad() {
-            const lazyImages = document.querySelectorAll('.gallery-item img.gallery-lazy');
+        // Blur-up loading with smooth placeholder-to-sharp transition
+        function initBlurUpLoading() {
+            const imageWrappers = document.querySelectorAll('.image-wrapper.blur-load');
             
-            lazyImages.forEach(img => {
+            imageWrappers.forEach(wrapper => {
+                const img = wrapper.querySelector('.gallery-image');
+                
+                if (!img) return;
+                
                 // Check if image is already loaded (from browser cache)
                 if (img.complete && img.naturalHeight !== 0) {
-                    // Image is already loaded - remove blur immediately
-                    img.classList.add('loaded');
+                    // Image is cached - transition immediately
+                    setTimeout(() => {
+                        wrapper.classList.add('loaded');
+                    }, 100);
                 } else {
                     // Image is loading - wait for load event
-                    const handleLoad = () => {
-                        // Small delay to ensure smooth transition
+                    img.addEventListener('load', function() {
+                        // Smooth transition after image loads
                         setTimeout(() => {
-                            img.classList.add('loaded');
-                        }, 50);
-                    };
+                            wrapper.classList.add('loaded');
+                        }, 150);
+                    }, { once: true });
                     
-                    const handleError = () => {
-                        // Remove blur even on error to show broken image icon
-                        img.classList.add('loaded');
-                    };
-                    
-                    img.addEventListener('load', handleLoad, { once: true });
-                    img.addEventListener('error', handleError, { once: true });
+                    // Handle error case
+                    img.addEventListener('error', function() {
+                        wrapper.classList.add('loaded');
+                    }, { once: true });
                 }
             });
         }

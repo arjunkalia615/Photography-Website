@@ -4997,39 +4997,61 @@ body.lightbox-open {
                 box-shadow 900ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* Image style - natural aspect ratio preserved (v2.0) */
-.gallery-item img {
+/* Blur-up image wrapper with placeholder */
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    display: block;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+/* Blurred placeholder background */
+.image-wrapper.blur-load {
+    background-size: cover;
+    background-position: center;
+    filter: blur(20px);
+    transform: scale(1.05);
+    transition: filter 800ms cubic-bezier(0.19, 1, 0.22, 1),
+                transform 800ms cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* When image loaded - remove blur and scale */
+.image-wrapper.blur-load.loaded {
+    filter: blur(0);
+    transform: scale(1);
+}
+
+/* Gallery image - overlays on placeholder */
+.gallery-item .gallery-image {
     width: 100%;
     height: auto;
     display: block;
     border-radius: 8px;
     transform-origin: center center;
-    /* Very slow, buttery-smooth zoom - PREMIUM */
-    transition: transform 1000ms cubic-bezier(0.19, 1, 0.22, 1),
+    opacity: 0;
+    /* Very slow, buttery-smooth fade-in - PREMIUM */
+    transition: opacity 900ms cubic-bezier(0.19, 1, 0.22, 1),
+                transform 1000ms cubic-bezier(0.19, 1, 0.22, 1),
                 filter 800ms cubic-bezier(0.19, 1, 0.22, 1);
     -webkit-user-drag: none;
-    pointer-events: none;           /* click handled by the <a> wrapper */
-    background-color: rgba(255, 255, 255, 0.05); /* placeholder color */
+    pointer-events: none;
     /* NO aspect-ratio, NO object-fit - pure natural sizing */
 }
 
-/* Lazy Loading with Blur Fade-In Animation - DO NOT MODIFY */
-.gallery-item img.gallery-lazy {
-    filter: blur(15px);
-    opacity: 0.3;
-    transition: filter 0.7s cubic-bezier(0.4, 0.0, 0.2, 1), 
-                opacity 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
-}
-
-.gallery-item img.gallery-lazy.loaded {
-    filter: blur(0);
+/* When wrapper is loaded, show the actual image */
+.image-wrapper.loaded .gallery-image {
     opacity: 1;
 }
 
 /* Ultra-premium hover animation - very slow & smooth */
-.gallery-item:hover img,
-.gallery-item:focus img {
-    transform: scale(1.02);  /* Very subtle 2% zoom */
+.gallery-item:hover .gallery-image,
+.gallery-item:focus .gallery-image {
+    transform: scale(1.03);  /* Subtle 3% zoom - smooth and elegant */
+}
+
+.gallery-item:hover .image-wrapper,
+.gallery-item:focus .image-wrapper {
     filter: brightness(1.05);  /* Slight brightness lift */
 }
 
