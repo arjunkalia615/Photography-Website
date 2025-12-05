@@ -4992,9 +4992,9 @@ body.lightbox-open {
     color: inherit;
     overflow: hidden;
     border-radius: 8px;
-    /* Smooth, premium hover animation */
-    transition: transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94), 
-                box-shadow 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    /* Ultra-smooth, luxurious hover animation - SLOW */
+    transition: transform 900ms cubic-bezier(0.19, 1, 0.22, 1), 
+                box-shadow 900ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 /* Image style - natural aspect ratio preserved (v2.0) */
@@ -5004,8 +5004,9 @@ body.lightbox-open {
     display: block;
     border-radius: 8px;
     transform-origin: center center;
-    /* Slow, smooth zoom animation */
-    transition: transform 700ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    /* Very slow, buttery-smooth zoom - PREMIUM */
+    transition: transform 1000ms cubic-bezier(0.19, 1, 0.22, 1),
+                filter 800ms cubic-bezier(0.19, 1, 0.22, 1);
     -webkit-user-drag: none;
     pointer-events: none;           /* click handled by the <a> wrapper */
     background-color: rgba(255, 255, 255, 0.05); /* placeholder color */
@@ -5025,17 +5026,19 @@ body.lightbox-open {
     opacity: 1;
 }
 
-/* Premium hover animation - slow & smooth zoom */
+/* Ultra-premium hover animation - very slow & smooth */
 .gallery-item:hover img,
 .gallery-item:focus img {
-    transform: scale(1.03);  /* Subtle 3% zoom */
+    transform: scale(1.02);  /* Very subtle 2% zoom */
+    filter: brightness(1.05);  /* Slight brightness lift */
 }
 
-/* Subtle elevation on hover - premium feel */
+/* Luxurious elevation on hover - modern, refined */
 .gallery-item:hover,
 .gallery-item:focus {
-    transform: translateY(-2px);  /* Gentle lift */
-    box-shadow: 0 12px 32px rgba(0,0,0,0.15);  /* Soft shadow */
+    transform: translateY(-3px);  /* Smooth lift */
+    box-shadow: 0 16px 48px rgba(0,0,0,0.18), 
+                0 4px 12px rgba(0,0,0,0.08);  /* Layered premium shadow */
     z-index: 2;
 }
 
