@@ -6,10 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="p:domain_verify" content="5c8e90eabee750a65bc324f16f1a408e"/>
     <title>ifeelworld - Art & Photography</title>
-    
-    <!-- Pinterest fallback meta tags (will be updated dynamically) -->
-    <meta property="og:image" id="ogImage" content="">
-    <link rel="image_src" id="imageSrc" href="">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -147,53 +143,19 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Update Pinterest fallback meta tags with first photo's low-res image
-                if (data.photos && data.photos.length > 0) {
-                    const firstPhoto = data.photos[0];
-                    const firstPhotoLowResUrl = new URL(firstPhoto.imageSrc, window.location.origin).href;
-                    const ogImageMeta = document.getElementById('ogImage');
-                    const imageSrcLink = document.getElementById('imageSrc');
-                    if (ogImageMeta) {
-                        ogImageMeta.setAttribute('content', firstPhotoLowResUrl);
-                    }
-                    if (imageSrcLink) {
-                        imageSrcLink.setAttribute('href', firstPhotoLowResUrl);
-                    }
-                    console.log('✅ Pinterest meta tags updated with first photo:', firstPhotoLowResUrl);
-                }
-                
-                // Generate gallery items with blur-up placeholders and Pin It buttons
+                // Generate gallery items with blur-up placeholders
                 const photosHTML = data.photos.map((photo, index) => {
-                    // Get absolute URL for low-res image (for Pinterest)
-                    const lowResUrl = new URL(photo.imageSrc, window.location.origin).href;
-                    const productUrl = new URL(`product.html?id=${photo.productId}`, window.location.origin).href;
-                    
                     return `
-                        <div class="gallery-item-wrapper">
-                            <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                                <div class="image-wrapper blur-load" style="background-image: url('${photo.imageSrc}');">
-                                    <img src="${photo.imageSrc}" 
-                                         data-full="${photo.imageHQ || photo.imageSrc}"
-                                         data-pin-media="${lowResUrl}"
-                                         data-pin-desc="${photo.title.replace(/"/g, '&quot;')}"
-                                         data-pin-url="${productUrl}"
-                                         alt="${photo.title}" 
-                                         class="gallery-image" 
-                                         loading="lazy"
-                                         decoding="async">
-                                </div>
-                            </a>
-                            <button class="pin-it-btn" 
-                                    aria-label="Pin it on Pinterest"
-                                    data-pin-media="${lowResUrl}"
-                                    data-pin-desc="${photo.title.replace(/"/g, '&quot;')}"
-                                    data-pin-url="${productUrl}">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z"/>
-                                </svg>
-                                <span>Pin It</span>
-                            </button>
-                        </div>
+                        <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
+                            <div class="image-wrapper blur-load" style="background-image: url('${photo.imageSrc}');">
+                                <img src="${photo.imageSrc}" 
+                                     data-full="${photo.imageHQ || photo.imageSrc}"
+                                     alt="${photo.title}" 
+                                     class="gallery-image" 
+                                     loading="lazy"
+                                     decoding="async">
+                            </div>
+                        </a>
                     `;
                 }).join('');
                 
@@ -240,47 +202,6 @@
                 }
             });
         }
-        
-        // Pin It button handler - opens Pinterest with low-res image
-        document.addEventListener('click', (e) => {
-            const button = e.target.closest('.pin-it-btn');
-            if (!button) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Get image data from button or from associated gallery item
-            const galleryItem = button.closest('.gallery-item-wrapper');
-            const img = galleryItem?.querySelector('img[data-pin-media]');
-            
-            // Get media URL (low-res from data-pin-media)
-            const media = img?.dataset.pinMedia || button.dataset.pinMedia || null;
-            if (!media) {
-                console.error('❌ No pin media URL found');
-                return;
-            }
-            
-            // Get page URL (product page URL from data-pin-url, or current page)
-            const pageUrl = img?.dataset.pinUrl || button.dataset.pinUrl || window.location.href;
-            
-            // Get description (from data-pin-desc or image alt or document title)
-            const desc = img?.dataset.pinDesc || button.dataset.pinDesc || img?.alt || document.title;
-            
-            // Encode all parameters
-            const page = encodeURIComponent(pageUrl);
-            const mediaEncoded = encodeURIComponent(media);
-            const descEncoded = encodeURIComponent(desc);
-            
-            // Construct Pinterest URL with explicit media parameter
-            const pinUrl = `https://www.pinterest.com/pin/create/button/?url=${page}&media=${mediaEncoded}&description=${descEncoded}`;
-            
-            // Open Pinterest in new window
-            window.open(pinUrl, '_blank', 'noopener,noreferrer');
-            
-            console.log('📌 Pinterest share opened');
-            console.log(`   Media (low-res): ${media}`);
-            console.log(`   Page URL: ${pageUrl}`);
-        });
         
         // Cart controls removed from gallery - users add items from product pages
         

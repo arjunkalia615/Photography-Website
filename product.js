@@ -52,28 +52,20 @@
     function getLoResImagePath(highResPath) {
         if (!highResPath) return highResPath;
         
+        // If already a low-res path, return as is
+        if (highResPath.includes('LowResImages')) {
+            return highResPath;
+        }
+        
         // Extract filename from high-res path
         const filename = highResPath.split('/').pop();
         
-        // Construct low-res path (correct path: Images/LowResImages/)
+        // Construct low-res path (correct folder name: LowResImages, not Low-Res Images)
         const lowResPath = `Images/LowResImages/${filename}`;
         
         console.log(`🔄 Image path conversion: ${highResPath} → ${lowResPath}`);
         
         return lowResPath;
-    }
-    
-    /**
-     * Get absolute HTTPS URL for an image path
-     */
-    function getAbsoluteImageUrl(imagePath) {
-        if (!imagePath) return '';
-        // If already absolute URL, return as-is
-        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-            return imagePath;
-        }
-        // Convert relative path to absolute HTTPS URL
-        return new URL(imagePath, window.location.origin).href;
     }
 
     /**
@@ -114,10 +106,21 @@
     function updateMetaTags(product) {
         const productUrl = window.location.href;
         
-        // For product pages: Use HIGH-RES image for og:image meta tag (as per requirements)
-        // Note: Gallery pages use LOW-RES, but product pages use HIGH-RES
-        const highResPath = product.imageHQ || product.imageSrc;
-        const socialImageUrl = getAbsoluteImageUrl(highResPath);
+        // Use LOW-RES watermarked image for social sharing previews (Pinterest, Twitter, Facebook)
+        // product.imageSrc is already the low-res path from API (Images/LowResImages/...)
+        let lowResPath = product.imageSrc;
+        
+        // If imageSrc is not already low-res, convert it
+        if (!lowResPath.includes('LowResImages')) {
+            lowResPath = getLoResImagePath(product.imageHQ || product.imageSrc);
+        }
+        
+        // Ensure path starts with / for absolute URL construction
+        if (!lowResPath.startsWith('/')) {
+            lowResPath = '/' + lowResPath;
+        }
+        
+        const socialImageUrl = new URL(lowResPath, window.location.origin).href;
         
         const title = `${product.title} - ifeelworld Photography`;
         const description = `High-resolution digital photography print: ${product.title}. Available for instant download at $${ITEM_PRICE.toFixed(2)}.`;
@@ -126,19 +129,13 @@
         document.getElementById('pageTitle').textContent = title;
         document.getElementById('pageDescription').setAttribute('content', description);
 
-        // Open Graph (Facebook, Pinterest) - Use HIGH-RES image for product pages (as per requirements)
+        // Open Graph (Facebook, Pinterest) - Use LOW-RES watermarked image
         document.getElementById('ogTitle').setAttribute('content', title);
         document.getElementById('ogDescription').setAttribute('content', description);
         document.getElementById('ogImage').setAttribute('content', socialImageUrl);
         document.getElementById('ogUrl').setAttribute('content', productUrl);
-        
-        // Pinterest fallback image source - Use HIGH-RES for product pages (as per requirements)
-        const imageSrcLink = document.getElementById('imageSrc');
-        if (imageSrcLink) {
-            imageSrcLink.setAttribute('href', socialImageUrl);
-        }
 
-        // Twitter Card - Use HIGH-RES image for product pages
+        // Twitter Card - Use LOW-RES watermarked image
         document.getElementById('twitterTitle').setAttribute('content', title);
         document.getElementById('twitterDescription').setAttribute('content', description);
         document.getElementById('twitterImage').setAttribute('content', socialImageUrl);
@@ -146,7 +143,8 @@
         // Update document title
         document.title = title;
         
-        console.log('✅ Meta tags updated with HIGH-RES images for product page social sharing');
+        console.log('✅ Meta tags updated with LOW-RES images for social sharing');
+        console.log(`   Image path: ${lowResPath}`);
         console.log(`   Social preview image: ${socialImageUrl}`);
     }
 
@@ -299,25 +297,42 @@
 
     /**
      * Handle Pinterest share
-     * Product pages use HIGH-RES images for Pinterest (as per requirements)
      */
     function handlePinterestShare() {
         if (!currentProduct) return;
 
         const url = encodeURIComponent(window.location.href);
         
-        // Use HIGH-RES image for product page Pinterest preview (as per requirements)
-        const highResPath = currentProduct.imageHQ || currentProduct.imageSrc;
-        const imageUrl = encodeURIComponent(getAbsoluteImageUrl(highResPath));
+        // Use LOW-RES watermarked image for Pinterest preview
+        // currentProduct.imageSrc is already the low-res path from API (Images/LowResImages/...)
+        // Ensure we use the correct path format
+        let lowResPath = currentProduct.imageSrc;
+        
+        // If imageSrc is not already low-res, convert it
+        if (!lowResPath.includes('LowResImages')) {
+            lowResPath = getLoResImagePath(currentProduct.imageHQ || currentProduct.imageSrc);
+        }
+        
+        // Ensure path starts with / for absolute URL construction
+        if (!lowResPath.startsWith('/')) {
+            lowResPath = '/' + lowResPath;
+        }
+        
+        // Construct full URL - ensure proper encoding
+        const imageUrl = new URL(lowResPath, window.location.origin).href;
+        const encodedImageUrl = encodeURIComponent(imageUrl);
         
         const description = encodeURIComponent(`${currentProduct.title} - High-resolution digital photography print from ifeelworld`);
 
-        const pinterestUrl = `https://www.pinterest.com/pin/create/button/?url=${url}&media=${imageUrl}&description=${description}`;
+        const pinterestUrl = `https://www.pinterest.com/pin/create/button/?url=${url}&media=${encodedImageUrl}&description=${description}`;
         
         window.open(pinterestUrl, 'pinterest-share', 'width=750,height=550');
         
-        console.log('📌 Pinterest share opened with HIGH-RES image (product page)');
-        console.log(`   Image: ${decodeURIComponent(imageUrl)}`);
+        console.log('📌 Pinterest share opened with LOW-RES watermarked image');
+        console.log(`   Image path: ${lowResPath}`);
+        console.log(`   Image URL: ${imageUrl}`);
+        console.log(`   Encoded URL: ${encodedImageUrl}`);
+        console.log(`   Full Pinterest URL: ${pinterestUrl}`);
     }
 
     /**
