@@ -47,7 +47,7 @@
     /**
      * Convert high-res image path to low-res watermarked version
      * High-res: Images/High-Quality Photos/[filename].jpg
-     * Low-res: Low-Res Images/[filename].jpg
+     * Low-res: Images/LowResImages/[filename].jpg
      */
     function getLoResImagePath(highResPath) {
         if (!highResPath) return highResPath;
@@ -55,12 +55,25 @@
         // Extract filename from high-res path
         const filename = highResPath.split('/').pop();
         
-        // Construct low-res path
-        const lowResPath = `Low-Res Images/${filename}`;
+        // Construct low-res path (correct path: Images/LowResImages/)
+        const lowResPath = `Images/LowResImages/${filename}`;
         
         console.log(`🔄 Image path conversion: ${highResPath} → ${lowResPath}`);
         
         return lowResPath;
+    }
+    
+    /**
+     * Get absolute HTTPS URL for an image path
+     */
+    function getAbsoluteImageUrl(imagePath) {
+        if (!imagePath) return '';
+        // If already absolute URL, return as-is
+        if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+            return imagePath;
+        }
+        // Convert relative path to absolute HTTPS URL
+        return new URL(imagePath, window.location.origin).href;
     }
 
     /**
@@ -101,9 +114,10 @@
     function updateMetaTags(product) {
         const productUrl = window.location.href;
         
-        // Use LOW-RES watermarked image for social sharing previews (Pinterest, Twitter, Facebook)
-        const lowResPath = getLoResImagePath(product.imageSrc);
-        const socialImageUrl = new URL(lowResPath, window.location.origin).href;
+        // For product pages: Use HIGH-RES image for og:image meta tag (as per requirements)
+        // Note: Gallery pages use LOW-RES, but product pages use HIGH-RES
+        const highResPath = product.imageHQ || product.imageSrc;
+        const socialImageUrl = getAbsoluteImageUrl(highResPath);
         
         const title = `${product.title} - ifeelworld Photography`;
         const description = `High-resolution digital photography print: ${product.title}. Available for instant download at $${ITEM_PRICE.toFixed(2)}.`;
@@ -112,13 +126,19 @@
         document.getElementById('pageTitle').textContent = title;
         document.getElementById('pageDescription').setAttribute('content', description);
 
-        // Open Graph (Facebook, Pinterest) - Use LOW-RES watermarked image
+        // Open Graph (Facebook, Pinterest) - Use HIGH-RES image for product pages (as per requirements)
         document.getElementById('ogTitle').setAttribute('content', title);
         document.getElementById('ogDescription').setAttribute('content', description);
         document.getElementById('ogImage').setAttribute('content', socialImageUrl);
         document.getElementById('ogUrl').setAttribute('content', productUrl);
+        
+        // Pinterest fallback image source - Use HIGH-RES for product pages (as per requirements)
+        const imageSrcLink = document.getElementById('imageSrc');
+        if (imageSrcLink) {
+            imageSrcLink.setAttribute('href', socialImageUrl);
+        }
 
-        // Twitter Card - Use LOW-RES watermarked image
+        // Twitter Card - Use HIGH-RES image for product pages
         document.getElementById('twitterTitle').setAttribute('content', title);
         document.getElementById('twitterDescription').setAttribute('content', description);
         document.getElementById('twitterImage').setAttribute('content', socialImageUrl);
@@ -126,7 +146,7 @@
         // Update document title
         document.title = title;
         
-        console.log('✅ Meta tags updated with LOW-RES images for social sharing');
+        console.log('✅ Meta tags updated with HIGH-RES images for product page social sharing');
         console.log(`   Social preview image: ${socialImageUrl}`);
     }
 
@@ -279,15 +299,16 @@
 
     /**
      * Handle Pinterest share
+     * Product pages use HIGH-RES images for Pinterest (as per requirements)
      */
     function handlePinterestShare() {
         if (!currentProduct) return;
 
         const url = encodeURIComponent(window.location.href);
         
-        // Use LOW-RES watermarked image for Pinterest preview
-        const lowResPath = getLoResImagePath(currentProduct.imageSrc);
-        const imageUrl = encodeURIComponent(new URL(lowResPath, window.location.origin).href);
+        // Use HIGH-RES image for product page Pinterest preview (as per requirements)
+        const highResPath = currentProduct.imageHQ || currentProduct.imageSrc;
+        const imageUrl = encodeURIComponent(getAbsoluteImageUrl(highResPath));
         
         const description = encodeURIComponent(`${currentProduct.title} - High-resolution digital photography print from ifeelworld`);
 
@@ -295,7 +316,7 @@
         
         window.open(pinterestUrl, 'pinterest-share', 'width=750,height=550');
         
-        console.log('📌 Pinterest share opened with LOW-RES watermarked image');
+        console.log('📌 Pinterest share opened with HIGH-RES image (product page)');
         console.log(`   Image: ${decodeURIComponent(imageUrl)}`);
     }
 

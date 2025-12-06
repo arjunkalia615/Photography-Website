@@ -4983,11 +4983,18 @@ body.lightbox-open {
     box-sizing: border-box;
 }
 
-/* Each gallery item adapts to column flow */
-.gallery-item {
+/* Gallery item wrapper - contains both the link and Pin It button */
+.gallery-item-wrapper {
     display: inline-block;          /* required for CSS columns */
     width: 100%;
     margin: 0 0 18px;               /* vertical gap between items */
+    position: relative;
+}
+
+/* Each gallery item adapts to column flow */
+.gallery-item {
+    display: block;
+    width: 100%;
     text-decoration: none;
     color: inherit;
     overflow: hidden;
@@ -5064,6 +5071,55 @@ body.lightbox-open {
     z-index: 2;
 }
 
+/* Pin It button - positioned on gallery items */
+.pin-it-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #E60023;
+    border: 1px solid rgba(230, 0, 35, 0.2);
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(8px);
+    pointer-events: auto;
+}
+
+.pin-it-btn:hover {
+    background: #E60023;
+    color: white;
+    border-color: #E60023;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(230, 0, 35, 0.3);
+    opacity: 1 !important;
+}
+
+.pin-it-btn:active {
+    transform: translateY(0);
+}
+
+.pin-it-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.gallery-item-wrapper:hover .pin-it-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* Responsive columns */
 @media (max-width: 1100px) {
     .gallery { 
@@ -5071,7 +5127,7 @@ body.lightbox-open {
         column-gap: 14px; 
         padding: 16px; 
     }
-    .gallery-item {
+    .gallery-item-wrapper {
         margin: 0 0 14px;
     }
 }
