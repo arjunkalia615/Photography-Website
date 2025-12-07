@@ -29,16 +29,39 @@ const { getPhotoTitle } = require('./photo-titles');
 
 // Load LQIP data if available
 let LQIP_DATA = {};
+let LQIP_LOAD_ERROR = null;
 try {
     const lqipPath = path.join(__dirname, 'lqip-data.js');
     if (fs.existsSync(lqipPath)) {
-        LQIP_DATA = require('./lqip-data');
-        console.log(`✅ Loaded LQIP data: ${Object.keys(LQIP_DATA).length} placeholders`);
+        try {
+            LQIP_DATA = require('./lqip-data');
+            console.log(`✅ Loaded LQIP data: ${Object.keys(LQIP_DATA).length} placeholders`);
+        } catch (requireError) {
+            // If require fails, try reading as JSON instead
+            console.warn('⚠️ require() failed for lqip-data.js, trying alternative method:', requireError.message);
+            try {
+                const lqipContent = fs.readFileSync(lqipPath, 'utf8');
+                // Extract the JSON object from the file
+                const jsonMatch = lqipContent.match(/const LQIP_DATA = ({[\s\S]*});/);
+                if (jsonMatch) {
+                    LQIP_DATA = JSON.parse(jsonMatch[1]);
+                    console.log(`✅ Loaded LQIP data (alternative method): ${Object.keys(LQIP_DATA).length} placeholders`);
+                } else {
+                    throw new Error('Could not parse LQIP data from file');
+                }
+            } catch (parseError) {
+                LQIP_LOAD_ERROR = parseError.message;
+                console.error('❌ Failed to load LQIP data:', parseError.message);
+                LQIP_DATA = {};
+            }
+        }
     } else {
         console.log('⚠️ LQIP data not found. Run generate-lqip.js to generate placeholders.');
     }
 } catch (error) {
-    console.warn('⚠️ Could not load LQIP data:', error.message);
+    LQIP_LOAD_ERROR = error.message;
+    console.error('❌ Error loading LQIP data:', error.message);
+    console.error('Stack:', error.stack);
     LQIP_DATA = {};
 }
 
@@ -1190,6 +1213,10 @@ async function handleGetPhotos(req, res) {
     }
 
     try {
+        // Log LQIP status for debugging
+        if (LQIP_LOAD_ERROR) {
+            console.warn('⚠️ LQIP data had loading errors, continuing without placeholders:', LQIP_LOAD_ERROR);
+        }
         // Try multiple folder name variations
         const possibleFolders = [
             path.join(process.cwd(), 'Images', 'High-Quality Photos'), // Correct spelling
@@ -1252,16 +1279,6 @@ async function handleGetPhotos(req, res) {
 
                 // Get LQIP placeholder if available
                 const placeholder = LQIP_DATA[lowResPath] || null;
-                
-                // Debug: Log first few photos to verify placeholder lookup
-                if (photos.length < 3) {
-                    console.log(`🔍 LQIP lookup for "${file}":`, {
-                        lowResPath: lowResPath,
-                        found: !!placeholder,
-                        placeholderLength: placeholder ? placeholder.length : 0,
-                        availableKeys: Object.keys(LQIP_DATA).length
-                    });
-                }
 
                 return {
                     productId: productId || `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -1279,6 +1296,10 @@ async function handleGetPhotos(req, res) {
 
         console.log(`✅ Found ${photos.length} photos in high_quality_photos folder`);
         
+        // Count photos with placeholders
+        const photosWithPlaceholders = photos.filter(p => p.placeholder).length;
+        console.log(`📊 LQIP Status: ${photosWithPlaceholders}/${photos.length} photos have placeholders`);
+        
         return res.status(200).json({
             success: true,
             photos: photos,
@@ -1286,9 +1307,14 @@ async function handleGetPhotos(req, res) {
         });
     } catch (error) {
         console.error('❌ Error getting photos:', error);
+        console.error('Error stack:', error.stack);
         return res.status(500).json({
             error: 'Failed to get photos',
-            message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred while fetching photos.'
+            message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred while fetching photos.',
+            details: process.env.NODE_ENV === 'development' ? {
+                stack: error.stack,
+                lqipError: LQIP_LOAD_ERROR
+            } : undefined
         });
     }
 }
