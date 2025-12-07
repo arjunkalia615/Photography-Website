@@ -143,6 +143,26 @@
         // Update document title
         document.title = title;
         
+        // Load image to get dimensions for proper aspect ratio in Pinterest preview
+        const img = new Image();
+        img.onload = function() {
+            const width = this.naturalWidth;
+            const height = this.naturalHeight;
+            
+            // Set image dimensions for Pinterest to respect aspect ratio
+            const ogImageWidth = document.getElementById('ogImageWidth');
+            const ogImageHeight = document.getElementById('ogImageHeight');
+            
+            if (ogImageWidth) ogImageWidth.setAttribute('content', width.toString());
+            if (ogImageHeight) ogImageHeight.setAttribute('content', height.toString());
+            
+            console.log(`✅ Image dimensions set: ${width}x${height} (aspect ratio: ${(width/height).toFixed(2)})`);
+        };
+        img.onerror = function() {
+            console.warn('⚠️ Could not load image to get dimensions, Pinterest may default to square crop');
+        };
+        img.src = socialImageUrl;
+        
         console.log('✅ Meta tags updated with LOW-RES images for social sharing');
         console.log(`   Image path: ${lowResPath}`);
         console.log(`   Social preview image: ${socialImageUrl}`);
@@ -324,15 +344,19 @@
         
         const description = encodeURIComponent(`${currentProduct.title} - High-resolution digital photography print from ifeelworld`);
 
+        // Pinterest URL with proper parameters to maintain aspect ratio
+        // Using the media parameter ensures Pinterest uses the full image with its natural aspect ratio
         const pinterestUrl = `https://www.pinterest.com/pin/create/button/?url=${url}&media=${encodedImageUrl}&description=${description}`;
         
-        window.open(pinterestUrl, 'pinterest-share', 'width=750,height=550');
+        // Open Pinterest in a larger window to better show the preview
+        window.open(pinterestUrl, 'pinterest-share', 'width=750,height=600');
         
         console.log('📌 Pinterest share opened with LOW-RES watermarked image');
         console.log(`   Image path: ${lowResPath}`);
         console.log(`   Image URL: ${imageUrl}`);
         console.log(`   Encoded URL: ${encodedImageUrl}`);
         console.log(`   Full Pinterest URL: ${pinterestUrl}`);
+        console.log(`   Note: Pinterest will use the image's natural aspect ratio based on og:image dimensions`);
     }
 
     /**
