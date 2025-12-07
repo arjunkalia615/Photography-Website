@@ -127,80 +127,46 @@
             });
         }
         
-        // Batch loading configuration
-        const BATCH_SIZE = 20; // Load 20 photos at a time
-        let currentOffset = 0;
-        let totalPhotos = 0;
-        let allPhotosLoaded = false;
-        
-        // Load photos dynamically from High-Quality Photos folder (in batches)
-        async function loadPhotos(offset = 0, isInitial = false) {
+        // Load photos dynamically from High-Quality Photos folder
+        async function loadPhotos() {
             const photoGrid = document.getElementById('photoGrid');
             const loadingPhotos = document.getElementById('loadingPhotos');
-            const loadMoreBtn = document.getElementById('loadMoreBtn');
             
-            // Show loading message only on initial load
-            if (isInitial) {
-                // Remove old items first
-                removeOldPhotoItems();
-                currentOffset = 0;
-                allPhotosLoaded = false;
-            }
-            
-            // Show loading indicator for subsequent batches
-            if (!isInitial && loadMoreBtn) {
-                loadMoreBtn.disabled = true;
-                loadMoreBtn.textContent = 'Loading...';
-            }
+            // Remove old items first
+            removeOldPhotoItems();
             
             try {
-                const response = await fetch(`/api/functions?action=getPhotos&limit=${BATCH_SIZE}&offset=${offset}`);
+                const response = await fetch('/api/functions?action=getPhotos');
                 if (!response.ok) {
                     throw new Error(`Failed to load photos: ${response.status}`);
                 }
                 
                 const data = await response.json();
                 if (!data.success || !data.photos || data.photos.length === 0) {
-                    if (isInitial) {
-                        loadingPhotos.innerHTML = '<p>No photos available at this time.</p>';
-                    }
-                    allPhotosLoaded = true;
-                    if (loadMoreBtn) {
-                        loadMoreBtn.style.display = 'none';
-                    }
+                    loadingPhotos.innerHTML = '<p>No photos available at this time.</p>';
                     return;
                 }
                 
-                // Update totals
-                totalPhotos = data.total || data.photos.length;
-                currentOffset = offset + data.photos.length;
-                allPhotosLoaded = !data.hasMore || data.photos.length < BATCH_SIZE;
-                
-                // Remove loading message on initial load
-                if (isInitial && loadingPhotos) {
-                    loadingPhotos.remove();
-                }
+                // Remove loading message
+                loadingPhotos.remove();
                 
                 // Generate gallery items
-                // First row (4 images) gets priority loading and preloading (only on initial load)
+                // First row (4 images) gets priority loading and preloading
                 const photosPerRow = 4;
-                const isFirstBatch = offset === 0;
                 
-                // Preload first row images for instant display (only on initial load)
-                if (isFirstBatch) {
-                    const firstRowPhotos = data.photos.slice(0, photosPerRow);
-                    firstRowPhotos.forEach(photo => {
-                        const link = document.createElement('link');
-                        link.rel = 'preload';
-                        link.as = 'image';
-                        link.href = photo.imageSrc;
-                        link.fetchPriority = 'high';
-                        document.head.appendChild(link);
-                    });
-                }
+                // Preload first row images for instant display
+                const firstRowPhotos = data.photos.slice(0, photosPerRow);
+                firstRowPhotos.forEach(photo => {
+                    const link = document.createElement('link');
+                    link.rel = 'preload';
+                    link.as = 'image';
+                    link.href = photo.imageSrc;
+                    link.fetchPriority = 'high';
+                    document.head.appendChild(link);
+                });
                 
                 const photosHTML = data.photos.map((photo, index) => {
-                    const isFirstRow = isFirstBatch && index < photosPerRow;
+                    const isFirstRow = index < photosPerRow;
                     
                     // Use low-res image as blurred placeholder
                     const placeholderStyle = `background-image: url('${photo.imageSrc}'); background-size: cover; background-position: center; filter: blur(20px); transform: scale(1.1);`;
@@ -223,13 +189,10 @@
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                // Initialize blur-up loading for new images
+                // Initialize optimized blur-up loading
                 initBlurUpLoading();
                 
-                // Update or create Load More button
-                updateLoadMoreButton();
-                
-                console.log(`✅ Loaded ${data.photos.length} photos (${currentOffset}/${totalPhotos} total)`);
+                console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
             } catch (error) {
                 console.error('❌ Error loading photos:', error);
                 console.error('Error details:', {
@@ -245,7 +208,7 @@
             }
         }
         
-        // Optimized LQIP blur-up loading with instant display for cached images
+        // Blur-up loading with smooth placeholder-to-sharp transition
         function initBlurUpLoading() {
             const imageWrappers = document.querySelectorAll('.image-wrapper.blur-load');
             

@@ -5010,62 +5010,24 @@ body.lightbox-open {
     border-radius: 8px;
 }
 
-/* Blurred placeholder background - shows instantly */
+/* Blurred placeholder background */
 .image-wrapper.blur-load {
     background-size: cover;
     background-position: center;
-    background-repeat: no-repeat;
-    position: relative;
-    min-height: 200px; /* Prevent layout shift */
     filter: blur(20px);
     transform: scale(1.05);
     transition: filter 800ms cubic-bezier(0.19, 1, 0.22, 1),
                 transform 800ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* When image loaded - hide placeholder background */
+/* When image loaded - remove blur and scale */
 .image-wrapper.blur-load.loaded {
-    background-image: none !important;
     filter: blur(0);
     transform: scale(1);
+    background-image: none !important;
 }
 
-/* Load More Button */
-.load-more-btn {
-    display: block;
-    margin: 40px auto;
-    padding: 16px 32px;
-    background: var(--color-bg-primary);
-    color: var(--color-text-primary);
-    border: 2px solid var(--color-text-primary);
-    border-radius: 8px;
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-medium);
-    font-family: var(--font-body);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    max-width: 300px;
-    text-align: center;
-}
-
-.load-more-btn:hover:not(:disabled) {
-    background: var(--color-text-primary);
-    color: var(--color-bg-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.load-more-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.load-more-btn:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-/* Gallery image - overlays on placeholder */
+/* Gallery image - overlays on blurred placeholder */
 .gallery-item .gallery-image {
     width: 100%;
     height: auto;

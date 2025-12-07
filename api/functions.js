@@ -27,7 +27,7 @@ const db = require('./db');
 const IMAGE_MAPPING = require('./image-mapping');
 const { getPhotoTitle } = require('./photo-titles');
 
-// LQIP functionality removed to reduce serverless function size
+// LQIP functionality removed - not needed
 
 // Helper: Get action from query or body
 function getAction(req) {
@@ -1177,7 +1177,6 @@ async function handleGetPhotos(req, res) {
     }
 
     try {
-        // Load photos from folder
         // Try multiple folder name variations
         const possibleFolders = [
             path.join(process.cwd(), 'Images', 'High-Quality Photos'), // Correct spelling
@@ -1226,56 +1225,7 @@ async function handleGetPhotos(req, res) {
                 const ext = path.extname(file);
                 const baseFileName = path.basename(file, ext);
                 const normalizedFileName = baseFileName + ext.toLowerCase();
-                
-                // Try to find matching low-res file (handle name variations)
-                // First try exact match with normalized extension
-                let lowResPath = `Images/LowResImages/${normalizedFileName}`;
-                let lowResFilePath = path.join(process.cwd(), lowResPath);
-                
-                // If exact match doesn't exist, try variations
-                if (!fs.existsSync(lowResFilePath)) {
-                    // Try with original extension case
-                    const altPath1 = `Images/LowResImages/${baseFileName}${ext}`;
-                    const altPath1Full = path.join(process.cwd(), altPath1);
-                    if (fs.existsSync(altPath1Full)) {
-                        lowResPath = altPath1;
-                    } else {
-                        // Try common name variations (e.g., "Sakura" vs "White Sakura", 
-                        // "BAPS Shri Swaminarayan Mandir and Cultural Precinct" vs "BAPS Shri Swaminarayan Mandir")
-                        const lowResFolder = path.join(process.cwd(), 'Images', 'LowResImages');
-                        if (fs.existsSync(lowResFolder)) {
-                            const lowResFiles = fs.readdirSync(lowResFolder);
-                            // Find file that matches or contains the base filename
-                            const match = lowResFiles.find(lrFile => {
-                                const lrBase = path.basename(lrFile, path.extname(lrFile));
-                                const lrBaseLower = lrBase.toLowerCase();
-                                const baseLower = baseFileName.toLowerCase();
-                                
-                                // Exact match
-                                if (lrBaseLower === baseLower) return true;
-                                // Low-res contains high-res name (e.g., "White Sakura" contains "Sakura")
-                                if (lrBaseLower.includes(baseLower)) return true;
-                                // High-res contains low-res name (e.g., "BAPS...and Cultural Precinct" contains "BAPS...Mandir")
-                                if (baseLower.includes(lrBaseLower)) return true;
-                                // Check if they share significant words (for complex names)
-                                const baseWords = baseLower.split(/\s+/).filter(w => w.length > 3);
-                                const lrWords = lrBaseLower.split(/\s+/).filter(w => w.length > 3);
-                                if (baseWords.length > 0 && lrWords.length > 0) {
-                                    const sharedWords = baseWords.filter(w => lrWords.includes(w));
-                                    if (sharedWords.length >= Math.min(baseWords.length, lrWords.length) * 0.7) {
-                                        return true; // 70% word match
-                                    }
-                                }
-                                return false;
-                            });
-                            if (match) {
-                                lowResPath = `Images/LowResImages/${match}`;
-                            } else {
-                                console.warn(`⚠️ Could not find matching low-res file for: ${file}`);
-                            }
-                        }
-                    }
-                }
+                const lowResPath = `Images/LowResImages/${normalizedFileName}`;
                 
                 const baseName = path.basename(file, ext);
                 
@@ -1302,23 +1252,10 @@ async function handleGetPhotos(req, res) {
 
         console.log(`✅ Found ${photos.length} photos in high_quality_photos folder`);
         
-        // Support pagination with limit and offset
-        const limit = parseInt(req.query.limit) || photos.length; // Default: all photos
-        const offset = parseInt(req.query.offset) || 0;
-        const total = photos.length;
-        
-        // Get paginated subset
-        const paginatedPhotos = photos.slice(offset, offset + limit);
-        const hasMore = offset + limit < total;
-        
         return res.status(200).json({
             success: true,
-            photos: paginatedPhotos,
-            count: paginatedPhotos.length,
-            total: total,
-            offset: offset,
-            limit: limit,
-            hasMore: hasMore
+            photos: photos,
+            count: photos.length
         });
     } catch (error) {
         console.error('❌ Error getting photos:', error);
