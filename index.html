@@ -136,23 +136,43 @@
             removeOldPhotoItems();
             
             try {
-                const response = await fetch('/api/functions?action=getPhotos');
-                if (!response.ok) {
-                    throw new Error(`Failed to load photos: ${response.status}`);
+                // Load photos and LQIP data in parallel
+                const [photosResponse, lqipResponse] = await Promise.all([
+                    fetch('/api/functions?action=getPhotos'),
+                    fetch('/api/lqip')
+                ]);
+                
+                if (!photosResponse.ok) {
+                    throw new Error(`Failed to load photos: ${photosResponse.status}`);
                 }
                 
-                const data = await response.json();
+                const data = await photosResponse.json();
                 if (!data.success || !data.photos || data.photos.length === 0) {
                     loadingPhotos.innerHTML = '<p>No photos available at this time.</p>';
                     return;
                 }
                 
-                // Debug: Check if placeholders are in the response
+                // Load LQIP data separately
+                let lqipData = {};
+                try {
+                    if (lqipResponse.ok) {
+                        const lqipResult = await lqipResponse.json();
+                        if (lqipResult.success && lqipResult.data) {
+                            lqipData = lqipResult.data;
+                            console.log(`✅ Loaded LQIP data: ${Object.keys(lqipData).length} placeholders`);
+                        }
+                    }
+                } catch (lqipError) {
+                    console.warn('⚠️ Could not load LQIP data:', lqipError);
+                }
+                
+                // Merge LQIP data with photos
+                data.photos.forEach(photo => {
+                    photo.placeholder = lqipData[photo.imageSrc] || null;
+                });
+                
                 const photosWithPlaceholders = data.photos.filter(p => p.placeholder).length;
                 console.log(`📊 LQIP Status: ${photosWithPlaceholders}/${data.photos.length} photos have placeholders`);
-                if (photosWithPlaceholders === 0) {
-                    console.warn('⚠️ No LQIP placeholders found in API response. Check if lqip-data.js is loaded correctly.');
-                }
                 
                 // Remove loading message
                 loadingPhotos.remove();
