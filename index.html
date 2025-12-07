@@ -143,16 +143,27 @@
                 // Remove loading message
                 loadingPhotos.remove();
                 
-                // Generate gallery items with blur-up placeholders
+                // Generate gallery items with LQIP placeholders
+                // First row (4 images) gets priority loading
+                const photosPerRow = 4;
                 const photosHTML = data.photos.map((photo, index) => {
+                    const isFirstRow = index < photosPerRow;
+                    const hasPlaceholder = photo.placeholder;
+                    
+                    // Use LQIP placeholder if available, otherwise use low-res as fallback
+                    const placeholderStyle = hasPlaceholder 
+                        ? `background-image: url('${photo.placeholder}');`
+                        : `background-image: url('${photo.imageSrc}'); filter: blur(20px); transform: scale(1.1);`;
+                    
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
-                            <div class="image-wrapper blur-load" style="background-image: url('${photo.imageSrc}');">
+                            <div class="image-wrapper blur-load lqip-wrapper" style="${placeholderStyle}">
                                 <img src="${photo.imageSrc}" 
                                      data-full="${photo.imageHQ || photo.imageSrc}"
                                      alt="${photo.title}" 
                                      class="gallery-image" 
-                                     loading="lazy"
+                                     loading="${isFirstRow ? 'eager' : 'lazy'}"
+                                     fetchpriority="${isFirstRow ? 'high' : 'auto'}"
                                      decoding="async">
                             </div>
                         </a>
@@ -171,7 +182,7 @@
             }
         }
         
-        // Blur-up loading with smooth placeholder-to-sharp transition
+        // LQIP blur-up loading with smooth placeholder-to-sharp transition
         function initBlurUpLoading() {
             const imageWrappers = document.querySelectorAll('.image-wrapper.blur-load');
             
@@ -180,24 +191,37 @@
                 
                 if (!img) return;
                 
+                // LQIP placeholder is shown instantly via CSS background-image
+                // Real image fades in when loaded
+                
                 // Check if image is already loaded (from browser cache)
                 if (img.complete && img.naturalHeight !== 0) {
                     // Image is cached - transition immediately
                     setTimeout(() => {
                         wrapper.classList.add('loaded');
-                    }, 100);
+                        img.style.opacity = '1';
+                    }, 50);
                 } else {
+                    // Start with image hidden (LQIP placeholder visible)
+                    img.style.opacity = '0';
+                    img.style.transition = 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                    
                     // Image is loading - wait for load event
                     img.addEventListener('load', function() {
-                        // Smooth transition after image loads
-                        setTimeout(() => {
-                            wrapper.classList.add('loaded');
-                        }, 150);
+                        // Smooth fade-in transition after image loads
+                        requestAnimationFrame(() => {
+                            img.style.opacity = '1';
+                            // Hide placeholder background after image is visible
+                            setTimeout(() => {
+                                wrapper.classList.add('loaded');
+                            }, 200);
+                        });
                     }, { once: true });
                     
                     // Handle error case
                     img.addEventListener('error', function() {
                         wrapper.classList.add('loaded');
+                        img.style.opacity = '1';
                     }, { once: true });
                 }
             });

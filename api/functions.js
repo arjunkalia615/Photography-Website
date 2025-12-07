@@ -27,6 +27,27 @@ const db = require('./db');
 const IMAGE_MAPPING = require('./image-mapping');
 const { getPhotoTitle } = require('./photo-titles');
 
+// Load LQIP data if available
+let LQIP_DATA = {};
+try {
+    const lqipPath = path.join(__dirname, 'lqip-data.js');
+    if (fs.existsSync(lqipPath)) {
+        LQIP_DATA = require('./lqip-data');
+        console.log(`✅ Loaded LQIP data: ${Object.keys(LQIP_DATA).length} placeholders`);
+    }
+} catch (error) {
+    console.warn('⚠️ Could not load LQIP data:', error.message);
+    LQIP_DATA = {};
+}
+        LQIP_DATA = JSON.parse(fs.readFileSync(lqipPath, 'utf8'));
+        console.log(`✅ Loaded ${Object.keys(LQIP_DATA).length} LQIP placeholders`);
+    } else {
+        console.log('⚠️ LQIP data not found. Run generate-lqip.js to generate placeholders.');
+    }
+} catch (error) {
+    console.warn('⚠️ Could not load LQIP data:', error.message);
+}
+
 // Helper: Get action from query or body
 function getAction(req) {
     // Try query parameter first
@@ -1235,11 +1256,15 @@ async function handleGetPhotos(req, res) {
                 // Get descriptive title from mapping or generate from filename
                 const title = getPhotoTitle(file, baseName);
 
+                // Get LQIP placeholder if available
+                const placeholder = LQIP_DATA[lowResPath] || null;
+
                 return {
                     productId: productId || `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     imageSrc: lowResPath,              // Low-res for gallery thumbnails
                     imageThumb: lowResPath,            // Low-res thumbnail
                     imageHQ: highQualityPath,          // High-quality for product page
+                    placeholder: placeholder,         // LQIP base64 data URL (2-5 KB)
                     title: title,
                     filename: file,
                     category: 'Photography' // Default category, can be enhanced later

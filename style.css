@@ -5006,32 +5006,44 @@ body.lightbox-open {
     border-radius: 8px;
 }
 
-/* Blurred placeholder background */
-.image-wrapper.blur-load {
+/* LQIP placeholder background - shows instantly (2-5 KB base64) */
+.image-wrapper.blur-load.lqip-wrapper {
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    min-height: 200px; /* Prevent layout shift */
+}
+
+/* Blurred placeholder background (fallback for images without LQIP) */
+.image-wrapper.blur-load:not(.lqip-wrapper) {
     filter: blur(20px);
     transform: scale(1.05);
     transition: filter 800ms cubic-bezier(0.19, 1, 0.22, 1),
                 transform 800ms cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* When image loaded - remove blur and scale */
+/* When image loaded - hide placeholder background */
 .image-wrapper.blur-load.loaded {
+    background-image: none !important;
+}
+
+.image-wrapper.blur-load.loaded:not(.lqip-wrapper) {
     filter: blur(0);
     transform: scale(1);
 }
 
-/* Gallery image - overlays on placeholder */
+/* Gallery image - overlays on LQIP placeholder */
 .gallery-item .gallery-image {
     width: 100%;
     height: auto;
     display: block;
     border-radius: 8px;
     transform-origin: center center;
-    opacity: 0;
-    /* Very slow, buttery-smooth fade-in - PREMIUM */
-    transition: opacity 900ms cubic-bezier(0.19, 1, 0.22, 1),
+    position: relative;
+    z-index: 1;
+    /* Smooth fade-in transition */
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1),
                 transform 1000ms cubic-bezier(0.19, 1, 0.22, 1),
                 filter 800ms cubic-bezier(0.19, 1, 0.22, 1);
     -webkit-user-drag: none;
@@ -5039,9 +5051,14 @@ body.lightbox-open {
     /* NO aspect-ratio, NO object-fit - pure natural sizing */
 }
 
+/* Image starts hidden, fades in when loaded */
+.gallery-item .gallery-image:not([style*="opacity"]) {
+    opacity: 0;
+}
+
 /* When wrapper is loaded, show the actual image */
 .image-wrapper.loaded .gallery-image {
-    opacity: 1;
+    opacity: 1 !important;
 }
 
 /* Ultra-premium hover animation - very slow & smooth */
