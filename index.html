@@ -150,8 +150,20 @@
                 loadingPhotos.remove();
                 
                 // Generate gallery items with LQIP placeholders
-                // First row (4 images) gets priority loading
+                // First row (4 images) gets priority loading and preloading
                 const photosPerRow = 4;
+                
+                // Preload first row images for instant display
+                const firstRowPhotos = data.photos.slice(0, photosPerRow);
+                firstRowPhotos.forEach(photo => {
+                    const link = document.createElement('link');
+                    link.rel = 'preload';
+                    link.as = 'image';
+                    link.href = photo.imageSrc;
+                    link.fetchPriority = 'high';
+                    document.head.appendChild(link);
+                });
+                
                 const photosHTML = data.photos.map((photo, index) => {
                     const isFirstRow = index < photosPerRow;
                     const hasPlaceholder = photo.placeholder;
@@ -160,15 +172,6 @@
                     const placeholderStyle = hasPlaceholder 
                         ? `background-image: url('${photo.placeholder}'); background-size: cover; background-position: center;`
                         : `background-image: url('${photo.imageSrc}'); background-size: cover; background-position: center; filter: blur(20px); transform: scale(1.1);`;
-                    
-                    // Debug: Log first photo to see if placeholder exists
-                    if (index === 0) {
-                        console.log('📸 First photo LQIP check:', {
-                            hasPlaceholder: hasPlaceholder,
-                            placeholderLength: photo.placeholder ? photo.placeholder.length : 0,
-                            placeholderPreview: photo.placeholder ? photo.placeholder.substring(0, 50) + '...' : 'none'
-                        });
-                    }
                     
                     return `
                         <a class="gallery-item" href="product.html?id=${photo.productId}" aria-label="Open photo: ${photo.title}">
@@ -188,7 +191,7 @@
                 
                 photoGrid.insertAdjacentHTML('beforeend', photosHTML);
                 
-                // Initialize blur-up loading
+                // Initialize optimized blur-up loading
                 initBlurUpLoading();
                 
                 console.log(`✅ Loaded ${data.photos.length} photos in masonry layout`);
@@ -207,7 +210,7 @@
             }
         }
         
-        // LQIP blur-up loading with smooth placeholder-to-sharp transition
+        // Optimized LQIP blur-up loading with instant display for cached images
         function initBlurUpLoading() {
             const imageWrappers = document.querySelectorAll('.image-wrapper.blur-load');
             
@@ -221,30 +224,39 @@
                 
                 // Always start with image hidden to show placeholder first
                 img.style.opacity = '0';
-                img.style.transition = 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                img.style.transition = 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
                 
-                // Check if image is already loaded (from browser cache)
+                // Check if image is already loaded (from browser cache or preload)
                 if (img.complete && img.naturalHeight !== 0) {
-                    // Image is cached - show placeholder briefly, then fade in
-                    // This ensures users see the LQIP effect even with cached images
-                    setTimeout(() => {
+                    // Image is cached/preloaded - show immediately for instant display
+                    requestAnimationFrame(() => {
                         img.style.opacity = '1';
-                        setTimeout(() => {
-                            wrapper.classList.add('loaded');
-                        }, 200);
-                    }, 100); // Brief delay to show placeholder
+                        wrapper.classList.add('loaded');
+                    });
                 } else {
-                    // Image is loading - wait for load event
-                    img.addEventListener('load', function() {
-                        // Smooth fade-in transition after image loads
+                    // Image is loading - wait for load event with optimized handling
+                    const handleLoad = () => {
                         requestAnimationFrame(() => {
                             img.style.opacity = '1';
                             // Hide placeholder background after image is visible
                             setTimeout(() => {
                                 wrapper.classList.add('loaded');
-                            }, 200);
+                            }, 150);
                         });
-                    }, { once: true });
+                    };
+                    
+                    // Use both load event and complete check for faster response
+                    if (img.complete) {
+                        handleLoad();
+                    } else {
+                        img.addEventListener('load', handleLoad, { once: true });
+                        // Fallback: check if image loaded while we were setting up listener
+                        setTimeout(() => {
+                            if (img.complete && img.naturalHeight !== 0) {
+                                handleLoad();
+                            }
+                        }, 50);
+                    }
                     
                     // Handle error case
                     img.addEventListener('error', function() {

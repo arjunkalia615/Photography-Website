@@ -5042,12 +5042,15 @@ body.lightbox-open {
     transform-origin: center center;
     position: relative;
     z-index: 1;
-    /* Smooth fade-in transition */
-    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1),
+    /* Faster, smoother fade-in transition */
+    transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1),
                 transform 1000ms cubic-bezier(0.19, 1, 0.22, 1),
                 filter 800ms cubic-bezier(0.19, 1, 0.22, 1);
     -webkit-user-drag: none;
     pointer-events: none;
+    /* Performance optimizations */
+    will-change: opacity;
+    backface-visibility: hidden;
     /* NO aspect-ratio, NO object-fit - pure natural sizing */
 }
 
