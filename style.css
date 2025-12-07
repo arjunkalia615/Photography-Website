@@ -5030,6 +5030,41 @@ body.lightbox-open {
     transform: scale(1);
 }
 
+/* Load More Button */
+.load-more-btn {
+    display: block;
+    margin: 40px auto;
+    padding: 16px 32px;
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    border: 2px solid var(--color-text-primary);
+    border-radius: 8px;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    max-width: 300px;
+    text-align: center;
+}
+
+.load-more-btn:hover:not(:disabled) {
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.load-more-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.load-more-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
 /* Gallery image - overlays on placeholder */
 .gallery-item .gallery-image {
     width: 100%;
