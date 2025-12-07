@@ -144,7 +144,9 @@
         document.title = title;
         
         // Load image to get dimensions for proper aspect ratio in Pinterest preview
+        // This is critical for Pinterest to understand the image's natural aspect ratio
         const img = new Image();
+        img.crossOrigin = 'anonymous'; // Allow CORS if needed
         img.onload = function() {
             const width = this.naturalWidth;
             const height = this.naturalHeight;
@@ -157,9 +159,11 @@
             if (ogImageHeight) ogImageHeight.setAttribute('content', height.toString());
             
             console.log(`✅ Image dimensions set: ${width}x${height} (aspect ratio: ${(width/height).toFixed(2)})`);
+            console.log(`   Pinterest will use these dimensions to maintain aspect ratio in the actual pin`);
         };
         img.onerror = function() {
             console.warn('⚠️ Could not load image to get dimensions, Pinterest may default to square crop');
+            console.warn(`   Image URL that failed: ${socialImageUrl}`);
         };
         img.src = socialImageUrl;
         
@@ -317,11 +321,12 @@
 
     /**
      * Handle Pinterest share
+     * Note: Pinterest's popup preview may show a square crop, but the actual pin will maintain the image's natural aspect ratio
      */
     function handlePinterestShare() {
         if (!currentProduct) return;
 
-        const url = encodeURIComponent(window.location.href);
+        const url = window.location.href;
         
         // Use LOW-RES watermarked image for Pinterest preview
         // currentProduct.imageSrc is already the low-res path from API (Images/LowResImages/...)
@@ -338,25 +343,27 @@
             lowResPath = '/' + lowResPath;
         }
         
-        // Construct full URL - ensure proper encoding
+        // Construct full URL - ensure it's an absolute URL that Pinterest can access
         const imageUrl = new URL(lowResPath, window.location.origin).href;
-        const encodedImageUrl = encodeURIComponent(imageUrl);
-        
-        const description = encodeURIComponent(`${currentProduct.title} - High-resolution digital photography print from ifeelworld`);
+        const description = `${currentProduct.title} - High-resolution digital photography print from ifeelworld`;
 
-        // Pinterest URL with proper parameters to maintain aspect ratio
-        // Using the media parameter ensures Pinterest uses the full image with its natural aspect ratio
-        const pinterestUrl = `https://www.pinterest.com/pin/create/button/?url=${url}&media=${encodedImageUrl}&description=${description}`;
+        // Encode all parameters
+        const encodedUrl = encodeURIComponent(url);
+        const encodedImageUrl = encodeURIComponent(imageUrl);
+        const encodedDescription = encodeURIComponent(description);
         
-        // Open Pinterest in a larger window to better show the preview
-        window.open(pinterestUrl, 'pinterest-share', 'width=750,height=600');
+        // Pinterest URL - Pinterest will fetch the image and use its natural dimensions
+        // The popup preview may show a square, but the actual pin will maintain aspect ratio
+        const pinterestUrl = `https://www.pinterest.com/pin/create/button/?url=${encodedUrl}&media=${encodedImageUrl}&description=${encodedDescription}`;
+        
+        // Open Pinterest in a larger window to show more of the preview
+        window.open(pinterestUrl, 'pinterest-share', 'width=750,height=700');
         
         console.log('📌 Pinterest share opened with LOW-RES watermarked image');
         console.log(`   Image path: ${lowResPath}`);
         console.log(`   Image URL: ${imageUrl}`);
-        console.log(`   Encoded URL: ${encodedImageUrl}`);
         console.log(`   Full Pinterest URL: ${pinterestUrl}`);
-        console.log(`   Note: Pinterest will use the image's natural aspect ratio based on og:image dimensions`);
+        console.log(`   Note: Pinterest popup may show square preview, but the actual pin will maintain aspect ratio`);
     }
 
     /**
