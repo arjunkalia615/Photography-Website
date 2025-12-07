@@ -1252,6 +1252,16 @@ async function handleGetPhotos(req, res) {
 
                 // Get LQIP placeholder if available
                 const placeholder = LQIP_DATA[lowResPath] || null;
+                
+                // Debug: Log first few photos to verify placeholder lookup
+                if (photos.length < 3) {
+                    console.log(`🔍 LQIP lookup for "${file}":`, {
+                        lowResPath: lowResPath,
+                        found: !!placeholder,
+                        placeholderLength: placeholder ? placeholder.length : 0,
+                        availableKeys: Object.keys(LQIP_DATA).length
+                    });
+                }
 
                 return {
                     productId: productId || `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
