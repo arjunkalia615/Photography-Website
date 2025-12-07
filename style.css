@@ -1337,7 +1337,8 @@ footer {
     margin: 0;
 }
 
-.instagram-link {
+.instagram-link,
+.pinterest-link {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -1348,18 +1349,21 @@ footer {
     transition: color var(--transition-fast);
 }
 
-.instagram-link:hover {
+.instagram-link:hover,
+.pinterest-link:hover {
     color: var(--color-text-primary);
 }
 
-.instagram-icon {
+.instagram-icon,
+.pinterest-icon {
     width: 24px;
     height: 24px;
     fill: currentColor;
     transition: transform 0.3s ease;
 }
 
-.instagram-link:hover .instagram-icon {
+.instagram-link:hover .instagram-icon,
+.pinterest-link:hover .pinterest-icon {
     transform: scale(1.1);
 }
 
