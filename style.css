@@ -5010,17 +5010,13 @@ body.lightbox-open {
     border-radius: 8px;
 }
 
-/* LQIP placeholder background - shows instantly (2-5 KB base64) */
+/* Blurred placeholder background - shows instantly */
 .image-wrapper.blur-load {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     position: relative;
     min-height: 200px; /* Prevent layout shift */
-}
-
-/* Blurred placeholder background (fallback for images without LQIP) */
-.image-wrapper.blur-load {
     filter: blur(20px);
     transform: scale(1.05);
     transition: filter 800ms cubic-bezier(0.19, 1, 0.22, 1),
@@ -5030,14 +5026,11 @@ body.lightbox-open {
 /* When image loaded - hide placeholder background */
 .image-wrapper.blur-load.loaded {
     background-image: none !important;
-}
-
-.image-wrapper.blur-load.loaded {
     filter: blur(0);
     transform: scale(1);
 }
 
-/* Gallery image - overlays on LQIP placeholder */
+/* Gallery image - overlays on placeholder */
 .gallery-item .gallery-image {
     width: 100%;
     height: auto;
