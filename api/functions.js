@@ -27,8 +27,7 @@ const db = require('./db');
 const IMAGE_MAPPING = require('./image-mapping');
 const { getPhotoTitle } = require('./photo-titles');
 
-// LQIP data is now served via a separate endpoint (/api/lqip) to avoid bundling issues
-// The placeholder field will be null in getPhotos response, and frontend will load LQIP separately
+// LQIP functionality removed to reduce serverless function size
 
 // Helper: Get action from query or body
 function getAction(req) {
@@ -1178,8 +1177,7 @@ async function handleGetPhotos(req, res) {
     }
 
     try {
-        // Log LQIP status for debugging
-        // LQIP data is now loaded separately via /api/lqip endpoint
+        // Load photos from folder
         // Try multiple folder name variations
         const possibleFolders = [
             path.join(process.cwd(), 'Images', 'High-Quality Photos'), // Correct spelling
@@ -1289,16 +1287,11 @@ async function handleGetPhotos(req, res) {
                 // Get descriptive title from mapping or generate from filename
                 const title = getPhotoTitle(file, baseName);
 
-                // LQIP placeholder is now loaded separately via /api/lqip endpoint
-                // to avoid bundling large data in serverless function
-                const placeholder = null;
-
                 return {
                     productId: productId || `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     imageSrc: lowResPath,              // Low-res for gallery thumbnails
                     imageThumb: lowResPath,            // Low-res thumbnail
                     imageHQ: highQualityPath,          // High-quality for product page
-                    placeholder: placeholder,         // LQIP loaded separately by frontend
                     title: title,
                     filename: file,
                     category: 'Photography' // Default category, can be enhanced later
@@ -1309,9 +1302,6 @@ async function handleGetPhotos(req, res) {
 
         console.log(`✅ Found ${photos.length} photos in high_quality_photos folder`);
         
-        // Count photos with placeholders
-        const photosWithPlaceholders = photos.filter(p => p.placeholder).length;
-        console.log(`📊 LQIP Status: ${photosWithPlaceholders}/${photos.length} photos have placeholders`);
         
         return res.status(200).json({
             success: true,
