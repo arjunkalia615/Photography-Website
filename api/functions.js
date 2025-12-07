@@ -1302,11 +1302,23 @@ async function handleGetPhotos(req, res) {
 
         console.log(`✅ Found ${photos.length} photos in high_quality_photos folder`);
         
+        // Support pagination with limit and offset
+        const limit = parseInt(req.query.limit) || photos.length; // Default: all photos
+        const offset = parseInt(req.query.offset) || 0;
+        const total = photos.length;
+        
+        // Get paginated subset
+        const paginatedPhotos = photos.slice(offset, offset + limit);
+        const hasMore = offset + limit < total;
         
         return res.status(200).json({
             success: true,
-            photos: photos,
-            count: photos.length
+            photos: paginatedPhotos,
+            count: paginatedPhotos.length,
+            total: total,
+            offset: offset,
+            limit: limit,
+            hasMore: hasMore
         });
     } catch (error) {
         console.error('❌ Error getting photos:', error);
