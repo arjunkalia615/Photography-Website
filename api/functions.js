@@ -34,18 +34,12 @@ try {
     if (fs.existsSync(lqipPath)) {
         LQIP_DATA = require('./lqip-data');
         console.log(`✅ Loaded LQIP data: ${Object.keys(LQIP_DATA).length} placeholders`);
-    }
-} catch (error) {
-    console.warn('⚠️ Could not load LQIP data:', error.message);
-    LQIP_DATA = {};
-}
-        LQIP_DATA = JSON.parse(fs.readFileSync(lqipPath, 'utf8'));
-        console.log(`✅ Loaded ${Object.keys(LQIP_DATA).length} LQIP placeholders`);
     } else {
         console.log('⚠️ LQIP data not found. Run generate-lqip.js to generate placeholders.');
     }
 } catch (error) {
     console.warn('⚠️ Could not load LQIP data:', error.message);
+    LQIP_DATA = {};
 }
 
 // Helper: Get action from query or body
