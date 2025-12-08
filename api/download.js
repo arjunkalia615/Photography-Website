@@ -109,8 +109,8 @@ async function handleDownloadFile(req, res) {
     }
 
     try {
-        // Get parameters
-        const sessionId = req.query.session_id;
+        // Get parameters - standardize to session_id
+        const sessionId = req.query.session_id || req.query.sessionId || req.query.session;
         const productId = req.query.productId;
 
         if (!sessionId || !productId) {
@@ -157,7 +157,9 @@ async function handleDownloadFile(req, res) {
 
         // Check if item has already been downloaded (boolean check)
         const isDownloaded = await db.isItemDownloaded(sessionId, productId);
-        const quantityPurchased = purchasedItem.quantityPurchased || purchasedItem.quantity || purchasedItem.maxDownloads || purchasedItem.max_downloads || 1;
+        // Normalize maxDownloads - use maxDownloads, fallback to max_downloads
+        const maxDownloads = purchasedItem.maxDownloads || purchasedItem.max_downloads || purchasedItem.quantity || 1;
+        const quantityPurchased = purchasedItem.quantityPurchased || purchasedItem.quantity || maxDownloads || 1;
 
         // If item has already been downloaded, prevent further downloads
         if (isDownloaded) {
@@ -544,8 +546,8 @@ async function handleGetDownloadLinks(req, res) {
     }
 
     try {
-        // Get session ID from query parameters (exact session ID from Stripe)
-        const sessionId = req.query.session_id;
+        // Get session ID from query parameters - standardize to session_id
+        const sessionId = req.query.session_id || req.query.sessionId || req.query.session;
 
         // Validate session_id is provided
         if (!sessionId) {
@@ -589,7 +591,9 @@ async function handleGetDownloadLinks(req, res) {
         // Build download information for each purchased item (boolean downloaded flag)
         const downloads = await Promise.all(items.map(async (item) => {
             const productId = item.productId;
-            const quantityPurchased = item.quantityPurchased || item.quantity || item.maxDownloads || item.max_downloads || 1;
+            // Normalize maxDownloads - use maxDownloads, fallback to max_downloads
+            const maxDownloads = item.maxDownloads || item.max_downloads || item.quantity || 1;
+            const quantityPurchased = item.quantityPurchased || item.quantity || maxDownloads || 1;
             
             // Check if item has been downloaded (boolean flag)
             const downloaded = purchase.downloaded?.[productId] === true;
@@ -606,7 +610,7 @@ async function handleGetDownloadLinks(req, res) {
                 downloaded: downloaded, // Boolean: has item been downloaded?
                 canDownload: canDownload, // Can download if not downloaded
                 // Backward compatibility
-                maxDownloads: quantityPurchased,
+                maxDownloads: maxDownloads,
                 downloadCount: downloaded ? quantityPurchased : 0,
                 remainingDownloads: downloaded ? 0 : quantityPurchased,
                 // Secure download URL (points to download endpoint)
@@ -650,12 +654,14 @@ async function handleGeneratePurchaseDownload(req, res) {
 
     try {
         const body = parseBody(req);
-        const { sessionId, productId, imageSrc, title, quantity } = body;
+        // Standardize session ID: get from body or query, always use session_id
+        const sessionId = body.sessionId || req.query.session_id || body.session_id;
+        const productId = body.productId; // Optional - if provided, download only that item
 
-        if (!sessionId || !productId || !imageSrc || !quantity) {
+        if (!sessionId) {
             return res.status(400).json({ 
-                error: 'Missing parameters', 
-                message: 'sessionId, productId, imageSrc, and quantity are required' 
+                error: 'Missing parameter', 
+                message: 'sessionId is required' 
             });
         }
 
@@ -663,293 +669,138 @@ async function handleGeneratePurchaseDownload(req, res) {
             return res.status(400).json({ error: 'Invalid session ID', message: 'Invalid session ID format' });
         }
 
-        // Verify purchase exists and item is in purchase
+        // Get purchase from Redis
         // Note: db.getPurchase() already adds 'purchase:' prefix, so pass sessionId directly
-        // First try Redis, then fallback to Stripe session retrieval if webhook hasn't processed yet
-        let purchase = null;
-        try {
-            purchase = await db.getPurchase(sessionId);
-            if (!purchase) {
-                console.warn(`⚠️ Purchase not found in Redis for session: ${sessionId}`);
-                console.warn(`🔑 Redis key checked: purchase:${sessionId}`);
-                console.log(`🔄 Attempting to retrieve from Stripe session as fallback...`);
-                
-                // Fallback: Try to get purchase data from Stripe session directly
-                // This handles cases where webhook hasn't processed yet
-                try {
-                    const stripe = require('stripe');
-                    const useTestMode = process.env.USE_TEST_STRIPE === 'true';
-                    const stripeSecretKey = useTestMode 
-                        ? process.env.STRIPE_SECRET_KEY_TEST 
-                        : process.env.STRIPE_SECRET_KEY;
-                    
-                    if (stripeSecretKey) {
-                        const stripeInstance = stripe(stripeSecretKey);
-                        const session = await stripeInstance.checkout.sessions.retrieve(sessionId, {
-                            expand: ['line_items']
-                        });
-                        
-                        if (session && session.payment_status === 'paid') {
-                            console.log(`✅ Retrieved session from Stripe, reconstructing purchase data...`);
-                            
-                            // Reconstruct purchase data from Stripe session
-                            const db = require('./db');
-                            const utils = require('./utils');
-                            
-                            // Get cart items from Redis using temp_cart_key
-                            let cartItems = [];
-                            if (session.metadata && session.metadata.temp_cart_key) {
-                                const tempCartData = await db.getPurchase(session.metadata.temp_cart_key);
-                                if (tempCartData && tempCartData.cartItems) {
-                                    cartItems = tempCartData.cartItems;
-                                }
-                            }
-                            
-                            // Fallback: Try session ID directly
-                            if (cartItems.length === 0) {
-                                const sessionCartData = await db.getPurchase(`temp_cart:${sessionId}`);
-                                if (sessionCartData && sessionCartData.cartItems) {
-                                    cartItems = sessionCartData.cartItems;
-                                }
-                            }
-                            
-                            // If we have cart items, reconstruct purchase data
-                            if (cartItems.length > 0) {
-                                const purchasedItems = cartItems.map(cartItem => ({
-                                    productId: cartItem.productId || cartItem.id,
-                                    title: cartItem.title || cartItem.name,
-                                    fileName: (cartItem.imageHQ || cartItem.imageSrc || '').split('/').pop() || `${(cartItem.title || cartItem.name).replace(/[^a-z0-9]/gi, '_')}.jpg`,
-                                    imageSrc: cartItem.imageSrc || '',
-                                    imageHQ: cartItem.imageHQ || cartItem.imageSrc || '',
-                                    quantity: cartItem.quantity || 1,
-                                    quantityPurchased: cartItem.quantity || 1,
-                                    max_downloads: cartItem.quantity || 1,
-                                    maxDownloads: cartItem.quantity || 1
-                                }));
-                                
-                                const purchaseData = {
-                                    session_id: sessionId,
-                                    email: session.customer_email || session.customer_details?.email,
-                                    customer_email: session.customer_email || session.customer_details?.email,
-                                    products: purchasedItems,
-                                    purchased_items: purchasedItems,
-                                    quantity: purchasedItems.reduce((sum, item) => sum + item.quantity, 0),
-                                    downloaded: {},
-                                    payment_status: session.payment_status,
-                                    createdAt: new Date().toISOString(),
-                                    timestamp: new Date().toISOString()
-                                };
-                                
-                                // Save to Redis for future requests
-                                await db.savePurchase(sessionId, purchaseData);
-                                console.log(`✅ Reconstructed and saved purchase data to Redis`);
-                                
-                                purchase = purchaseData;
-                            }
-                        }
-                    }
-                } catch (stripeError) {
-                    console.error('❌ Error retrieving from Stripe:', stripeError);
-                }
-            }
-            
-            if (!purchase) {
-                console.error(`❌ Purchase not found for session: ${sessionId}`);
-                console.error(`🔑 Redis key checked: purchase:${sessionId}`);
-                return res.status(404).json({
-                    error: 'Purchase not found',
-                    message: 'No purchase found for this session. The webhook may still be processing. Please wait a moment and refresh the page.'
+        let purchase = await db.getPurchase(sessionId);
+        
+        if (!purchase) {
+            console.error(`❌ Purchase not found for session: ${sessionId}`);
+            console.error(`🔑 Redis key checked: purchase:${sessionId}`);
+            return res.status(404).json({
+                error: 'Purchase not found',
+                message: 'No purchase found for this session. The webhook may still be processing. Please wait a moment and refresh the page.'
+            });
+        }
+        
+        // Parse purchase data (Upstash Redis returns objects directly, but handle string case)
+        let purchaseData;
+        if (typeof purchase === 'string') {
+            try {
+                purchaseData = JSON.parse(purchase);
+            } catch (parseError) {
+                console.error('❌ Error parsing purchase data:', parseError);
+                return res.status(500).json({
+                    error: 'Data format error',
+                    message: 'Purchase data format is invalid.'
                 });
             }
-            
-            // Parse purchase data (Upstash Redis returns objects directly, but handle string case)
-            let purchaseData;
-            if (typeof purchase === 'string') {
-                try {
-                    purchaseData = JSON.parse(purchase);
-                } catch (parseError) {
-                    console.error('❌ Error parsing purchase data:', parseError);
-                    return res.status(500).json({
-                        error: 'Data format error',
-                        message: 'Purchase data format is invalid.'
-                    });
-                }
-            } else {
-                purchaseData = purchase;
-            }
-            
-            // Debug: Log purchase structure
-            console.log(`🔍 Purchase data structure:`, {
-                hasProducts: !!purchaseData.products,
-                hasPurchasedItems: !!purchaseData.purchased_items,
-                productsCount: purchaseData.products?.length || 0,
-                purchasedItemsCount: purchaseData.purchased_items?.length || 0,
-                sessionId: purchaseData.session_id,
-                email: purchaseData.email || purchaseData.customer_email
+        } else {
+            purchaseData = purchase;
+        }
+        
+        // Get purchased items array (use purchased_items as primary source - it has full structure)
+        const purchasedItems = purchaseData.purchased_items || purchaseData.products || [];
+        
+        if (purchasedItems.length === 0) {
+            return res.status(404).json({
+                error: 'No items found',
+                message: 'No purchased items found in this purchase.'
             });
-            
-            const items = purchaseData.products || purchaseData.purchased_items || [];
-            console.log(`🔍 Looking for productId: ${productId} in ${items.length} items`);
-            
-            const purchasedItem = items.find(item => {
+        }
+        
+        // If productId is provided, filter to that specific item
+        // Otherwise, download all items
+        let itemsToDownload = purchasedItems;
+        if (productId) {
+            itemsToDownload = purchasedItems.filter(item => {
                 const itemProductId = item.productId || item.id;
-                console.log(`  - Comparing: ${itemProductId} === ${productId}? ${itemProductId === productId}`);
                 return itemProductId === productId;
             });
             
-            if (!purchasedItem) {
+            if (itemsToDownload.length === 0) {
                 console.error(`❌ Product ${productId} not found in purchase. Available productIds:`, 
-                    items.map(item => item.productId || item.id));
+                    purchasedItems.map(item => item.productId || item.id));
                 return res.status(403).json({
                     error: 'Item not in purchase',
                     message: 'This item was not found in your purchase.'
                 });
             }
-            
-            console.log(`✅ Found purchased item:`, {
-                productId: purchasedItem.productId,
-                title: purchasedItem.title,
-                imageHQ: purchasedItem.imageHQ ? 'present' : 'missing',
-                quantity: purchasedItem.quantity
-            });
+        }
+        
+        // Check download status for all items to download
+        const redisClient = db.getRedis();
+        const itemsToProcess = [];
+        
+        for (const item of itemsToDownload) {
+            const itemProductId = item.productId || item.id;
+            // Normalize maxDownloads - use maxDownloads, fallback to max_downloads
+            const maxDownloads = item.maxDownloads || item.max_downloads || item.quantity || 1;
             
             // Check if already downloaded
-            const downloadKey = `purchase_download:${sessionId}:${productId}`;
-            const redisClient = db.getRedis();
+            const downloadKey = `purchase_download:${sessionId}:${itemProductId}`;
             const downloaded = await redisClient.get(downloadKey);
+            const isDownloaded = downloaded === 'true' || (purchaseData.downloaded && purchaseData.downloaded[itemProductId]);
             
-            if (downloaded === 'true' || (purchaseData.downloaded && purchaseData.downloaded[productId])) {
-                console.warn(`⚠️ Item already downloaded: ${productId}`);
-                return res.status(403).json({
-                    error: 'Already downloaded',
-                    message: 'This item has already been downloaded. You can only download it once.'
-                });
+            if (isDownloaded) {
+                console.warn(`⚠️ Item ${itemProductId} already downloaded, skipping`);
+                continue;
             }
-        } catch (redisError) {
-            console.error('❌ Redis error checking download status:', redisError);
-            // Continue with download even if Redis check fails (fail open for better UX)
-        }
-
-        // Get image URL from purchased item (prefer imageHQ for downloads)
-        // Fallback to imageSrc from request body if not in purchase data
-        const imageUrl = purchasedItem.imageHQ || purchasedItem.imageSrc || imageSrc;
-        if (!imageUrl) {
-            console.error(`❌ No image URL found for product ${productId}`);
-            return res.status(404).json({
-                error: 'Image not found',
-                message: 'Image URL not available for this product.'
+            
+            // Verify item has imageHQ (required for download) - use imageHQ, fallback to imageSrc
+            const imageUrl = item.imageHQ || item.imageSrc;
+            if (!imageUrl) {
+                console.warn(`⚠️ Item ${itemProductId} has no image URL, skipping`);
+                continue;
+            }
+            
+            itemsToProcess.push({
+                item: item,
+                productId: itemProductId,
+                imageUrl: imageUrl, // Use imageHQ or imageSrc from Redis structure
+                maxDownloads: maxDownloads,
+                downloadKey: downloadKey
             });
         }
         
-        console.log(`📥 Image URL for download: ${imageUrl.substring(0, 80)}...`);
-
-        // If imageUrl is an external URL (BunnyCDN), fetch it and create ZIP
-        let imageBuffer = null;
-        let imageFileName = null;
+        if (itemsToProcess.length === 0) {
+            return res.status(403).json({
+                error: 'All items already downloaded',
+                message: 'All items in this purchase have already been downloaded.'
+            });
+        }
         
-        if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
-            // Fetch image from BunnyCDN
-            try {
-                console.log(`📥 Fetching image from BunnyCDN: ${imageUrl}`);
+        console.log(`📦 Processing ${itemsToProcess.length} item(s) for download`);
+        
+        // Helper function to fetch image from BunnyCDN
+        async function fetchImageFromCDN(imageUrl) {
+            return new Promise((resolve, reject) => {
                 const https = require('https');
                 const http = require('http');
-                const url = require('url');
                 
                 const parsedUrl = new URL(imageUrl);
                 const client = parsedUrl.protocol === 'https:' ? https : http;
                 
-                imageBuffer = await new Promise((resolve, reject) => {
-                    const request = client.get(imageUrl, (response) => {
-                        if (response.statusCode !== 200) {
-                            reject(new Error(`Failed to fetch image: ${response.statusCode}`));
-                            return;
-                        }
-                        
-                        const chunks = [];
-                        response.on('data', (chunk) => chunks.push(chunk));
-                        response.on('end', () => resolve(Buffer.concat(chunks)));
-                        response.on('error', reject);
-                    });
-                    request.on('error', reject);
-                    request.setTimeout(30000, () => {
-                        request.destroy();
-                        reject(new Error('Request timeout'));
-                    });
+                const request = client.get(imageUrl, (response) => {
+                    if (response.statusCode !== 200) {
+                        reject(new Error(`Failed to fetch image: ${response.statusCode}`));
+                        return;
+                    }
+                    
+                    const chunks = [];
+                    response.on('data', (chunk) => chunks.push(chunk));
+                    response.on('end', () => resolve(Buffer.concat(chunks)));
+                    response.on('error', reject);
                 });
                 
-                // Extract filename from URL
-                const urlPath = parsedUrl.pathname;
-                imageFileName = decodeURIComponent(urlPath.split('/').pop() || `${productId}.jpg`);
-                console.log(`✅ Fetched image from BunnyCDN: ${imageFileName} (${imageBuffer.length} bytes)`);
-            } catch (fetchError) {
-                console.error('❌ Error fetching image from BunnyCDN:', fetchError);
-                return res.status(500).json({
-                    error: 'Failed to fetch image',
-                    message: 'Could not download image from CDN. Please try again later.'
+                request.on('error', reject);
+                request.setTimeout(30000, () => {
+                    request.destroy();
+                    reject(new Error('Request timeout'));
                 });
-            }
+            });
         }
-
-        // Determine file path or use fetched image
-        let filePath = null;
-        let fileExtension = '.jpg';
-        let baseFileName = null;
-        let fileNameWithoutExt = null;
         
-        if (imageBuffer) {
-            // Use fetched image from BunnyCDN
-            fileExtension = path.extname(imageFileName) || '.jpg';
-            baseFileName = path.basename(imageFileName, fileExtension);
-            fileNameWithoutExt = baseFileName;
-        } else {
-            // Local file path (fallback - should not happen with BunnyCDN)
-            let decodedPath = decodeURIComponent(imageUrl);
-            const cleanPath = decodedPath.startsWith('/') 
-                ? decodedPath.substring(1) 
-                : decodedPath.replace(/^\.\.\//, '').replace(/^\.\//, '');
-            const normalizedPath = cleanPath.replace(/\\/g, '/');
-            
-            // Security: Prevent downloading banner photos
-            if (normalizedPath.includes('banner_photos') || normalizedPath.includes('Banner Photo')) {
-                return res.status(403).json({ 
-                    error: 'Access denied', 
-                    message: 'Banner photos are not available for download' 
-                });
-            }
-            
-            // Security: Only allow downloads from High-Quality Photos folder (legacy local paths)
-            if (!normalizedPath.includes('High-Quality Photos') && !normalizedPath.includes('high_quality_photos') && !normalizedPath.includes('High-Qaulity Photos')) {
-                return res.status(403).json({ 
-                    error: 'Access denied', 
-                    message: 'Only photos from the High-Quality Photos folder can be downloaded' 
-                });
-            }
-            
-            filePath = path.join(process.cwd(), normalizedPath);
-
-            const resolvedPath = path.resolve(filePath);
-            const projectRoot = path.resolve(process.cwd());
-            if (!resolvedPath.startsWith(projectRoot)) {
-                return res.status(403).json({ error: 'Access denied', message: 'Invalid file path' });
-            }
-
-            if (!fs.existsSync(filePath)) {
-                return res.status(404).json({
-                    error: 'File not found',
-                    message: `No image found for the purchased item`
-                });
-            }
-
-            const stats = fs.statSync(filePath);
-            if (!stats.isFile()) {
-                return res.status(404).json({ error: 'Not a file', message: 'The requested path is not a file' });
-            }
-
-            fileExtension = path.extname(filePath);
-            baseFileName = path.basename(filePath, fileExtension);
-            fileNameWithoutExt = path.basename(filePath, fileExtension);
-        }
-
+        // Helper function to sanitize filename
         function sanitizeFilename(filename) {
             if (!filename) return 'Photo';
             return filename
@@ -959,11 +810,11 @@ async function handleGeneratePurchaseDownload(req, res) {
                 .replace(/^_+|_+$/g, '')
                 .substring(0, 100);
         }
-
-        const sanitizedTitle = sanitizeFilename(title || baseFileName);
-        const zipFilename = quantity > 1 
-            ? `${sanitizedTitle}_x${quantity}.zip`
-            : `${sanitizedTitle}.zip`;
+        
+        // Generate ZIP filename
+        const zipFilename = itemsToProcess.length === 1 
+            ? `${sanitizeFilename(itemsToProcess[0].item.title || itemsToProcess[0].item.fileName || 'Photo')}.zip`
+            : `purchase_${sessionId.substring(0, 20)}.zip`;
 
         // Set headers to force download (not preview)
         res.setHeader('Content-Type', 'application/zip');
@@ -975,7 +826,7 @@ async function handleGeneratePurchaseDownload(req, res) {
         res.setHeader('Content-Transfer-Encoding', 'binary');
 
         const archive = archiver('zip', {
-            zlib: { level: 0 }
+            zlib: { level: 0 } // No compression for maximum quality
         });
 
         archive.on('error', (error) => {
@@ -990,45 +841,73 @@ async function handleGeneratePurchaseDownload(req, res) {
 
         archive.pipe(res);
 
-        // Add images to ZIP (quantity copies)
-        for (let i = 1; i <= quantity; i++) {
-            const copyFileName = `${fileNameWithoutExt}_${i}${fileExtension}`;
-            
-            if (imageBuffer) {
-                // Add fetched image buffer to ZIP
-                archive.append(imageBuffer, { name: copyFileName });
-            } else {
-                // Add local file to ZIP
-                archive.file(filePath, { name: copyFileName });
+        // Process each item: fetch from BunnyCDN and add to ZIP
+        for (const { item, productId: itemProductId, imageUrl, maxDownloads, downloadKey } of itemsToProcess) {
+            try {
+                console.log(`📥 Fetching image for ${itemProductId}: ${imageUrl.substring(0, 60)}...`);
+                
+                // Fetch image from BunnyCDN
+                const imageBuffer = await fetchImageFromCDN(imageUrl);
+                
+                // Get filename from item or extract from URL
+                let fileName = item.fileName;
+                if (!fileName && imageUrl) {
+                    const urlPath = new URL(imageUrl).pathname;
+                    fileName = decodeURIComponent(urlPath.split('/').pop() || `${itemProductId}.jpg`);
+                }
+                
+                // Add image to ZIP with quantity copies
+                const fileExtension = path.extname(fileName) || '.jpg';
+                const baseFileName = path.basename(fileName, fileExtension);
+                
+                for (let copy = 1; copy <= maxDownloads; copy++) {
+                    const copyFileName = maxDownloads > 1 
+                        ? `${baseFileName}_copy_${copy}${fileExtension}`
+                        : `${baseFileName}${fileExtension}`;
+                    
+                    archive.append(imageBuffer, { name: copyFileName });
+                }
+                
+                console.log(`✅ Added ${itemProductId} to ZIP (${maxDownloads} copy/copies)`);
+            } catch (fetchError) {
+                console.error(`❌ Error fetching image for ${itemProductId}:`, fetchError);
+                // Continue with other items even if one fails
             }
         }
 
         await archive.finalize();
 
-        // Mark item as downloaded in Redis (after successful ZIP creation)
+        // Mark all processed items as downloaded in Redis (after successful ZIP creation)
         try {
-            const redisClient = db.getRedis();
-            await redisClient.set(downloadKey, 'true', { EX: 86400 * 365 }); // Expire after 1 year
-            console.log(`✅ Marked purchase download in Redis: ${downloadKey}`);
-            
-            // Also update purchase record to mark item as downloaded
             const purchaseKey = `purchase:${sessionId}`;
-            const purchase = await redisClient.get(purchaseKey);
-            if (purchase) {
-                const purchaseData = typeof purchase === 'string' ? JSON.parse(purchase) : purchase;
-                if (!purchaseData.downloaded) {
-                    purchaseData.downloaded = {};
-                }
-                purchaseData.downloaded[productId] = true;
-                await redisClient.set(purchaseKey, JSON.stringify(purchaseData), { EX: 86400 * 365 });
-                console.log(`✅ Updated purchase record: ${productId} marked as downloaded`);
+            const currentPurchase = await redisClient.get(purchaseKey);
+            let updatedPurchaseData = purchaseData;
+            
+            if (currentPurchase) {
+                updatedPurchaseData = typeof currentPurchase === 'string' ? JSON.parse(currentPurchase) : currentPurchase;
             }
+            
+            // Initialize downloaded tracking if needed
+            if (!updatedPurchaseData.downloaded) {
+                updatedPurchaseData.downloaded = {};
+            }
+            
+            // Mark each item as downloaded
+            for (const { productId: itemProductId, downloadKey } of itemsToProcess) {
+                await redisClient.set(downloadKey, 'true', { EX: 86400 * 365 }); // Expire after 1 year
+                updatedPurchaseData.downloaded[itemProductId] = true;
+                console.log(`✅ Marked ${itemProductId} as downloaded`);
+            }
+            
+            // Update purchase record in Redis
+            await redisClient.set(purchaseKey, updatedPurchaseData, { EX: 86400 * 365 });
+            console.log(`✅ Updated purchase record with download status`);
         } catch (redisError) {
-            console.error('❌ Error marking download in Redis:', redisError);
+            console.error('❌ Error marking downloads in Redis:', redisError);
         }
 
-        console.log(`✅ ZIP archive created with ${quantity} copies: ${baseFileName || imageFileName}`);
-        console.log(`📊 Session: ${sessionId}, Product: ${productId}, Source: ${imageBuffer ? 'BunnyCDN' : 'Local'}`);
+        console.log(`✅ ZIP archive created with ${itemsToProcess.length} item(s)`);
+        console.log(`📊 Session: ${sessionId}, Items: ${itemsToProcess.map(i => i.productId).join(', ')}`);
 
     } catch (error) {
         console.error('❌ Error generating purchase download:', error);
@@ -1327,4 +1206,3 @@ async function handler(req, res) {
 }
 
 module.exports = handler;
-
