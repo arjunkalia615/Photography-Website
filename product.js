@@ -46,12 +46,18 @@
 
     /**
      * Convert high-res image path to low-res watermarked version
-     * High-res: Images/High-Quality Photos/[filename].jpg
-     * Low-res: Images/LowResImages/[filename].jpg
+     * Now handles placeholder URLs (external URLs) - just returns them as-is
+     * Legacy local paths are no longer used (images served from BunnyCDN)
      */
     function getLoResImagePath(highResPath) {
         if (!highResPath) return highResPath;
         
+        // If it's already an external URL (placeholder or BunnyCDN), return as-is
+        if (highResPath.startsWith('http://') || highResPath.startsWith('https://')) {
+            return highResPath;
+        }
+        
+        // Legacy local path handling (should not be used in production)
         // If already a low-res path, return as is
         if (highResPath.includes('LowResImages')) {
             return highResPath;
@@ -107,20 +113,26 @@
         const productUrl = window.location.href;
         
         // Use LOW-RES watermarked image for social sharing previews (Pinterest, Twitter, Facebook)
-        // product.imageSrc is already the low-res path from API (Images/LowResImages/...)
+        // product.imageSrc is now a placeholder URL or BunnyCDN URL from API
         let lowResPath = product.imageSrc;
         
-        // If imageSrc is not already low-res, convert it
-        if (!lowResPath.includes('LowResImages')) {
-            lowResPath = getLoResImagePath(product.imageHQ || product.imageSrc);
+        // If imageSrc is an external URL (placeholder or BunnyCDN), use it directly
+        if (lowResPath.startsWith('http://') || lowResPath.startsWith('https://')) {
+            var socialImageUrl = lowResPath;
+        } else {
+            // Legacy local path handling (should not be used in production)
+            // If imageSrc is not already low-res, convert it
+            if (!lowResPath.includes('LowResImages')) {
+                lowResPath = getLoResImagePath(product.imageHQ || product.imageSrc);
+            }
+            
+            // Ensure path starts with / for absolute URL construction
+            if (!lowResPath.startsWith('/')) {
+                lowResPath = '/' + lowResPath;
+            }
+            
+            socialImageUrl = new URL(lowResPath, window.location.origin).href;
         }
-        
-        // Ensure path starts with / for absolute URL construction
-        if (!lowResPath.startsWith('/')) {
-            lowResPath = '/' + lowResPath;
-        }
-        
-        const socialImageUrl = new URL(lowResPath, window.location.origin).href;
         
         const title = `${product.title} - ifeelworld Photography`;
         const description = `High-resolution digital photography print: ${product.title}. Available for instant download at $${ITEM_PRICE.toFixed(2)}.`;
@@ -329,22 +341,28 @@
         const url = window.location.href;
         
         // Use LOW-RES watermarked image for Pinterest preview
-        // currentProduct.imageSrc is already the low-res path from API (Images/LowResImages/...)
-        // Ensure we use the correct path format
+        // currentProduct.imageSrc is now a placeholder URL or BunnyCDN URL from API
         let lowResPath = currentProduct.imageSrc;
         
-        // If imageSrc is not already low-res, convert it
-        if (!lowResPath.includes('LowResImages')) {
-            lowResPath = getLoResImagePath(currentProduct.imageHQ || currentProduct.imageSrc);
+        // If imageSrc is an external URL (placeholder or BunnyCDN), use it directly
+        let imageUrl;
+        if (lowResPath.startsWith('http://') || lowResPath.startsWith('https://')) {
+            imageUrl = lowResPath;
+        } else {
+            // Legacy local path handling (should not be used in production)
+            // If imageSrc is not already low-res, convert it
+            if (!lowResPath.includes('LowResImages')) {
+                lowResPath = getLoResImagePath(currentProduct.imageHQ || currentProduct.imageSrc);
+            }
+            
+            // Ensure path starts with / for absolute URL construction
+            if (!lowResPath.startsWith('/')) {
+                lowResPath = '/' + lowResPath;
+            }
+            
+            // Construct full URL - ensure it's an absolute URL that Pinterest can access
+            imageUrl = new URL(lowResPath, window.location.origin).href;
         }
-        
-        // Ensure path starts with / for absolute URL construction
-        if (!lowResPath.startsWith('/')) {
-            lowResPath = '/' + lowResPath;
-        }
-        
-        // Construct full URL - ensure it's an absolute URL that Pinterest can access
-        const imageUrl = new URL(lowResPath, window.location.origin).href;
         const description = `${currentProduct.title} - High-resolution digital photography print from ifeelworld`;
 
         // Encode all parameters

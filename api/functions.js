@@ -1237,11 +1237,15 @@ async function handleGetPhotos(req, res) {
                 // Get descriptive title from mapping or generate from filename
                 const title = getPhotoTitle(file, baseName);
 
+                // Use placeholder URLs instead of local paths (images will be served from BunnyCDN)
+                const placeholderLowRes = `https://via.placeholder.com/800?text=${encodeURIComponent(title)}`;
+                const placeholderHighRes = `https://via.placeholder.com/2000?text=${encodeURIComponent(title)}`;
+                
                 return {
                     productId: productId || `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    imageSrc: lowResPath,              // Low-res for gallery thumbnails
-                    imageThumb: lowResPath,            // Low-res thumbnail
-                    imageHQ: highQualityPath,          // High-quality for product page
+                    imageSrc: placeholderLowRes,              // Placeholder for gallery thumbnails
+                    imageThumb: placeholderLowRes,            // Placeholder thumbnail
+                    imageHQ: placeholderHighRes,          // Placeholder for product page
                     title: title,
                     filename: file,
                     category: 'Photography' // Default category, can be enhanced later
