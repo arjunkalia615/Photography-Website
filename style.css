@@ -5008,6 +5008,8 @@ body.lightbox-open {
     display: block;
     overflow: hidden;
     border-radius: 8px;
+    min-height: 200px; /* Ensure placeholder is visible */
+    background-color: var(--color-bg-secondary); /* Fallback background */
 }
 
 /* Blurred placeholder background */

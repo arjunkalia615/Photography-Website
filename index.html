@@ -141,6 +141,9 @@
                     return;
                 }
                 
+                console.log(`✅ Loaded ${data.photos.length} photos from API`);
+                console.log('Sample photo:', data.photos[0]);
+                
                 // Remove loading message
                 loadingPhotos.remove();
                 
@@ -224,7 +227,6 @@
                     requestAnimationFrame(() => {
                         img.style.opacity = '1';
                         wrapper.classList.add('loaded');
-                        console.log(`✅ Image loaded: ${img.src}`);
                     });
                 };
                 
@@ -247,8 +249,11 @@
                         img.addEventListener('load', handleLoad, { once: true });
                         img.addEventListener('error', function() {
                             console.error(`❌ Image failed to load: ${img.src}`);
-                            // Show image anyway (might be CORS issue but image could still display)
-                            showImage();
+                            console.error(`   naturalWidth: ${img.naturalWidth}, naturalHeight: ${img.naturalHeight}`);
+                            // Show image anyway after a delay (might be CORS issue but image could still display)
+                            setTimeout(() => {
+                                showImage();
+                            }, 500);
                         }, { once: true });
                         
                         // Fallback: check periodically if image loaded
