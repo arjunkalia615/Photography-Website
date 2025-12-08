@@ -8,6 +8,40 @@
 const stripe = require('stripe');
 const db = require('./db');
 
+// Helper: Check webhook status (debug endpoint)
+async function handleCheckWebhook(req, res) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const sessionId = req.query.session_id;
+
+        if (!sessionId) {
+            return res.status(400).json({ error: 'session_id required' });
+        }
+
+        if (!sessionId.startsWith('cs_')) {
+            return res.status(400).json({ error: 'Invalid session ID format' });
+        }
+
+        const purchase = await db.getPurchase(sessionId);
+
+        return res.status(200).json({
+            sessionId: sessionId,
+            found: !!purchase,
+            purchase: purchase || null,
+            redisKey: `purchase:${sessionId}`
+        });
+    } catch (error) {
+        console.error('Error checking webhook:', error);
+        return res.status(500).json({
+            error: 'Failed to check webhook',
+            message: error.message
+        });
+    }
+}
+
 async function handler(req, res) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,41 +53,23 @@ async function handler(req, res) {
         return res.status(200).end();
     }
 
-    // Handle GET request for checking webhook status
+    // Support both GET (check webhook) and POST (webhook handler)
     if (req.method === 'GET') {
-        try {
-            const sessionId = req.query.session_id;
-
-            if (!sessionId) {
-                return res.status(400).json({ error: 'session_id required' });
-            }
-
-            if (!sessionId.startsWith('cs_')) {
-                return res.status(400).json({ error: 'Invalid session ID format' });
-            }
-
-            const purchase = await db.getPurchase(sessionId);
-
-            return res.status(200).json({
-                sessionId: sessionId,
-                found: !!purchase,
-                purchase: purchase || null,
-                redisKey: `purchase:${sessionId}`
-            });
-        } catch (error) {
-            console.error('Error checking webhook:', error);
-            return res.status(500).json({
-                error: 'Failed to check webhook',
-                message: error.message
-            });
+        // Check if this is a webhook check request
+        if (req.query && req.query.action === 'check' || req.query.session_id) {
+            return await handleCheckWebhook(req, res);
         }
+        return res.status(405).json({
+            error: 'Method not allowed',
+            message: 'GET method only supported for webhook check. Use ?action=check&session_id=...'
+        });
     }
 
-    // Only allow POST method for webhook processing
+    // Only allow POST method for webhook events
     if (req.method !== 'POST') {
         return res.status(405).json({
             error: 'Method not allowed',
-            message: 'Only GET and POST methods are supported'
+            message: 'Only POST method is supported for webhook events'
         });
     }
 

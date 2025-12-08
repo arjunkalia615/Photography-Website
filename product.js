@@ -79,7 +79,7 @@
      */
     async function fetchProductData(productId) {
         try {
-            const response = await fetch('/api/get-photos');
+            const response = await fetch('/api/utils?action=getPhotos');
             
             if (!response.ok) {
                 throw new Error(`Failed to fetch photos: ${response.status}`);
