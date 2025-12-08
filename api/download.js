@@ -676,17 +676,56 @@ async function handleGeneratePurchaseDownload(req, res) {
                 });
             }
             
-            // Check if item is in purchase
-            const purchaseData = typeof purchase === 'string' ? JSON.parse(purchase) : purchase;
+            // Parse purchase data (Upstash Redis returns objects directly, but handle string case)
+            let purchaseData;
+            if (typeof purchase === 'string') {
+                try {
+                    purchaseData = JSON.parse(purchase);
+                } catch (parseError) {
+                    console.error('❌ Error parsing purchase data:', parseError);
+                    return res.status(500).json({
+                        error: 'Data format error',
+                        message: 'Purchase data format is invalid.'
+                    });
+                }
+            } else {
+                purchaseData = purchase;
+            }
+            
+            // Debug: Log purchase structure
+            console.log(`🔍 Purchase data structure:`, {
+                hasProducts: !!purchaseData.products,
+                hasPurchasedItems: !!purchaseData.purchased_items,
+                productsCount: purchaseData.products?.length || 0,
+                purchasedItemsCount: purchaseData.purchased_items?.length || 0,
+                sessionId: purchaseData.session_id,
+                email: purchaseData.email || purchaseData.customer_email
+            });
+            
             const items = purchaseData.products || purchaseData.purchased_items || [];
-            const purchasedItem = items.find(item => item.productId === productId);
+            console.log(`🔍 Looking for productId: ${productId} in ${items.length} items`);
+            
+            const purchasedItem = items.find(item => {
+                const itemProductId = item.productId || item.id;
+                console.log(`  - Comparing: ${itemProductId} === ${productId}? ${itemProductId === productId}`);
+                return itemProductId === productId;
+            });
             
             if (!purchasedItem) {
+                console.error(`❌ Product ${productId} not found in purchase. Available productIds:`, 
+                    items.map(item => item.productId || item.id));
                 return res.status(403).json({
                     error: 'Item not in purchase',
                     message: 'This item was not found in your purchase.'
                 });
             }
+            
+            console.log(`✅ Found purchased item:`, {
+                productId: purchasedItem.productId,
+                title: purchasedItem.title,
+                imageHQ: purchasedItem.imageHQ ? 'present' : 'missing',
+                quantity: purchasedItem.quantity
+            });
             
             // Check if already downloaded
             const downloadKey = `purchase_download:${sessionId}:${productId}`;
@@ -694,6 +733,7 @@ async function handleGeneratePurchaseDownload(req, res) {
             const downloaded = await redisClient.get(downloadKey);
             
             if (downloaded === 'true' || (purchaseData.downloaded && purchaseData.downloaded[productId])) {
+                console.warn(`⚠️ Item already downloaded: ${productId}`);
                 return res.status(403).json({
                     error: 'Already downloaded',
                     message: 'This item has already been downloaded. You can only download it once.'
@@ -711,16 +751,16 @@ async function handleGeneratePurchaseDownload(req, res) {
         if (imageSrc && (imageSrc.startsWith('http://') || imageSrc.startsWith('https://'))) {
             // Fetch image from BunnyCDN
             try {
-                console.log(`📥 Fetching image from BunnyCDN: ${imageSrc}`);
+                console.log(`📥 Fetching image from BunnyCDN: ${imageUrl}`);
                 const https = require('https');
                 const http = require('http');
                 const url = require('url');
                 
-                const imageUrl = new URL(imageSrc);
-                const client = imageUrl.protocol === 'https:' ? https : http;
+                const parsedUrl = new URL(imageUrl);
+                const client = parsedUrl.protocol === 'https:' ? https : http;
                 
                 imageBuffer = await new Promise((resolve, reject) => {
-                    const request = client.get(imageSrc, (response) => {
+                    const request = client.get(imageUrl, (response) => {
                         if (response.statusCode !== 200) {
                             reject(new Error(`Failed to fetch image: ${response.statusCode}`));
                             return;
@@ -736,10 +776,16 @@ async function handleGeneratePurchaseDownload(req, res) {
                         request.destroy();
                         reject(new Error('Request timeout'));
                     });
+                    });
+                    request.on('error', reject);
+                    request.setTimeout(30000, () => {
+                        request.destroy();
+                        reject(new Error('Request timeout'));
+                    });
                 });
                 
                 // Extract filename from URL
-                const urlPath = imageUrl.pathname;
+                const urlPath = parsedUrl.pathname;
                 imageFileName = decodeURIComponent(urlPath.split('/').pop() || `${productId}.jpg`);
                 console.log(`✅ Fetched image from BunnyCDN: ${imageFileName} (${imageBuffer.length} bytes)`);
             } catch (fetchError) {
@@ -763,8 +809,8 @@ async function handleGeneratePurchaseDownload(req, res) {
             baseFileName = path.basename(imageFileName, fileExtension);
             fileNameWithoutExt = baseFileName;
         } else {
-            // Local file path
-            let decodedPath = decodeURIComponent(imageSrc);
+            // Local file path (fallback - should not happen with BunnyCDN)
+            let decodedPath = decodeURIComponent(imageUrl);
             const cleanPath = decodedPath.startsWith('/') 
                 ? decodedPath.substring(1) 
                 : decodedPath.replace(/^\.\.\//, '').replace(/^\.\//, '');
