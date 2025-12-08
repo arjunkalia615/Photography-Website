@@ -237,9 +237,10 @@
             downloadLinks.innerHTML = data.items.map((item, index) => {
                 const quantityPurchased = item.quantity || 1;
                 const productId = item.productId || item.id || `item_${sessionId}_${index}`;
-                const imageSrc = item.imageSrc || '';
+                const imageSrc = item.imageSrc || ''; // Low-res for display
+                const imageHQ = item.imageHQ || item.imageSrc || ''; // High-quality for downloads
                 const title = item.title || item.name || 'Photo';
-                const price = 0.50; // Fixed price per item
+                const price = 1.00; // Updated price per item
                 
                 // Generate unique button ID for tracking
                 const buttonId = `download-btn-${productId}`;
@@ -253,7 +254,8 @@
                                         class="zip-download-btn"
                                         data-session-id="${sessionId}"
                                         data-product-id="${productId}"
-                                        data-image-src="${imageSrc}"
+                                        data-image-src="${imageHQ}" 
+                                        data-image-hq="${imageHQ}"
                                         data-title="${title}"
                                         data-quantity="${quantityPurchased}"
                                         style="display: inline-block; padding: 12px 24px; background: #4dabf7; color: #000000; text-decoration: none; border-radius: 6px; font-weight: 500; transition: background 0.3s; cursor: pointer; border: none; font-size: 0.9rem;">
