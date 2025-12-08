@@ -158,6 +158,7 @@
                     link.rel = 'preload';
                     link.as = 'image';
                     link.href = photo.imageSrc;
+                    link.crossOrigin = 'anonymous';
                     link.fetchPriority = 'high';
                     document.head.appendChild(link);
                 });
