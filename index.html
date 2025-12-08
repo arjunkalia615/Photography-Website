@@ -209,14 +209,17 @@
         // Blur-up loading with smooth placeholder-to-sharp transition
         function initBlurUpLoading() {
             const imageWrappers = document.querySelectorAll('.image-wrapper.blur-load');
+            console.log(`🖼️ Initializing blur-up for ${imageWrappers.length} images`);
             
             imageWrappers.forEach((wrapper, index) => {
                 const img = wrapper.querySelector('.gallery-image');
                 
-                if (!img) return;
+                if (!img) {
+                    console.warn(`⚠️ No image found in wrapper ${index}`);
+                    return;
+                }
                 
-                // Blurred placeholder background is shown instantly via CSS
-                // Real image fades in when loaded
+                console.log(`📸 Setting up image ${index + 1}: ${img.src.substring(0, 60)}...`);
                 
                 // Always start with image hidden to show placeholder first
                 img.style.opacity = '0';
@@ -227,18 +230,25 @@
                     requestAnimationFrame(() => {
                         img.style.opacity = '1';
                         wrapper.classList.add('loaded');
+                        console.log(`✅ Image visible: ${img.src.substring(0, 60)}...`);
                     });
                 };
                 
                 // Check if image is already loaded (from browser cache or preload)
                 if (img.complete && img.naturalHeight !== 0 && img.naturalWidth !== 0) {
                     // Image is cached/preloaded - show immediately
+                    console.log(`⚡ Image already loaded: ${img.src.substring(0, 60)}...`);
                     showImage();
                 } else {
                     // Image is loading - wait for load event
                     const handleLoad = () => {
                         if (img.naturalHeight !== 0 && img.naturalWidth !== 0) {
+                            console.log(`✅ Image loaded successfully: ${img.src.substring(0, 60)}... (${img.naturalWidth}x${img.naturalHeight})`);
                             showImage();
+                        } else {
+                            console.warn(`⚠️ Image load event fired but dimensions are 0: ${img.src.substring(0, 60)}...`);
+                            // Show anyway after a short delay
+                            setTimeout(showImage, 100);
                         }
                     };
                     
@@ -252,6 +262,7 @@
                             console.error(`   naturalWidth: ${img.naturalWidth}, naturalHeight: ${img.naturalHeight}`);
                             // Show image anyway after a delay (might be CORS issue but image could still display)
                             setTimeout(() => {
+                                console.warn(`⚠️ Showing image despite error: ${img.src.substring(0, 60)}...`);
                                 showImage();
                             }, 500);
                         }, { once: true });
@@ -263,10 +274,10 @@
                             if (img.complete && img.naturalHeight !== 0 && img.naturalWidth !== 0) {
                                 clearInterval(checkInterval);
                                 handleLoad();
-                            } else if (checkCount > 20) {
-                                // After 2 seconds, show image anyway
+                            } else if (checkCount > 30) {
+                                // After 3 seconds, show image anyway
                                 clearInterval(checkInterval);
-                                console.warn(`⚠️ Image loading timeout: ${img.src}`);
+                                console.warn(`⚠️ Image loading timeout after 3s: ${img.src.substring(0, 60)}...`);
                                 showImage();
                             }
                         }, 100);
