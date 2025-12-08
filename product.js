@@ -8,7 +8,7 @@
     'use strict';
 
     // Configuration
-    const ITEM_PRICE = 0.50;
+    const ITEM_PRICE = 1.00;
 
     // State
     let currentProduct = null;

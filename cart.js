@@ -1,6 +1,6 @@
 // Simple Cart System - Clean Implementation
 const CART_STORAGE_KEY = 'shoppingCart';
-const ITEM_PRICE = 0.50; // Price per photo
+const ITEM_PRICE = 1.00; // Price per photo
 
 // Cart Utilities
 const CartUtils = {
