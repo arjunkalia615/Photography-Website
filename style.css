@@ -5064,6 +5064,14 @@ body.lightbox-open {
 /* When wrapper is loaded, show the actual image */
 .image-wrapper.loaded .gallery-image {
     opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Fallback: if image has loaded attribute or is complete, show it */
+.gallery-image[complete],
+.gallery-image[data-loaded="true"] {
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 /* Ultra-premium hover animation - very slow & smooth */
