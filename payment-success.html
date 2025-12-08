@@ -295,16 +295,8 @@
                     btn.style.color = '#ffffff';
                     btn.textContent = 'Downloading...';
                     
-                    // If imageHQ is a BunnyCDN URL, redirect directly instead of generating ZIP
-                    if (imageHQ && (imageHQ.startsWith('http://') || imageHQ.startsWith('https://'))) {
-                        // Direct download from BunnyCDN
-                        window.location.href = imageHQ;
-                        btn.textContent = 'Downloaded';
-                        return;
-                    }
-                    
                     try {
-                        // Call generatePurchaseDownload API (for local files only)
+                        // Call generatePurchaseDownload API (handles both local files and BunnyCDN URLs)
                         const response = await fetch('/api/download?action=generatePurchaseDownload', {
                             method: 'POST',
                             headers: {
@@ -355,22 +347,37 @@
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
                         
-                        // Update button to show downloaded state
+                        // Update button to show downloaded state and disable it
                         btn.textContent = `✅ Downloaded (${quantity} ${quantity === 1 ? 'copy' : 'copies'})`;
                         btn.style.background = '#51cf66';
+                        btn.disabled = true;
+                        btn.style.cursor = 'not-allowed';
+                        btn.onclick = null; // Prevent future clicks
                         
                         console.log(`✅ ZIP download successful: ${zipFilename}`);
                     } catch (error) {
                         console.error('❌ ZIP download error:', error);
-                        alert(`Download failed: ${error.message}`);
                         
-                        // Re-enable button on error
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                        btn.style.cursor = 'pointer';
-                        btn.style.background = '#4dabf7';
-                        btn.style.color = '#000000';
-                        btn.textContent = `📦 Download ZIP (${quantity} ${quantity === 1 ? 'copy' : 'copies'})`;
+                        // Check if error is "already downloaded"
+                        const errorMessage = error.message || '';
+                        if (errorMessage.includes('Already downloaded') || errorMessage.includes('already been downloaded')) {
+                            btn.textContent = `✅ Already Downloaded`;
+                            btn.style.background = '#51cf66';
+                            btn.disabled = true;
+                            btn.style.cursor = 'not-allowed';
+                            btn.onclick = null;
+                        } else {
+                            // Show error and allow retry
+                            alert(`Download failed: ${errorMessage}`);
+                            
+                            // Re-enable button on error
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                            btn.style.cursor = 'pointer';
+                            btn.style.background = '#4dabf7';
+                            btn.style.color = '#000000';
+                            btn.textContent = `📦 Download ZIP (${quantity} ${quantity === 1 ? 'copy' : 'copies'})`;
+                        }
                     }
                 });
             });

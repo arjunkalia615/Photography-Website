@@ -663,13 +663,34 @@ async function handleGeneratePurchaseDownload(req, res) {
             return res.status(400).json({ error: 'Invalid session ID', message: 'Invalid session ID format' });
         }
 
-        // Check if already downloaded using sessionId+productId as key
-        const downloadKey = `purchase_download:${sessionId}:${productId}`;
+        // Verify purchase exists and item is in purchase
         try {
+            const purchase = await db.getPurchase(`purchase:${sessionId}`);
+            if (!purchase) {
+                return res.status(404).json({
+                    error: 'Purchase not found',
+                    message: 'No purchase found for this session. Please contact support.'
+                });
+            }
+            
+            // Check if item is in purchase
+            const purchaseData = typeof purchase === 'string' ? JSON.parse(purchase) : purchase;
+            const items = purchaseData.products || purchaseData.purchased_items || [];
+            const purchasedItem = items.find(item => item.productId === productId);
+            
+            if (!purchasedItem) {
+                return res.status(403).json({
+                    error: 'Item not in purchase',
+                    message: 'This item was not found in your purchase.'
+                });
+            }
+            
+            // Check if already downloaded
+            const downloadKey = `purchase_download:${sessionId}:${productId}`;
             const redisClient = db.getRedis();
             const downloaded = await redisClient.get(downloadKey);
             
-            if (downloaded === true || downloaded === 'true') {
+            if (downloaded === 'true' || (purchaseData.downloaded && purchaseData.downloaded[productId])) {
                 return res.status(403).json({
                     error: 'Already downloaded',
                     message: 'This item has already been downloaded. You can only download it once.'
@@ -677,64 +698,115 @@ async function handleGeneratePurchaseDownload(req, res) {
             }
         } catch (redisError) {
             console.error('❌ Redis error checking download status:', redisError);
-            // Continue with download even if Redis check fails
+            // Continue with download even if Redis check fails (fail open for better UX)
         }
 
-        // If imageSrc is an external URL (BunnyCDN), we can't generate ZIP from it
+        // If imageSrc is an external URL (BunnyCDN), fetch it and create ZIP
+        let imageBuffer = null;
+        let imageFileName = null;
+        
         if (imageSrc && (imageSrc.startsWith('http://') || imageSrc.startsWith('https://'))) {
-            return res.status(400).json({
-                error: 'External URL not supported',
-                message: 'Cannot generate ZIP from external URLs. Use direct download instead.'
-            });
+            // Fetch image from BunnyCDN
+            try {
+                console.log(`📥 Fetching image from BunnyCDN: ${imageSrc}`);
+                const https = require('https');
+                const http = require('http');
+                const url = require('url');
+                
+                const imageUrl = new URL(imageSrc);
+                const client = imageUrl.protocol === 'https:' ? https : http;
+                
+                imageBuffer = await new Promise((resolve, reject) => {
+                    const request = client.get(imageSrc, (response) => {
+                        if (response.statusCode !== 200) {
+                            reject(new Error(`Failed to fetch image: ${response.statusCode}`));
+                            return;
+                        }
+                        
+                        const chunks = [];
+                        response.on('data', (chunk) => chunks.push(chunk));
+                        response.on('end', () => resolve(Buffer.concat(chunks)));
+                        response.on('error', reject);
+                    });
+                    request.on('error', reject);
+                    request.setTimeout(30000, () => {
+                        request.destroy();
+                        reject(new Error('Request timeout'));
+                    });
+                });
+                
+                // Extract filename from URL
+                const urlPath = imageUrl.pathname;
+                imageFileName = decodeURIComponent(urlPath.split('/').pop() || `${productId}.jpg`);
+                console.log(`✅ Fetched image from BunnyCDN: ${imageFileName} (${imageBuffer.length} bytes)`);
+            } catch (fetchError) {
+                console.error('❌ Error fetching image from BunnyCDN:', fetchError);
+                return res.status(500).json({
+                    error: 'Failed to fetch image',
+                    message: 'Could not download image from CDN. Please try again later.'
+                });
+            }
         }
 
-        // Determine file path
-        let decodedPath = decodeURIComponent(imageSrc);
-        const cleanPath = decodedPath.startsWith('/') 
-            ? decodedPath.substring(1) 
-            : decodedPath.replace(/^\.\.\//, '').replace(/^\.\//, '');
-        const normalizedPath = cleanPath.replace(/\\/g, '/');
+        // Determine file path or use fetched image
+        let filePath = null;
+        let fileExtension = '.jpg';
+        let baseFileName = null;
+        let fileNameWithoutExt = null;
         
-        // Security: Prevent downloading banner photos
-        if (normalizedPath.includes('banner_photos') || normalizedPath.includes('Banner Photo')) {
-            return res.status(403).json({ 
-                error: 'Access denied', 
-                message: 'Banner photos are not available for download' 
-            });
-        }
-        
-        // Security: Only allow downloads from High-Quality Photos folder (legacy local paths)
-        // For BunnyCDN URLs, skip this check as they're already validated external URLs
-        if (!normalizedPath.includes('High-Quality Photos') && !normalizedPath.includes('high_quality_photos') && !normalizedPath.includes('High-Qaulity Photos') && !imageSrc.startsWith('http')) {
-            return res.status(403).json({ 
-                error: 'Access denied', 
-                message: 'Only photos from the High-Quality Photos folder can be downloaded' 
-            });
-        }
-        
-        const filePath = path.join(process.cwd(), normalizedPath);
+        if (imageBuffer) {
+            // Use fetched image from BunnyCDN
+            fileExtension = path.extname(imageFileName) || '.jpg';
+            baseFileName = path.basename(imageFileName, fileExtension);
+            fileNameWithoutExt = baseFileName;
+        } else {
+            // Local file path
+            let decodedPath = decodeURIComponent(imageSrc);
+            const cleanPath = decodedPath.startsWith('/') 
+                ? decodedPath.substring(1) 
+                : decodedPath.replace(/^\.\.\//, '').replace(/^\.\//, '');
+            const normalizedPath = cleanPath.replace(/\\/g, '/');
+            
+            // Security: Prevent downloading banner photos
+            if (normalizedPath.includes('banner_photos') || normalizedPath.includes('Banner Photo')) {
+                return res.status(403).json({ 
+                    error: 'Access denied', 
+                    message: 'Banner photos are not available for download' 
+                });
+            }
+            
+            // Security: Only allow downloads from High-Quality Photos folder (legacy local paths)
+            if (!normalizedPath.includes('High-Quality Photos') && !normalizedPath.includes('high_quality_photos') && !normalizedPath.includes('High-Qaulity Photos')) {
+                return res.status(403).json({ 
+                    error: 'Access denied', 
+                    message: 'Only photos from the High-Quality Photos folder can be downloaded' 
+                });
+            }
+            
+            filePath = path.join(process.cwd(), normalizedPath);
 
-        const resolvedPath = path.resolve(filePath);
-        const projectRoot = path.resolve(process.cwd());
-        if (!resolvedPath.startsWith(projectRoot)) {
-            return res.status(403).json({ error: 'Access denied', message: 'Invalid file path' });
-        }
+            const resolvedPath = path.resolve(filePath);
+            const projectRoot = path.resolve(process.cwd());
+            if (!resolvedPath.startsWith(projectRoot)) {
+                return res.status(403).json({ error: 'Access denied', message: 'Invalid file path' });
+            }
 
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({
-                error: 'File not found',
-                message: `No image found for the purchased item`
-            });
-        }
+            if (!fs.existsSync(filePath)) {
+                return res.status(404).json({
+                    error: 'File not found',
+                    message: `No image found for the purchased item`
+                });
+            }
 
-        const stats = fs.statSync(filePath);
-        if (!stats.isFile()) {
-            return res.status(404).json({ error: 'Not a file', message: 'The requested path is not a file' });
-        }
+            const stats = fs.statSync(filePath);
+            if (!stats.isFile()) {
+                return res.status(404).json({ error: 'Not a file', message: 'The requested path is not a file' });
+            }
 
-        const fileExtension = path.extname(filePath);
-        const baseFileName = path.basename(filePath, fileExtension);
-        const fileNameWithoutExt = path.basename(filePath, fileExtension);
+            fileExtension = path.extname(filePath);
+            baseFileName = path.basename(filePath, fileExtension);
+            fileNameWithoutExt = path.basename(filePath, fileExtension);
+        }
 
         function sanitizeFilename(filename) {
             if (!filename) return 'Photo';
@@ -774,24 +846,45 @@ async function handleGeneratePurchaseDownload(req, res) {
 
         archive.pipe(res);
 
+        // Add images to ZIP (quantity copies)
         for (let i = 1; i <= quantity; i++) {
             const copyFileName = `${fileNameWithoutExt}_${i}${fileExtension}`;
-            archive.file(filePath, { name: copyFileName });
+            
+            if (imageBuffer) {
+                // Add fetched image buffer to ZIP
+                archive.append(imageBuffer, { name: copyFileName });
+            } else {
+                // Add local file to ZIP
+                archive.file(filePath, { name: copyFileName });
+            }
         }
 
         await archive.finalize();
 
-        // Mark item as downloaded in Redis
+        // Mark item as downloaded in Redis (after successful ZIP creation)
         try {
             const redisClient = db.getRedis();
-            await redisClient.set(downloadKey, true);
+            await redisClient.set(downloadKey, 'true', { EX: 86400 * 365 }); // Expire after 1 year
             console.log(`✅ Marked purchase download in Redis: ${downloadKey}`);
+            
+            // Also update purchase record to mark item as downloaded
+            const purchaseKey = `purchase:${sessionId}`;
+            const purchase = await redisClient.get(purchaseKey);
+            if (purchase) {
+                const purchaseData = typeof purchase === 'string' ? JSON.parse(purchase) : purchase;
+                if (!purchaseData.downloaded) {
+                    purchaseData.downloaded = {};
+                }
+                purchaseData.downloaded[productId] = true;
+                await redisClient.set(purchaseKey, JSON.stringify(purchaseData), { EX: 86400 * 365 });
+                console.log(`✅ Updated purchase record: ${productId} marked as downloaded`);
+            }
         } catch (redisError) {
             console.error('❌ Error marking download in Redis:', redisError);
         }
 
-        console.log(`✅ ZIP archive created with ${quantity} copies: ${baseFileName}`);
-        console.log(`📊 Session: ${sessionId}, Product: ${productId}, File: ${filePath}`);
+        console.log(`✅ ZIP archive created with ${quantity} copies: ${baseFileName || imageFileName}`);
+        console.log(`📊 Session: ${sessionId}, Product: ${productId}, Source: ${imageBuffer ? 'BunnyCDN' : 'Local'}`);
 
     } catch (error) {
         console.error('❌ Error generating purchase download:', error);
