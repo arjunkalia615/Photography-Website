@@ -665,14 +665,100 @@ async function handleGeneratePurchaseDownload(req, res) {
 
         // Verify purchase exists and item is in purchase
         // Note: db.getPurchase() already adds 'purchase:' prefix, so pass sessionId directly
+        // First try Redis, then fallback to Stripe session retrieval if webhook hasn't processed yet
+        let purchase = null;
         try {
-            const purchase = await db.getPurchase(sessionId);
+            purchase = await db.getPurchase(sessionId);
+            if (!purchase) {
+                console.warn(`⚠️ Purchase not found in Redis for session: ${sessionId}`);
+                console.warn(`🔑 Redis key checked: purchase:${sessionId}`);
+                console.log(`🔄 Attempting to retrieve from Stripe session as fallback...`);
+                
+                // Fallback: Try to get purchase data from Stripe session directly
+                // This handles cases where webhook hasn't processed yet
+                try {
+                    const stripe = require('stripe');
+                    const useTestMode = process.env.USE_TEST_STRIPE === 'true';
+                    const stripeSecretKey = useTestMode 
+                        ? process.env.STRIPE_SECRET_KEY_TEST 
+                        : process.env.STRIPE_SECRET_KEY;
+                    
+                    if (stripeSecretKey) {
+                        const stripeInstance = stripe(stripeSecretKey);
+                        const session = await stripeInstance.checkout.sessions.retrieve(sessionId, {
+                            expand: ['line_items']
+                        });
+                        
+                        if (session && session.payment_status === 'paid') {
+                            console.log(`✅ Retrieved session from Stripe, reconstructing purchase data...`);
+                            
+                            // Reconstruct purchase data from Stripe session
+                            const db = require('./db');
+                            const utils = require('./utils');
+                            
+                            // Get cart items from Redis using temp_cart_key
+                            let cartItems = [];
+                            if (session.metadata && session.metadata.temp_cart_key) {
+                                const tempCartData = await db.getPurchase(session.metadata.temp_cart_key);
+                                if (tempCartData && tempCartData.cartItems) {
+                                    cartItems = tempCartData.cartItems;
+                                }
+                            }
+                            
+                            // Fallback: Try session ID directly
+                            if (cartItems.length === 0) {
+                                const sessionCartData = await db.getPurchase(`temp_cart:${sessionId}`);
+                                if (sessionCartData && sessionCartData.cartItems) {
+                                    cartItems = sessionCartData.cartItems;
+                                }
+                            }
+                            
+                            // If we have cart items, reconstruct purchase data
+                            if (cartItems.length > 0) {
+                                const purchasedItems = cartItems.map(cartItem => ({
+                                    productId: cartItem.productId || cartItem.id,
+                                    title: cartItem.title || cartItem.name,
+                                    fileName: (cartItem.imageHQ || cartItem.imageSrc || '').split('/').pop() || `${(cartItem.title || cartItem.name).replace(/[^a-z0-9]/gi, '_')}.jpg`,
+                                    imageSrc: cartItem.imageSrc || '',
+                                    imageHQ: cartItem.imageHQ || cartItem.imageSrc || '',
+                                    quantity: cartItem.quantity || 1,
+                                    quantityPurchased: cartItem.quantity || 1,
+                                    max_downloads: cartItem.quantity || 1,
+                                    maxDownloads: cartItem.quantity || 1
+                                }));
+                                
+                                const purchaseData = {
+                                    session_id: sessionId,
+                                    email: session.customer_email || session.customer_details?.email,
+                                    customer_email: session.customer_email || session.customer_details?.email,
+                                    products: purchasedItems,
+                                    purchased_items: purchasedItems,
+                                    quantity: purchasedItems.reduce((sum, item) => sum + item.quantity, 0),
+                                    downloaded: {},
+                                    payment_status: session.payment_status,
+                                    createdAt: new Date().toISOString(),
+                                    timestamp: new Date().toISOString()
+                                };
+                                
+                                // Save to Redis for future requests
+                                await db.savePurchase(sessionId, purchaseData);
+                                console.log(`✅ Reconstructed and saved purchase data to Redis`);
+                                
+                                purchase = purchaseData;
+                            }
+                        }
+                    }
+                } catch (stripeError) {
+                    console.error('❌ Error retrieving from Stripe:', stripeError);
+                }
+            }
+            
             if (!purchase) {
                 console.error(`❌ Purchase not found for session: ${sessionId}`);
                 console.error(`🔑 Redis key checked: purchase:${sessionId}`);
                 return res.status(404).json({
                     error: 'Purchase not found',
-                    message: 'No purchase found for this session. Please contact support.'
+                    message: 'No purchase found for this session. The webhook may still be processing. Please wait a moment and refresh the page.'
                 });
             }
             
@@ -866,12 +952,14 @@ async function handleGeneratePurchaseDownload(req, res) {
             ? `${sanitizedTitle}_x${quantity}.zip`
             : `${sanitizedTitle}.zip`;
 
+        // Set headers to force download (not preview)
         res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"; filename*=UTF-8''${encodeURIComponent(zipFilename)}`);
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
         res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Content-Transfer-Encoding', 'binary');
 
         const archive = archiver('zip', {
             zlib: { level: 0 }
