@@ -175,7 +175,7 @@
                 console.log(`🔍 Fetching purchase details for session: ${sessionId}`);
                 
                 // Fetch session details immediately from Stripe (no Redis required)
-                const response = await fetch(`/api/functions?action=getSessionDetails&session_id=${encodeURIComponent(sessionId)}`);
+                const response = await fetch(`/api/get-session-details?session_id=${encodeURIComponent(sessionId)}`);
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
@@ -294,13 +294,12 @@
                     
                     try {
                         // Call generatePurchaseDownload API
-                        const response = await fetch('/api/functions', {
+                        const response = await fetch('/api/download?action=generate', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
-                                action: 'generatePurchaseDownload',
                                 sessionId: sessionId,
                                 productId: productId,
                                 imageSrc: imageSrc,

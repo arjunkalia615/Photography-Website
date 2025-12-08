@@ -143,9 +143,8 @@
         
         // Backend API endpoint (unified function)
         const API_BASE_URL = window.location.origin; // Use same origin, or set to your backend URL
-        const API_ENDPOINT = `${API_BASE_URL}/api/functions`;
-        const CHECKOUT_ENDPOINT = `${API_ENDPOINT}?action=createSession`;
-        const STRIPE_KEY_ENDPOINT = `${API_ENDPOINT}?action=getStripeKey`;
+        const CHECKOUT_ENDPOINT = `${API_BASE_URL}/api/create-checkout-session`;
+        const STRIPE_KEY_ENDPOINT = `${API_BASE_URL}/api/get-stripe-key`;
         
         // Fetch Stripe publishable key from environment variable via API
         async function initializeStripe() {

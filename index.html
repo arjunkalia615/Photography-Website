@@ -130,7 +130,7 @@
             removeOldPhotoItems();
             
             try {
-                const response = await fetch('/api/functions?action=getPhotos');
+                const response = await fetch('/api/get-photos');
                 if (!response.ok) {
                     throw new Error(`Failed to load photos: ${response.status}`);
                 }

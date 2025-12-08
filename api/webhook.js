@@ -11,7 +11,7 @@ const db = require('./db');
 async function handler(req, res) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Stripe-Signature');
 
     // Handle preflight OPTIONS request
@@ -19,11 +19,41 @@ async function handler(req, res) {
         return res.status(200).end();
     }
 
-    // Only allow POST method
+    // Handle GET request for checking webhook status
+    if (req.method === 'GET') {
+        try {
+            const sessionId = req.query.session_id;
+
+            if (!sessionId) {
+                return res.status(400).json({ error: 'session_id required' });
+            }
+
+            if (!sessionId.startsWith('cs_')) {
+                return res.status(400).json({ error: 'Invalid session ID format' });
+            }
+
+            const purchase = await db.getPurchase(sessionId);
+
+            return res.status(200).json({
+                sessionId: sessionId,
+                found: !!purchase,
+                purchase: purchase || null,
+                redisKey: `purchase:${sessionId}`
+            });
+        } catch (error) {
+            console.error('Error checking webhook:', error);
+            return res.status(500).json({
+                error: 'Failed to check webhook',
+                message: error.message
+            });
+        }
+    }
+
+    // Only allow POST method for webhook processing
     if (req.method !== 'POST') {
         return res.status(405).json({
             error: 'Method not allowed',
-            message: 'Only POST method is supported'
+            message: 'Only GET and POST methods are supported'
         });
     }
 
