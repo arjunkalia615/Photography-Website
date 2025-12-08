@@ -282,7 +282,8 @@
                     const btn = this;
                     const sessionId = btn.getAttribute('data-session-id');
                     const productId = btn.getAttribute('data-product-id');
-                    const imageSrc = btn.getAttribute('data-image-src');
+                    const imageSrc = btn.getAttribute('data-image-src'); // This is now HQ URL
+                    const imageHQ = btn.getAttribute('data-image-hq') || imageSrc; // HQ URL for downloads
                     const title = btn.getAttribute('data-title');
                     const quantity = parseInt(btn.getAttribute('data-quantity')) || 1;
                     
@@ -294,8 +295,16 @@
                     btn.style.color = '#ffffff';
                     btn.textContent = 'Downloading...';
                     
+                    // If imageHQ is a BunnyCDN URL, redirect directly instead of generating ZIP
+                    if (imageHQ && (imageHQ.startsWith('http://') || imageHQ.startsWith('https://'))) {
+                        // Direct download from BunnyCDN
+                        window.location.href = imageHQ;
+                        btn.textContent = 'Downloaded';
+                        return;
+                    }
+                    
                     try {
-                        // Call generatePurchaseDownload API
+                        // Call generatePurchaseDownload API (for local files only)
                         const response = await fetch('/api/download?action=generatePurchaseDownload', {
                             method: 'POST',
                             headers: {
