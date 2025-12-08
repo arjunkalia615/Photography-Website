@@ -652,11 +652,10 @@ async function handleGeneratePurchaseDownload(req, res) {
         const body = parseBody(req);
         const { sessionId, productId, imageSrc, title, quantity } = body;
 
-        // Note: imageSrc is optional - we'll get it from purchase data
-        if (!sessionId || !productId || !quantity) {
+        if (!sessionId || !productId || !imageSrc || !quantity) {
             return res.status(400).json({ 
                 error: 'Missing parameters', 
-                message: 'sessionId, productId, and quantity are required' 
+                message: 'sessionId, productId, imageSrc, and quantity are required' 
             });
         }
 
@@ -826,24 +825,29 @@ async function handleGeneratePurchaseDownload(req, res) {
                     message: 'This item has already been downloaded. You can only download it once.'
                 });
             }
-            
-            // Get image URL from purchased item (prefer imageHQ for downloads)
-            const imageUrl = purchasedItem.imageHQ || purchasedItem.imageSrc || imageSrc;
-            if (!imageUrl) {
-                console.error(`❌ No image URL found for product ${productId}`);
-                return res.status(404).json({
-                    error: 'Image not found',
-                    message: 'Image URL not available for this product.'
-                });
-            }
-            
-            console.log(`📥 Image URL for download: ${imageUrl.substring(0, 80)}...`);
-            
-            // If imageUrl is an external URL (BunnyCDN), fetch it and create ZIP
-            let imageBuffer = null;
-            let imageFileName = null;
-            
-            if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+        } catch (redisError) {
+            console.error('❌ Redis error checking download status:', redisError);
+            // Continue with download even if Redis check fails (fail open for better UX)
+        }
+
+        // Get image URL from purchased item (prefer imageHQ for downloads)
+        // Fallback to imageSrc from request body if not in purchase data
+        const imageUrl = purchasedItem.imageHQ || purchasedItem.imageSrc || imageSrc;
+        if (!imageUrl) {
+            console.error(`❌ No image URL found for product ${productId}`);
+            return res.status(404).json({
+                error: 'Image not found',
+                message: 'Image URL not available for this product.'
+            });
+        }
+        
+        console.log(`📥 Image URL for download: ${imageUrl.substring(0, 80)}...`);
+
+        // If imageUrl is an external URL (BunnyCDN), fetch it and create ZIP
+        let imageBuffer = null;
+        let imageFileName = null;
+        
+        if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
             // Fetch image from BunnyCDN
             try {
                 console.log(`📥 Fetching image from BunnyCDN: ${imageUrl}`);
