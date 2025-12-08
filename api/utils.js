@@ -55,10 +55,26 @@ function parseBody(req) {
 async function handleGetPhotos(req, res) {
     try {
         // Load images from JSON file
-        const imagesJsonPath = path.join(process.cwd(), 'data', 'images.json');
+        // Try multiple possible paths (Vercel deployment vs local development)
+        const possiblePaths = [
+            path.join(process.cwd(), 'data', 'images.json'),
+            path.join(__dirname, '..', 'data', 'images.json'),
+            path.join(process.cwd(), '..', 'data', 'images.json')
+        ];
         
-        if (!fs.existsSync(imagesJsonPath)) {
-            console.error(`❌ images.json not found at: ${imagesJsonPath}`);
+        let imagesJsonPath = null;
+        for (const jsonPath of possiblePaths) {
+            if (fs.existsSync(jsonPath)) {
+                imagesJsonPath = jsonPath;
+                console.log(`✅ Found images.json at: ${jsonPath}`);
+                break;
+            }
+        }
+        
+        if (!imagesJsonPath) {
+            console.error(`❌ images.json not found. Tried: ${possiblePaths.join(', ')}`);
+            console.error(`Current working directory: ${process.cwd()}`);
+            console.error(`__dirname: ${__dirname}`);
             return res.status(404).json({
                 error: 'Images data not found',
                 message: 'The images data file could not be located on the server.'
@@ -67,6 +83,7 @@ async function handleGetPhotos(req, res) {
 
         // Read and parse JSON file
         const imagesData = JSON.parse(fs.readFileSync(imagesJsonPath, 'utf8'));
+        console.log(`✅ Loaded ${Object.keys(imagesData).length} images from JSON`);
         
         // Convert JSON structure to photo array format
         const photos = Object.entries(imagesData).map(([productId, imageData]) => {
