@@ -748,7 +748,7 @@ async function handleGeneratePurchaseDownload(req, res) {
         let imageBuffer = null;
         let imageFileName = null;
         
-        if (imageSrc && (imageSrc.startsWith('http://') || imageSrc.startsWith('https://'))) {
+        if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
             // Fetch image from BunnyCDN
             try {
                 console.log(`📥 Fetching image from BunnyCDN: ${imageUrl}`);
