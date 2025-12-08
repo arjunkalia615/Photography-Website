@@ -128,6 +128,29 @@ async function handler(req, res) {
             quantity: item.quantity || 1,
         }));
 
+        // Store full cart items in Redis before creating session (for webhook access)
+        // This avoids Stripe's 500-character metadata limit
+        const db = require('./db');
+        const fullCartItems = body.items.map(item => ({
+            name: item.name,
+            title: item.title || item.name,
+            imageSrc: item.imageSrc || '', // Low-res for display
+            imageHQ: item.imageHQ || item.imageSrc || '', // High-quality for downloads
+            productId: item.productId || item.id || null,
+            quantity: item.quantity || 1
+        }));
+        
+        // Store cart items in Redis keyed by a temporary key first
+        const tempCartKey = `temp_cart:${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        let cartStored = false;
+        try {
+            await db.savePurchase(tempCartKey, { cartItems: fullCartItems }, 3600); // 1 hour expiry
+            cartStored = true;
+            console.log(`✅ Stored cart items in Redis with key: ${tempCartKey}`);
+        } catch (redisError) {
+            console.warn('⚠️ Could not store cart items in Redis, will use minimal metadata:', redisError);
+        }
+        
         // Create Stripe Checkout Session
         // Always include payment_intent_data with setup_future_usage to ensure card collection
         // This forces Stripe to show the card payment form even for $0.00 payments
@@ -144,21 +167,16 @@ async function handler(req, res) {
             // Explicitly set to 'en' to avoid locale detection issues
             locale: 'en',
             
-            // Metadata (useful for tracking and webhook processing)
+            // Metadata (minimal - only essential info to stay under 500 chars)
+            // Full cart data with image URLs is stored in Redis for webhook access
             metadata: {
                 order_type: 'digital_photo_download',
                 website: 'ifeelworld.com',
                 item_count: body.items.length.toString(),
-                // Store cart items as JSON for webhook to process download links
-                // Include productId, imageSrc (low-res), and imageHQ (high-quality) for proper tracking
-                cart_items: JSON.stringify(body.items.map(item => ({
-                    name: item.name,
-                    title: item.title || item.name,
-                    imageSrc: item.imageSrc || '', // Low-res for display
-                    imageHQ: item.imageHQ || item.imageSrc || '', // High-quality for downloads
-                    productId: item.productId || item.id || null,
-                    quantity: item.quantity || 1
-                })))
+                // Store only productIds (comma-separated) to minimize metadata size
+                // Full cart items with URLs are stored in Redis
+                product_ids: body.items.map(item => item.productId || item.id || '').filter(id => id).join(','),
+                temp_cart_key: cartStored ? tempCartKey : '' // Key to retrieve full cart from Redis
             },
             
             // Customer email collection (if provided)
@@ -182,6 +200,27 @@ async function handler(req, res) {
             },
         });
 
+        // After session creation, move cart from temp key to session-based key for easier webhook access
+        if (cartStored && tempCartKey) {
+            try {
+                const tempCartData = await db.getPurchase(tempCartKey);
+                if (tempCartData) {
+                    // Store with session ID for webhook access
+                    await db.savePurchase(`temp_cart:${session.id}`, tempCartData, 3600);
+                    console.log(`✅ Moved cart to session key: temp_cart:${session.id}`);
+                    // Clean up old temp key (optional, will expire anyway)
+                    try {
+                        const redis = db.getRedis();
+                        await redis.del(tempCartKey);
+                    } catch (cleanupError) {
+                        // Ignore cleanup errors
+                    }
+                }
+            } catch (moveError) {
+                console.warn('⚠️ Could not move cart to session key:', moveError);
+            }
+        }
+        
         // Return the session ID for redirect
         return res.status(200).json({
             id: session.id

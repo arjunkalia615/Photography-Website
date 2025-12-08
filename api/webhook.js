@@ -171,12 +171,41 @@ async function handler(req, res) {
                 console.error('❌ Error fetching line items:', error);
             }
 
-            // Extract cart items from metadata (fallback if line_items unavailable)
+            // Extract cart items from Redis (using temp_cart_key from metadata)
+            // This avoids Stripe's 500-character metadata limit
             let cartItems = [];
-            if (session.metadata && session.metadata.cart_items) {
+            
+            // Try session-based key first
+            if (session.metadata && session.metadata.temp_cart_key) {
+                try {
+                    const tempCartData = await db.getPurchase(session.metadata.temp_cart_key);
+                    if (tempCartData && tempCartData.cartItems) {
+                        cartItems = tempCartData.cartItems;
+                        console.log(`📋 Retrieved ${cartItems.length} cart items from Redis (key: ${session.metadata.temp_cart_key})`);
+                    }
+                } catch (redisError) {
+                    console.warn('⚠️ Could not retrieve cart items from Redis:', redisError);
+                }
+            }
+            
+            // Fallback: Try session ID directly
+            if (cartItems.length === 0) {
+                try {
+                    const sessionCartData = await db.getPurchase(`temp_cart:${sessionId}`);
+                    if (sessionCartData && sessionCartData.cartItems) {
+                        cartItems = sessionCartData.cartItems;
+                        console.log(`📋 Retrieved ${cartItems.length} cart items from Redis (session key)`);
+                    }
+                } catch (redisError) {
+                    // Ignore
+                }
+            }
+            
+            // Fallback: Try to parse from old metadata format (for backward compatibility)
+            if (cartItems.length === 0 && session.metadata && session.metadata.cart_items) {
                 try {
                     cartItems = JSON.parse(session.metadata.cart_items);
-                    console.log(`📋 Retrieved ${cartItems.length} cart items from metadata`);
+                    console.log(`📋 Retrieved ${cartItems.length} cart items from metadata (legacy format)`);
                 } catch (parseError) {
                     console.error('❌ Error parsing cart_items from metadata:', parseError);
                 }
