@@ -138,8 +138,21 @@
         }
 
         // Get session ID from URL query parameter (exact session ID from Stripe checkout)
+        // Stripe replaces {CHECKOUT_SESSION_ID} with the actual session ID in the success_url
         const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get('session_id');
+        let sessionId = urlParams.get('session_id');
+        
+        // Validate and clean session ID (remove any URL encoding issues)
+        if (sessionId) {
+            // Decode URL-encoded characters
+            sessionId = decodeURIComponent(sessionId);
+            // Remove any whitespace
+            sessionId = sessionId.trim();
+            // Log for debugging
+            console.log(`📋 Extracted session ID from URL: ${sessionId}`);
+            console.log(`📋 Session ID length: ${sessionId.length}`);
+            console.log(`📋 Session ID format valid: ${sessionId.startsWith('cs_')}`);
+        }
         
         // Display session ID
         if (sessionId) {
