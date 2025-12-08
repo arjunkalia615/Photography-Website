@@ -776,12 +776,6 @@ async function handleGeneratePurchaseDownload(req, res) {
                         request.destroy();
                         reject(new Error('Request timeout'));
                     });
-                    });
-                    request.on('error', reject);
-                    request.setTimeout(30000, () => {
-                        request.destroy();
-                        reject(new Error('Request timeout'));
-                    });
                 });
                 
                 // Extract filename from URL
