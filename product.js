@@ -278,12 +278,13 @@
             return;
         }
 
-        // Add item to cart using HIGH-QUALITY path for download
+        // Add item to cart with both low-res (for display) and HQ (for download)
         Cart.addItem(
-            currentProduct.imageHQ || currentProduct.imageSrc,
+            currentProduct.imageSrc, // Low-res for cart display
             currentProduct.title,
             ITEM_PRICE,
-            currentProduct.productId
+            currentProduct.productId,
+            currentProduct.imageHQ || currentProduct.imageSrc // HQ for downloads
         );
 
         // Update UI to show quantity control

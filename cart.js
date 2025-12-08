@@ -58,7 +58,7 @@ const CartUtils = {
 // Cart Operations
 const Cart = {
     // Add item to cart
-    addItem(imageSrc, title, price = ITEM_PRICE, productId = null) {
+    addItem(imageSrc, title, price = ITEM_PRICE, productId = null, imageHQ = null) {
         const cart = CartUtils.getCart();
         const normalizedPath = CartUtils.normalizeImagePath(imageSrc);
         // Use provided productId (UUID) or generate one
@@ -70,10 +70,15 @@ const Cart = {
         
         if (existingItem) {
             existingItem.quantity += 1;
+            // Update imageHQ if provided
+            if (imageHQ) {
+                existingItem.imageHQ = imageHQ;
+            }
         } else {
             cart.push({
                 id: itemId,
                 imageSrc: normalizedPath,
+                imageHQ: imageHQ || normalizedPath, // Include HQ URL for downloads
                 title: title,
                 price: price,
                 quantity: 1

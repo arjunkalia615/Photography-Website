@@ -201,13 +201,15 @@ async function handler(req, res) {
                     );
                     
                     const imageSrc = cartItem?.imageSrc || '';
+                    const imageHQ = cartItem?.imageHQ || imageSrc || ''; // Use HQ URL for downloads
                     const productId = cartItem?.productId || cartItem?.id || lineItem.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                    const fileName = imageSrc.split('/').pop() || `${productName.replace(/[^a-z0-9]/gi, '_')}.jpg`;
+                    const fileName = (imageHQ || imageSrc).split('/').pop() || `${productName.replace(/[^a-z0-9]/gi, '_')}.jpg`;
 
                     purchasedItems.push({
                         productId: productId,
                         fileName: fileName,
-                        imageSrc: imageSrc,
+                        imageSrc: imageSrc, // Low-res for display
+                        imageHQ: imageHQ, // High-quality for downloads
                         title: productName,
                         quantity: quantity,
                         quantityPurchased: quantity, // Explicit quantity purchased
@@ -222,13 +224,15 @@ async function handler(req, res) {
                 for (const cartItem of cartItems) {
                     const productId = cartItem.productId || cartItem.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                     const imageSrc = cartItem.imageSrc || '';
-                    const fileName = imageSrc.split('/').pop() || `${(cartItem.title || cartItem.name).replace(/[^a-z0-9]/gi, '_')}.jpg`;
+                    const imageHQ = cartItem.imageHQ || imageSrc || ''; // Use HQ URL for downloads
+                    const fileName = (imageHQ || imageSrc).split('/').pop() || `${(cartItem.title || cartItem.name).replace(/[^a-z0-9]/gi, '_')}.jpg`;
                     const quantity = cartItem.quantity || 1;
 
                     purchasedItems.push({
                         productId: productId,
                         fileName: fileName,
-                        imageSrc: imageSrc,
+                        imageSrc: imageSrc, // Low-res for display
+                        imageHQ: imageHQ, // High-quality for downloads
                         title: cartItem.title || cartItem.name,
                         quantity: quantity,
                         quantityPurchased: quantity, // Explicit quantity purchased
@@ -252,7 +256,8 @@ async function handler(req, res) {
                     productId: item.productId,
                     title: item.title,
                     fileName: item.fileName,
-                    imageSrc: item.imageSrc,
+                    imageSrc: item.imageSrc, // Low-res for display
+                    imageHQ: item.imageHQ, // High-quality for downloads
                     quantity: item.quantity,
                     quantityPurchased: item.quantity, // Explicit quantity purchased
                     maxDownloads: item.max_downloads,

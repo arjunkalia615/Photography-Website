@@ -188,7 +188,8 @@ async function handleDownloadFile(req, res) {
         console.log(`🔑 Redis key: purchase:${sessionId}`);
 
         // Get file path - handle both local paths and external URLs (BunnyCDN)
-        const imageSrc = purchasedItem.imageSrc;
+        // Prefer imageHQ (high-quality) for downloads, fallback to imageSrc
+        let imageSrc = purchasedItem.imageHQ || purchasedItem.imageSrc;
         if (!imageSrc) {
             return res.status(404).json({
                 error: 'File not found',
@@ -198,7 +199,7 @@ async function handleDownloadFile(req, res) {
 
         // If imageSrc is an external URL (BunnyCDN), redirect to it
         if (imageSrc.startsWith('http://') || imageSrc.startsWith('https://')) {
-            // Redirect to external URL for download
+            // Redirect to external URL for download (HQ image from BunnyCDN)
             res.setHeader('Location', imageSrc);
             return res.status(302).end();
         }
@@ -702,8 +703,9 @@ async function handleGeneratePurchaseDownload(req, res) {
             });
         }
         
-        // Security: Only allow downloads from High-Quality Photos folder
-        if (!normalizedPath.includes('High-Quality Photos') && !normalizedPath.includes('high_quality_photos') && !normalizedPath.includes('High-Qaulity Photos')) {
+        // Security: Only allow downloads from High-Quality Photos folder (legacy local paths)
+        // For BunnyCDN URLs, skip this check as they're already validated external URLs
+        if (!normalizedPath.includes('High-Quality Photos') && !normalizedPath.includes('high_quality_photos') && !normalizedPath.includes('High-Qaulity Photos') && !imageSrc.startsWith('http')) {
             return res.status(403).json({ 
                 error: 'Access denied', 
                 message: 'Only photos from the High-Quality Photos folder can be downloaded' 

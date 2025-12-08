@@ -51,90 +51,46 @@ function parseBody(req) {
     return req.body || {};
 }
 
-// Action: Get all photos from high-quality photos folder
+// Action: Get all photos from images.json (BunnyCDN URLs)
 async function handleGetPhotos(req, res) {
     try {
-        // Try multiple possible folder names (handle typos and variations)
-        const possibleFolders = [
-            path.join(process.cwd(), 'Images', 'High-Quality Photos'), // Correct spelling
-            path.join(process.cwd(), 'Images', 'high_quality_photos'), // Alternative spelling
-            path.join(process.cwd(), 'Images', 'High-Qaulity Photos'), // Common typo
-        ];
+        // Load images from JSON file
+        const imagesJsonPath = path.join(process.cwd(), 'data', 'images.json');
         
-        let photosFolder = null;
-        for (const folder of possibleFolders) {
-            if (fs.existsSync(folder)) {
-                photosFolder = folder;
-                console.log(`✅ Found photos folder: ${folder}`);
-                break;
-            }
-        }
-        
-        if (!photosFolder) {
-            console.warn(`⚠️ Photos folder not found. Tried: Images/High-Quality Photos, Images/high_quality_photos, and Images/High-Qaulity Photos`);
+        if (!fs.existsSync(imagesJsonPath)) {
+            console.error(`❌ images.json not found at: ${imagesJsonPath}`);
             return res.status(404).json({
-                error: 'Photos folder not found',
-                message: 'The photos folder could not be located on the server.'
+                error: 'Images data not found',
+                message: 'The images data file could not be located on the server.'
             });
         }
 
-        // Read all files from the folder
-        const files = fs.readdirSync(photosFolder);
+        // Read and parse JSON file
+        const imagesData = JSON.parse(fs.readFileSync(imagesJsonPath, 'utf8'));
         
-        // Filter for image files only
-        const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-        const photos = files
-            .filter(file => {
-                const ext = path.extname(file).toLowerCase();
-                return imageExtensions.includes(ext);
-            })
-            .map(file => {
-                const filePath = path.join(photosFolder, file);
-                const stats = fs.statSync(filePath);
-                
-                // Only include actual files (not directories)
-                if (!stats.isFile()) {
-                    return null;
-                }
+        // Convert JSON structure to photo array format
+        const photos = Object.entries(imagesData).map(([productId, imageData]) => {
+            // Extract title from productId (convert kebab-case to Title Case)
+            const title = productId
+                .split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+            
+            // Get original filename from productId (for backward compatibility)
+            const filename = `${productId}.jpg`;
+            
+            return {
+                productId: productId,
+                imageSrc: imageData.low,              // Low-res for gallery thumbnails
+                imageThumb: imageData.low,            // Low-res thumbnail
+                imageHQ: imageData.hq,                // High-quality for product page
+                title: title,
+                filename: filename,
+                category: 'Photography'
+            };
+        }).sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
 
-                // Use the actual folder name found (could be high_quality_photos or High-Qaulity Photos)
-                const folderName = path.basename(photosFolder);
-                const highQualityPath = `Images/${folderName}/${file}`;
-                
-                // Normalize extension to lowercase for low-res path (handles .JPG vs .jpg)
-                const ext = path.extname(file);
-                const baseFileName = path.basename(file, ext);
-                const normalizedFileName = baseFileName + ext.toLowerCase();
-                const lowResPath = `Images/LowResImages/${normalizedFileName}`;
-                
-                const baseName = path.basename(file, ext);
-                
-                // Generate a product ID from the filename (unchanged - based on filename)
-                const productId = baseName.toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, '');
-                
-                // Get descriptive title from mapping or generate from filename
-                const title = getPhotoTitle(file, baseName);
-
-                // Use placeholder URLs instead of local paths (images will be served from BunnyCDN)
-                const placeholderLowRes = `https://via.placeholder.com/800?text=${encodeURIComponent(title)}`;
-                const placeholderHighRes = `https://via.placeholder.com/2000?text=${encodeURIComponent(title)}`;
-                
-                return {
-                    productId: productId || `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    imageSrc: placeholderLowRes,              // Placeholder for gallery thumbnails
-                    imageThumb: placeholderLowRes,            // Placeholder thumbnail
-                    imageHQ: placeholderHighRes,          // Placeholder for product page
-                    title: title,
-                    filename: file,
-                    category: 'Photography' // Default category, can be enhanced later
-                };
-            })
-            .filter(photo => photo !== null) // Remove null entries
-            .sort((a, b) => a.title.localeCompare(b.title)); // Sort alphabetically by title
-
-        console.log(`✅ Found ${photos.length} photos in high_quality_photos folder`);
+        console.log(`✅ Loaded ${photos.length} photos from images.json`);
         
         return res.status(200).json({
             success: true,
