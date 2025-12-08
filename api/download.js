@@ -664,9 +664,12 @@ async function handleGeneratePurchaseDownload(req, res) {
         }
 
         // Verify purchase exists and item is in purchase
+        // Note: db.getPurchase() already adds 'purchase:' prefix, so pass sessionId directly
         try {
-            const purchase = await db.getPurchase(`purchase:${sessionId}`);
+            const purchase = await db.getPurchase(sessionId);
             if (!purchase) {
+                console.error(`❌ Purchase not found for session: ${sessionId}`);
+                console.error(`🔑 Redis key checked: purchase:${sessionId}`);
                 return res.status(404).json({
                     error: 'Purchase not found',
                     message: 'No purchase found for this session. Please contact support.'
