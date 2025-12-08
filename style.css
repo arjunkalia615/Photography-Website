@@ -5024,9 +5024,15 @@ body.lightbox-open {
 
 /* When image loaded - remove blur and scale */
 .image-wrapper.blur-load.loaded {
-    filter: blur(0);
-    transform: scale(1);
+    filter: blur(0) !important;
+    transform: scale(1) !important;
     background-image: none !important;
+}
+
+/* Force image visibility when loaded */
+.image-wrapper.loaded .gallery-image {
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 /* Gallery image - overlays on blurred placeholder */

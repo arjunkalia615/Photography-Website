@@ -179,7 +179,9 @@
                                      fetchpriority="${isFirstRow ? 'high' : 'auto'}"
                                      decoding="async"
                                      crossorigin="anonymous"
-                                     style="opacity: 0; width: 100%; height: auto; display: block;">
+                                     onload="this.style.opacity='1'; this.closest('.image-wrapper')?.classList.add('loaded');"
+                                     onerror="this.style.opacity='1'; this.closest('.image-wrapper')?.classList.add('loaded');"
+                                     style="opacity: 0; width: 100%; height: auto; display: block; transition: opacity 0.4s ease-in-out;">
                             </div>
                         </a>
                     `;
@@ -223,65 +225,79 @@
                 
                 // Always start with image hidden to show placeholder first
                 img.style.opacity = '0';
-                img.style.transition = 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                img.style.transition = 'opacity 0.4s ease-in-out';
                 
-                // Function to show image
+                // Function to show image - more aggressive
                 const showImage = () => {
+                    // Force show the image
                     requestAnimationFrame(() => {
                         img.style.opacity = '1';
+                        img.style.visibility = 'visible';
                         wrapper.classList.add('loaded');
+                        // Remove blur from background
+                        wrapper.style.filter = 'blur(0)';
+                        wrapper.style.transform = 'scale(1)';
                         console.log(`✅ Image visible: ${img.src.substring(0, 60)}...`);
                     });
                 };
                 
-                // Check if image is already loaded (from browser cache or preload)
-                if (img.complete && img.naturalHeight !== 0 && img.naturalWidth !== 0) {
-                    // Image is cached/preloaded - show immediately
-                    console.log(`⚡ Image already loaded: ${img.src.substring(0, 60)}...`);
-                    showImage();
-                } else {
-                    // Image is loading - wait for load event
-                    const handleLoad = () => {
-                        if (img.naturalHeight !== 0 && img.naturalWidth !== 0) {
-                            console.log(`✅ Image loaded successfully: ${img.src.substring(0, 60)}... (${img.naturalWidth}x${img.naturalHeight})`);
+                // More aggressive loading check
+                const checkAndShow = () => {
+                    // Check multiple conditions
+                    if (img.complete || img.readyState === 'complete' || img.readyState === 4) {
+                        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
                             showImage();
-                        } else {
-                            console.warn(`⚠️ Image load event fired but dimensions are 0: ${img.src.substring(0, 60)}...`);
-                            // Show anyway after a short delay
-                            setTimeout(showImage, 100);
+                            return true;
                         }
+                    }
+                    // Also check if image has dimensions even if not marked complete
+                    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                        showImage();
+                        return true;
+                    }
+                    return false;
+                };
+                
+                // Immediate check
+                if (checkAndShow()) {
+                    console.log(`⚡ Image already loaded: ${img.src.substring(0, 60)}...`);
+                } else {
+                    // Multiple event listeners for maximum compatibility
+                    const handleLoad = () => {
+                        console.log(`✅ Image load event: ${img.src.substring(0, 60)}... (${img.naturalWidth}x${img.naturalHeight})`);
+                        showImage();
                     };
                     
-                    // Use both load event and complete check for faster response
-                    if (img.complete) {
-                        handleLoad();
-                    } else {
-                        img.addEventListener('load', handleLoad, { once: true });
-                        img.addEventListener('error', function() {
-                            console.error(`❌ Image failed to load: ${img.src}`);
-                            console.error(`   naturalWidth: ${img.naturalWidth}, naturalHeight: ${img.naturalHeight}`);
-                            // Show image anyway after a delay (might be CORS issue but image could still display)
-                            setTimeout(() => {
-                                console.warn(`⚠️ Showing image despite error: ${img.src.substring(0, 60)}...`);
-                                showImage();
-                            }, 500);
-                        }, { once: true });
-                        
-                        // Fallback: check periodically if image loaded
-                        let checkCount = 0;
-                        const checkInterval = setInterval(() => {
-                            checkCount++;
-                            if (img.complete && img.naturalHeight !== 0 && img.naturalWidth !== 0) {
-                                clearInterval(checkInterval);
-                                handleLoad();
-                            } else if (checkCount > 30) {
-                                // After 3 seconds, show image anyway
-                                clearInterval(checkInterval);
-                                console.warn(`⚠️ Image loading timeout after 3s: ${img.src.substring(0, 60)}...`);
-                                showImage();
-                            }
-                        }, 100);
-                    }
+                    // Use multiple events
+                    img.addEventListener('load', handleLoad, { once: true });
+                    img.addEventListener('loadeddata', handleLoad, { once: true });
+                    img.addEventListener('loadstart', () => {
+                        console.log(`🔄 Image loading started: ${img.src.substring(0, 60)}...`);
+                    }, { once: true });
+                    
+                    // Error handling - show image anyway after delay
+                    img.addEventListener('error', function() {
+                        console.error(`❌ Image error: ${img.src}`);
+                        // Show image anyway - might be CORS but could still display
+                        setTimeout(() => {
+                            console.warn(`⚠️ Showing image despite error: ${img.src.substring(0, 60)}...`);
+                            showImage();
+                        }, 300);
+                    }, { once: true });
+                    
+                    // Aggressive polling - check every 50ms
+                    let checkCount = 0;
+                    const checkInterval = setInterval(() => {
+                        checkCount++;
+                        if (checkAndShow()) {
+                            clearInterval(checkInterval);
+                        } else if (checkCount > 40) {
+                            // After 2 seconds, show image anyway
+                            clearInterval(checkInterval);
+                            console.warn(`⚠️ Force showing image after timeout: ${img.src.substring(0, 60)}...`);
+                            showImage();
+                        }
+                    }, 50);
                 }
             });
         }
